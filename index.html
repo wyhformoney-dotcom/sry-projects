@@ -1,0 +1,301 @@
+<!-- SRY Interactive — Projects 首页(方案 B 精修版) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRY Interactive — Projects</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  img{display:block;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px;
+    -webkit-font-smoothing:antialiased;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+
+  /* ================= NAVBAR ================= */
+  .nav{
+    position:sticky; top:0; z-index:500;
+    display:flex; align-items:center; gap:28px;
+    padding:0 30px; height:62px;
+    background:rgba(12,13,10,.82); backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);
+  }
+  .logo{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-weight:900; font-size:17px; letter-spacing:-.01em; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo b{ color:#fff; } .logo span{ color:var(--ink-dim); font-weight:700; }
+  .nav-links{ display:flex; align-items:center; gap:4px; }
+  .nav-links a{
+    font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-dim); padding:8px 12px; border-radius:6px; position:relative; transition:color .15s;
+  }
+  .nav-links a:hover{ color:#fff; }
+  .nav-links a.active{ color:#fff; }
+  .nav-links a.active::after{ content:""; position:absolute; left:12px; right:12px; bottom:2px; height:2px; background:var(--accent); }
+  .nav-links a.soon{ color:var(--ink-faint); cursor:default; }
+  .nav-links a.soon .soon-tag{ font-size:8px; vertical-align:super; color:var(--accent); margin-left:3px; letter-spacing:.1em; }
+  .nav-spacer{ flex:1; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; transition:all .15s; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+  .cta{ font-family:var(--mono); font-weight:700; font-size:12px; letter-spacing:.04em; background:var(--accent); color:var(--accent-ink); padding:9px 15px; border-radius:7px; white-space:nowrap; transition:transform .12s; }
+  .cta:hover{ transform:translateY(-1px); }
+  .nav-burger{ display:none; }
+
+  /* ================= LAYOUT ================= */
+  .wrap{ max-width:1280px; margin:0 auto; padding:54px 30px 110px; }
+  .hero .kicker{ font-family:var(--mono); font-size:12px; letter-spacing:.14em; color:var(--accent); }
+  .hero h1{ font-family:var(--sans); font-weight:900; font-size:clamp(36px,5vw,58px); line-height:.98; letter-spacing:-.025em; color:#fff; text-transform:uppercase; margin:10px 0 12px; }
+  .hero p{ font-family:var(--mono); font-size:13px; line-height:1.75; color:var(--ink-dim); max-width:600px; }
+
+  /* ================= FILTER PANEL ================= */
+  .filters{ margin:38px 0 10px; border:1px solid var(--line); background:rgba(18,19,16,.5); }
+  .filter-top{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px; border-bottom:1px solid var(--line-soft); }
+  .search{ display:flex; align-items:center; gap:9px; border:1px solid var(--line); background:var(--bg); padding:9px 13px; min-width:240px; flex:1; max-width:340px; }
+  .search svg{ stroke:var(--accent); flex-shrink:0; }
+  .search input{ background:transparent; border:none; outline:none; width:100%; font-family:var(--mono); font-size:13px; color:var(--ink); }
+  .search input::placeholder{ color:var(--ink-faint); }
+  .count{ font-family:var(--mono); font-size:12px; color:var(--ink-dim); }
+  .count b{ color:var(--accent); }
+  .clear{ font-family:var(--mono); font-size:11px; color:var(--ink-dim); cursor:pointer; border:1px dashed var(--line); padding:7px 11px; transition:all .15s; }
+  .clear:hover{ color:#fff; border-color:var(--accent); }
+  .clear.hide{ display:none; }
+
+  .facet{ display:flex; gap:14px; padding:11px 16px; border-bottom:1px solid var(--line-soft); }
+  .facet:last-child{ border-bottom:none; }
+  .facet-label{ font-family:var(--mono); font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); width:86px; flex-shrink:0; padding-top:6px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:7px; }
+  .chip{
+    font-family:var(--mono); font-size:11px; cursor:pointer; user-select:none;
+    padding:6px 11px; background:var(--panel); border:1px solid var(--line); color:var(--ink-dim);
+    transition:all .13s;
+  }
+  .chip:hover{ border-color:var(--accent); color:#fff; }
+  .chip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+
+  /* ================= GRID ================= */
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:26px; }
+  @media(max-width:980px){ .grid{ grid-template-columns:repeat(2,1fr); } .facet-label{ width:100%; } .facet{ flex-direction:column; gap:8px; } }
+  @media(max-width:560px){ .grid{ grid-template-columns:1fr; } .wrap{ padding:34px 16px 80px; }
+    .nav-links{ display:none; } .nav{ gap:14px; padding:0 16px; } }
+
+  .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; }
+  .card:hover{ border-color:var(--accent); transform:translateY(-2px); }
+  .cover{ position:relative; aspect-ratio:16/10; overflow:hidden; background:#1a1a1a; }
+  .cover img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.3,1); }
+  .card:hover .cover img{ transform:scale(1.05); }
+  .cover .fallback{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
+  .stage-badge{ position:absolute; top:0; left:0; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:4px 11px; font-weight:700; }
+  .region-badge{ position:absolute; top:0; right:0; font-family:var(--mono); font-size:10px; letter-spacing:.08em; background:rgba(12,13,10,.7); color:var(--ink); padding:4px 10px; border-left:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .card-body{ padding:16px; }
+  .card-title{ font-family:var(--sans); font-weight:800; font-size:18px; color:#fff; letter-spacing:-.01em; margin-bottom:7px; }
+  .card-desc{ font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); line-height:1.65; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .card-genres{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+  .gtag{ font-family:var(--mono); font-size:10px; color:var(--ink-dim); }
+  .gtag::before{ content:"["; color:#4d4f44; } .gtag::after{ content:"]"; color:#4d4f44; }
+  .card-needs{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+  .need{ font-family:var(--mono); font-size:10px; color:var(--accent); }
+  .need::before{ content:"▸ "; }
+
+  .empty{ text-align:center; padding:80px 0; color:var(--ink-faint); font-family:var(--mono); font-size:14px; }
+
+  /* ================= MODAL ================= */
+  .modal{ position:fixed; inset:0; z-index:900; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
+  .modal.open{ display:flex; }
+  .modal-card{ position:relative; max-width:560px; width:100%; background:var(--panel); border:1px solid var(--line); }
+  .modal-card img{ width:100%; aspect-ratio:16/9; object-fit:cover; }
+  .modal-body{ padding:22px 24px 26px; }
+  .modal-body h2{ font-family:var(--sans); font-weight:900; font-size:25px; color:#fff; margin-bottom:10px; }
+  .modal-body p{ font-family:var(--mono); font-size:12.5px; color:var(--ink-dim); line-height:1.7; }
+  .modal-meta{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .modal-note{ margin-top:18px; padding-top:14px; border-top:1px dashed var(--line); font-family:var(--mono); font-size:11px; color:var(--ink-faint); }
+  .modal-close{ position:absolute; top:14px; right:14px; cursor:pointer; width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.5); border:1px solid var(--line); color:#fff; font-size:18px; }
+</style>
+
+<!-- ================= NAV ================= -->
+<nav class="nav">
+  <a class="logo" href="#"><span class="mark"></span><b>SRY</b><span>INTERACTIVE</span></a>
+  <div class="nav-links">
+    <a href="#" class="active" data-en="Projects" data-zh="项目">Projects</a>
+    <a class="soon" data-en="Partners" data-zh="合作发行商">Partners<span class="soon-tag">SOON</span></a>
+    <a class="soon" data-en="Events" data-zh="行业活动">Events<span class="soon-tag">SOON</span></a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button>
+    <button data-l="zh">中文</button>
+  </div>
+  <a class="cta" href="https://tally.so/r/eqxrbQ" target="_blank" id="cta" data-en="Submit Your Game ↗" data-zh="提交你的游戏 ↗">Submit Your Game ↗</a>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="kicker">SRY INTERACTIVE // DEVELOPER × PUBLISHER</div>
+    <h1 id="ptitle">Project Index</h1>
+    <p class="cjk-swap" id="lead"></p>
+  </header>
+
+  <section class="filters">
+    <div class="filter-top">
+      <label class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" type="text">
+      </label>
+      <div class="nav-spacer"></div>
+      <span class="clear hide" id="clear" data-en="Clear all ✕" data-zh="清除全部 ✕">Clear all ✕</span>
+    </div>
+    <div class="facet"><div class="facet-label" data-en="Genre" data-zh="类型">Genre</div><div class="chips" id="f-genre"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Stage" data-zh="进展">Stage</div><div class="chips" id="f-stage"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Need" data-zh="需求">Need</div><div class="chips" id="f-need"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Platform" data-zh="平台">Platform</div><div class="chips" id="f-platform"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Target Market" data-zh="目标市场">Target Market</div><div class="chips" id="f-region"></div></div>
+  </section>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none"></div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-close" id="modalClose">×</div>
+    <img id="mImg" src="" alt="">
+    <div class="modal-body">
+      <h2 class="cjk-swap" id="mTitle"></h2>
+      <p class="cjk-swap" id="mDesc"></p>
+      <div class="modal-meta" id="mMeta"></div>
+      <div class="modal-note" id="mNote"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ====== 数据(需求仅 发行/投资;region 真实;platform 为占位,待你给真实值) ======
+let GAMES = [];
+
+const I18N = {
+  en:{ title:"Project Index", lead:"A curated index of games seeking publishing and investment partners. Filter across genre, stage, platform and region to find your match.",
+       search:"Search by name…", count:(n)=>`${n} ${n===1?'TITLE':'TITLES'}`, empty:"No projects match your filters.",
+       note:"Demo detail view — a full detail page will be rebuilt for each title." },
+  zh:{ title:"项目索引", lead:"精选的游戏索引，汇集寻找发行与投资合作的项目。按类型、进展、平台与地区筛选，找到契合的对象。",
+       search:"按名称搜索…", count:(n)=>`${n} 款`, empty:"没有符合筛选条件的项目。",
+       note:"Demo 详情预览——最终会为每款游戏重建完整详情页。" }
+};
+const ZH = {
+  genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
+  need:{"Seeking Publisher":"寻找发行","Seeking Investment":"寻找投资"},
+  stage:{"In Development":"开发中",Demo:"Demo",Playtest:"Playtest","Early Access":"EA",Released:"发布"},
+  platform:{PC:"PC",Console:"主机",Mobile:"移动端"},
+  region:{Global:"全球",China:"中国",Overseas:"海外"}
+};
+
+let lang="en", search="";
+const sel={ genre:new Set(), stage:new Set(), need:new Set(), platform:new Set(), region:new Set() };
+const uniq=(arr)=>[...new Set(arr)];
+const OPTS={
+  genre:["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"],
+  stage:["In Development","Demo","Playtest","Early Access","Released"],
+  need:["Seeking Publisher","Seeking Investment"],
+  platform:["PC","Console","Mobile"],
+  region:["Global","China","Overseas"],
+};
+const $=s=>document.querySelector(s);
+const body=document.body;
+
+const L=(cat,v)=> lang==="zh" ? (ZH[cat][v]||v) : v;
+const title=g=> (lang==="zh"?g.t_zh:g.t_en)||g.t_en||g.t_zh||"";
+const desc=g=> (lang==="zh"?g.d_zh:g.d_en)||g.d_en||g.d_zh||"";
+
+function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return`linear-gradient(135deg,hsl(${h%360},45%,26%),hsl(${(h*3)%360},50%,16%))`;}
+
+function cardHTML(g,i){
+  return `<a class="card" data-i="${i}" href="#">
+    <div class="cover">
+      <span class="stage-badge">${L('stage',g.stage)}</span>
+      <span class="region-badge">${L('region',g.region)}</span>
+      <img src="${g.cover}" alt="" loading="lazy" data-t="${title(g).replace(/"/g,'&quot;')}"
+        onerror="this.style.display='none';this.parentElement.style.background='${hashColor(g.t_en)}';this.insertAdjacentHTML('afterend','<div class=\\'fallback cjk-swap\\'>'+this.dataset.t+'</div>')">
+    </div>
+    <div class="card-body">
+      <div class="card-title cjk-swap">${title(g)}</div>
+      <div class="card-desc cjk-swap">${desc(g)}</div>
+      <div class="card-genres">${g.genres.map(x=>`<span class="gtag">${L('genre',x)}</span>`).join("")}</div>
+      <div class="card-needs">${g.needs.map(n=>`<span class="need">${L('need',n)}</span>`).join("")}</div>
+    </div>
+  </a>`;
+}
+
+function matchFacet(values,set){ return set.size===0 || values.some(v=>set.has(v)); }
+function matches(g){
+  const q=search.trim().toLowerCase();
+  if(q && !g.t_en.toLowerCase().includes(q) && !g.t_zh.toLowerCase().includes(q)) return false;
+  return matchFacet(g.genres,sel.genre) && matchFacet([g.stage],sel.stage)
+      && matchFacet(g.needs,sel.need) && matchFacet(g.platforms,sel.platform)
+      && matchFacet([g.region],sel.region);
+}
+
+function renderChips(){
+  for(const cat of Object.keys(OPTS)){
+    $("#f-"+cat).innerHTML=OPTS[cat].map(v=>`<span class="chip ${sel[cat].has(v)?'on':''}" data-cat="${cat}" data-v="${v}">${L(cat,v)}</span>`).join("");
+  }
+  const any=Object.values(sel).some(s=>s.size>0)||search.trim();
+  $("#clear").classList.toggle("hide",!any);
+}
+function renderGrid(){
+  const list=GAMES.map((g,i)=>({g,i})).filter(o=>matches(o.g));
+  const grid=$("#grid"),empty=$("#empty");
+  if(!list.length){grid.innerHTML="";empty.style.display="block";empty.textContent=I18N[lang].empty;return;}
+  empty.style.display="none";
+  grid.innerHTML=list.map(o=>cardHTML(o.g,o.i)).join("");
+}
+function renderText(){
+  $("#ptitle").textContent=I18N[lang].title;
+  $("#lead").textContent=I18N[lang].lead;
+  $("#search").placeholder=I18N[lang].search;
+  document.querySelectorAll("[data-en]").forEach(el=>{ el.childNodes[0].nodeValue=el.getAttribute("data-"+lang); });
+}
+function renderAll(){ body.setAttribute("lang",lang); renderText(); renderChips(); renderGrid(); }
+
+$("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");lang=b.dataset.l;renderAll();});
+$("#search").addEventListener("input",e=>{search=e.target.value;renderChips();renderGrid();});
+document.querySelector(".filters").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;
+  const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); renderChips();renderGrid();});
+$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";$("#search").value="";renderChips();renderGrid();});
+$("#grid").addEventListener("click",e=>{const card=e.target.closest(".card");if(!card)return;e.preventDefault();
+  const g=GAMES[+card.dataset.i];
+  $("#mImg").src=g.cover; $("#mTitle").textContent=title(g); $("#mDesc").textContent=desc(g);
+  $("#mMeta").innerHTML=[...g.genres.map(x=>L('genre',x)),...g.needs.map(n=>L('need',n))].map(t=>`<span class="chip">${t}</span>`).join("");
+  $("#mNote").textContent=I18N[lang].note; $("#modal").classList.add("open");});
+$("#modalClose").addEventListener("click",()=>$("#modal").classList.remove("open"));
+$("#modal").addEventListener("click",e=>{if(e.target.id==="modal")$("#modal").classList.remove("open");});
+
+async function loadGames(){
+  try{
+    const res=await fetch('/api/games',{headers:{Accept:'application/json'}});
+    const data=await res.json();
+    if(!Array.isArray(data)) throw new Error((data&&data.error)||'bad data');
+    GAMES=data;
+  }catch(e){
+    $("#grid").innerHTML="";
+    $("#empty").style.display="block";
+    $("#empty").textContent=(lang==="zh"?"数据加载失败，请稍后刷新重试。":"Failed to load data. Please refresh.");
+    console.error("loadGames",e); return;
+  }
+  renderGrid();
+}
+body.setAttribute("lang",lang); renderText(); renderChips();
+$("#grid").innerHTML='<div style="grid-column:1/-1;padding:70px 0;text-align:center;color:#6b6d62;font-family:Space Mono,monospace">加载中 / Loading…</div>';
+loadGames();
+</script>
