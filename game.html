@@ -1,0 +1,296 @@
+<!-- SRY Interactive — 游戏详情页 -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SRY Interactive — Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  img{display:block;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+
+  /* nav (与列表页一致) */
+  .nav{ position:sticky; top:0; z-index:500; display:flex; align-items:center; gap:28px; padding:0 30px; height:62px; background:rgba(12,13,10,.82); backdrop-filter:blur(12px); border-bottom:1px solid var(--line); }
+  .logo{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-weight:900; font-size:17px; letter-spacing:-.01em; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo b{ color:#fff; } .logo span{ color:var(--ink-dim); font-weight:700; }
+  .nav-links{ display:flex; align-items:center; gap:4px; }
+  .nav-links a{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-dim); padding:8px 12px; border-radius:6px; transition:color .15s; }
+  .nav-links a:hover{ color:#fff; }
+  .nav-links a.active{ color:#fff; }
+  .nav-spacer{ flex:1; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; transition:all .15s; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+  @media(max-width:560px){ .nav-links{ display:none; } .nav{ gap:14px; padding:0 16px; } }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:30px 30px 110px; }
+  @media(max-width:560px){ .wrap{ padding:22px 16px 80px; } }
+
+  .back{ font-family:var(--mono); font-size:12px; color:var(--ink-dim); letter-spacing:.05em; display:inline-block; margin-bottom:26px; transition:color .15s; }
+  .back:hover{ color:var(--accent); }
+
+  /* header */
+  .kicker{ font-family:var(--mono); font-size:12px; letter-spacing:.14em; color:var(--accent); }
+  .ptitle{ font-family:var(--sans); font-weight:900; font-size:clamp(30px,4.4vw,50px); line-height:1; letter-spacing:-.025em; color:#fff; text-transform:uppercase; margin:10px 0 12px; }
+  .tagline{ font-family:var(--mono); font-size:14px; color:var(--ink-dim); line-height:1.7; max-width:680px; }
+  .head-chips{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .hchip{ font-family:var(--mono); font-size:11px; padding:5px 11px; border:1px solid var(--line); color:var(--ink-dim); }
+  .hchip.lime{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+
+  /* media viewer (全宽) */
+  .media{ margin:30px 0 0; }
+  .stage-main{ position:relative; width:100%; aspect-ratio:16/9; background:#000; border:1px solid var(--line); overflow:hidden; }
+  .stage-main img,.stage-main video,.stage-main iframe{ width:100%; height:100%; object-fit:cover; border:none; display:block; }
+  .playbtn{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; cursor:pointer; background:rgba(0,0,0,.35); }
+  .playbtn .tri{ width:0;height:0;border-top:13px solid transparent;border-bottom:13px solid transparent;border-left:22px solid var(--accent-ink); margin-left:5px; }
+  .playbtn .circ{ width:74px;height:74px;border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 1px rgba(0,0,0,.3); }
+  .vtag{ position:absolute; top:0; left:0; font-family:var(--mono); font-size:10px; letter-spacing:.1em; background:var(--accent); color:var(--accent-ink); padding:4px 10px; font-weight:700; }
+  .thumbs{ display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+  .thumb{ width:104px; height:60px; border:1px solid var(--line); overflow:hidden; cursor:pointer; position:relative; flex-shrink:0; opacity:.55; transition:opacity .15s,border-color .15s; background:#1a1a1a; }
+  .thumb.on{ opacity:1; border-color:var(--accent); }
+  .thumb img{ width:100%; height:100%; object-fit:cover; }
+  .thumb .mini{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.4); }
+  .thumb .mini .tri{ width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;border-left:10px solid #fff; margin-left:2px; }
+
+  /* DEAL SHEET 横条 */
+  .dealsheet{ margin-top:14px; border:1px solid var(--line); background:var(--panel); display:grid; grid-template-columns:repeat(4,1fr) 1.3fr; }
+  .deal-cell{ padding:14px 16px; border-right:1px solid var(--line-soft); }
+  .deal-cell:last-child{ border-right:none; }
+  .deal-k{ font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:7px; }
+  .deal-v{ font-family:var(--sans); font-size:14px; font-weight:600; color:#fff; }
+  .deal-seek{ display:flex; flex-direction:column; gap:6px; }
+  .seekpill{ font-family:var(--mono); font-size:11px; color:var(--accent); }
+  .seekpill::before{ content:"▸ "; }
+  .deal-cta{ background:var(--panel2); display:flex; align-items:center; }
+  .deal-cta a{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; gap:8px; font-family:var(--mono); font-weight:700; font-size:13px; background:var(--accent); color:var(--accent-ink); transition:filter .15s; }
+  .deal-cta a:hover{ filter:brightness(1.08); }
+  @media(max-width:860px){ .dealsheet{ grid-template-columns:1fr 1fr; } .deal-cell{ border-right:none; border-bottom:1px solid var(--line-soft); } .deal-cta{ grid-column:1/-1; } .deal-cta a{ padding:14px; } }
+
+  /* stage tracker */
+  .section-h{ font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin:48px 0 18px; padding-bottom:10px; border-bottom:1px solid var(--line); }
+  .tracker{ display:flex; align-items:flex-start; overflow-x:auto; padding-bottom:6px; }
+  .tk-node{ text-align:center; min-width:96px; }
+  .tk-label{ font-family:var(--mono); font-size:11px; letter-spacing:.04em; }
+  .tk-dot{ width:11px; height:11px; margin:9px auto 0; transform:rotate(45deg); }
+  .tk-line{ flex:1; height:1px; margin-top:14px; min-width:24px; }
+
+  /* overview / markdown */
+  .md-h2{ font-family:var(--sans); font-weight:800; font-size:19px; color:#fff; margin:26px 0 10px; }
+  .md-h3{ font-family:var(--sans); font-weight:700; font-size:15px; color:var(--ink); margin:18px 0 8px; }
+  .md-p{ font-family:var(--mono); font-size:13.5px; color:var(--ink-dim); line-height:1.9; margin-bottom:6px; }
+  .md-p strong{ color:#fff; font-weight:700; }
+  .md-img{ width:100%; border:1px solid var(--line); margin:16px 0; }
+  .md-sp{ height:10px; }
+
+  /* studio */
+  .studio{ border:1px solid var(--line); background:var(--panel); padding:20px; display:flex; gap:16px; align-items:flex-start; }
+  .studio-logo{ width:56px; height:56px; flex-shrink:0; border:1px solid var(--line); background:#1a1a1a; overflow:hidden; }
+  .studio-logo img{ width:100%; height:100%; object-fit:cover; }
+  .studio-name{ font-family:var(--sans); font-weight:800; font-size:17px; color:#fff; margin-bottom:6px; }
+  .studio-desc{ font-family:var(--mono); font-size:12.5px; color:var(--ink-dim); line-height:1.75; }
+
+  /* bottom CTA */
+  .cta-band{ margin-top:48px; border:1px solid var(--accent); background:linear-gradient(180deg,rgba(198,242,78,.06),transparent); padding:28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .cta-band h3{ font-family:var(--sans); font-weight:800; font-size:20px; color:#fff; }
+  .cta-band p{ font-family:var(--mono); font-size:12.5px; color:var(--ink-dim); margin-top:6px; max-width:520px; line-height:1.6; }
+  .cta-band a{ font-family:var(--mono); font-weight:700; font-size:13px; background:var(--accent); color:var(--accent-ink); padding:13px 22px; white-space:nowrap; }
+
+  .loading,.notfound{ font-family:var(--mono); color:var(--ink-faint); text-align:center; padding:100px 0; }
+  .col{ display:grid; grid-template-columns:1fr; gap:0; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span><b>SRY</b><span>INTERACTIVE</span></a>
+  <div class="nav-links">
+    <a href="/" class="active" data-en="Projects" data-zh="项目">Projects</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button>
+    <button data-l="zh">中文</button>
+  </div>
+</nav>
+
+<div class="wrap"><div id="app"><div class="loading">Loading… / 加载中…</div></div></div>
+
+<script>
+const ZH={
+  genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
+  need:{"Seeking Publisher":"寻找发行","Seeking Investment":"寻找投资"},
+  stage:{"In Development":"开发中",Demo:"Demo",Playtest:"Playtest","Early Access":"EA",Released:"发布"},
+  platform:{PC:"PC",Console:"主机",Mobile:"移动端"},
+  region:{Global:"全球",China:"中国",Overseas:"海外"}
+};
+const T={
+  en:{back:"← All Projects", developer:"Developer", platform:"Platform", market:"Target Market", stage:"Stage", seeking:"Seeking", overview:"Project Overview", studio:"Studio", contact:"Contact ↗", notfound:"Project not found.", ctaH:"Interested in this project?", ctaP:"Get in touch to request the full pitch deck, build access, or partnership terms.", ctaBtn:"Contact us ↗", trailer:"TRAILER", na:"—"},
+  zh:{back:"← 返回项目列表", developer:"开发商", platform:"平台", market:"目标市场", stage:"进展", seeking:"寻求合作", overview:"项目概览", studio:"开发团队", contact:"联系洽谈 ↗", notfound:"未找到该项目。", ctaH:"对这个项目感兴趣？", ctaP:"联系我们获取完整项目资料、试玩版本或合作条款。", ctaBtn:"联系我们 ↗", trailer:"预告片", na:"—"}
+};
+const STAGES=["In Development","Demo","Playtest","Early Access","Released"];
+const SUBMIT="https://tally.so/r/eqxrbQ"; // 兜底联系入口
+
+let lang="en", GAME=null, media=[], activeIdx=0, playing=false;
+const $=s=>document.querySelector(s);
+const slugify=s=>(s||"").toLowerCase().trim().replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+const esc=s=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const L=(cat,v)=> lang==="zh"?(ZH[cat][v]||v):v;
+const pick=(zh,en)=> lang==="zh"?(zh||en||""):(en||zh||"");
+
+function videoEmbed(url){
+  if(!url) return null;
+  let m=url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/);
+  if(m) return {type:"iframe", src:`https://www.youtube.com/embed/${m[1]}?autoplay=1`};
+  m=url.match(/bilibili\.com\/video\/(BV[\w]+)/);
+  if(m) return {type:"iframe", src:`https://player.bilibili.com/player.html?bvid=${m[1]}&autoplay=1&high_quality=1`};
+  m=url.match(/bilibili\.com\/video\/av(\d+)/);
+  if(m) return {type:"iframe", src:`https://player.bilibili.com/player.html?aid=${m[1]}&autoplay=1`};
+  if(/\.(mp4|webm|mov)(\?.*)?$/i.test(url)) return {type:"video", src:url};
+  return {type:"iframe", src:url};
+}
+function mdToHtml(t){
+  if(!t) return "";
+  let out="";
+  for(const line of t.split(/\r?\n/)){
+    const im=line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
+    if(im){ out+=`<img class="md-img" src="${im[2]}" alt="${esc(im[1])}">`; continue; }
+    if(line.startsWith("## ")){ out+=`<div class="md-h2">${esc(line.slice(3))}</div>`; continue; }
+    if(line.startsWith("### ")){ out+=`<div class="md-h3">${esc(line.slice(4))}</div>`; continue; }
+    if(line.trim()===""){ out+=`<div class="md-sp"></div>`; continue; }
+    out+=`<div class="md-p">${esc(line).replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")}</div>`;
+  }
+  return out;
+}
+
+function buildMedia(g){
+  const arr=[];
+  const ve=videoEmbed(g.video);
+  if(ve) arr.push({kind:"video", embed:ve, thumb:g.cover||(g.screenshots&&g.screenshots[0])||""});
+  (g.screenshots||[]).forEach(s=>arr.push({kind:"image", src:s}));
+  if(arr.length===0 && g.cover) arr.push({kind:"image", src:g.cover});
+  return arr;
+}
+
+function renderMain(){
+  const m=media[activeIdx];
+  if(!m) return `<div class="stage-main"></div>`;
+  if(m.kind==="video"){
+    if(playing){
+      if(m.embed.type==="video") return `<div class="stage-main"><video src="${m.embed.src}" controls autoplay></video></div>`;
+      return `<div class="stage-main"><iframe src="${m.embed.src}" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe></div>`;
+    }
+    return `<div class="stage-main"><span class="vtag">${T[lang].trailer}</span>
+      ${m.thumb?`<img src="${m.thumb}" alt="">`:`<div style="width:100%;height:100%;background:#15160f"></div>`}
+      <div class="playbtn" id="playbtn"><div class="circ"><div class="tri"></div></div></div></div>`;
+  }
+  return `<div class="stage-main"><img src="${m.src}" alt=""></div>`;
+}
+function renderThumbs(){
+  if(media.length<2) return "";
+  return `<div class="thumbs">`+media.map((m,i)=>`
+    <div class="thumb ${i===activeIdx?'on':''}" data-i="${i}">
+      ${m.kind==="video"?`${m.thumb?`<img src="${m.thumb}">`:''}<div class="mini"><div class="tri"></div></div>`:`<img src="${m.src}">`}
+    </div>`).join("")+`</div>`;
+}
+function renderTracker(g){
+  const cur=STAGES.indexOf(g.stage);
+  let h=`<div class="tracker">`;
+  STAGES.forEach((s,i)=>{
+    const done=i<cur, on=i===cur;
+    const col= on?"var(--accent)": done?"var(--ink-dim)":"var(--ink-faint)";
+    h+=`<div class="tk-node"><div class="tk-label" style="color:${col};font-weight:${on?700:400}">${L('stage',s)}</div>
+        <div class="tk-dot" style="background:${on?'var(--accent)':done?'var(--ink-dim)':'#2c2e26'};box-shadow:${on?'0 0 10px rgba(198,242,78,.6)':'none'}"></div></div>`;
+    if(i<STAGES.length-1) h+=`<div class="tk-line" style="background:${i<cur?'var(--ink-dim)':'#1e1f19'}"></div>`;
+  });
+  return h+`</div>`;
+}
+
+function render(){
+  const g=GAME, t=T[lang];
+  if(!g){ $("#app").innerHTML=`<a class="back" href="/">${t.back}</a><div class="notfound">${t.notfound}</div>`; return; }
+  document.body.setAttribute("lang",lang);
+  document.title=`${pick(g.t_zh,g.t_en)} — SRY Interactive`;
+  const full=mdToHtml(pick(g.full_zh,g.full_en)) || `<div class="md-p">${esc(pick(g.d_zh,g.d_en))}</div>`;
+  const studioDesc=pick(g.studio_zh,g.studio_en);
+  const contactHref=g.contact||SUBMIT;
+
+  $("#app").innerHTML=`
+    <a class="back" href="/">${t.back}</a>
+    <div class="kicker">SRY INTERACTIVE // DEVELOPER × PUBLISHER</div>
+    <h1 class="ptitle cjk-swap">${esc(pick(g.t_zh,g.t_en))}</h1>
+    <p class="tagline cjk-swap">${esc(pick(g.d_zh,g.d_en))}</p>
+    <div class="head-chips">
+      <span class="hchip lime">${L('stage',g.stage)}</span>
+      <span class="hchip">${L('region',g.region)}</span>
+      ${(g.genres||[]).map(x=>`<span class="hchip">${L('genre',x)}</span>`).join("")}
+    </div>
+
+    <div class="media"><div id="mainview">${renderMain()}</div><div id="thumbview">${renderThumbs()}</div></div>
+
+    <div class="dealsheet">
+      <div class="deal-cell"><div class="deal-k">${t.developer}</div><div class="deal-v cjk-swap">${esc(g.developer)||t.na}</div></div>
+      <div class="deal-cell"><div class="deal-k">${t.platform}</div><div class="deal-v">${(g.platforms||[]).map(p=>L('platform',p)).join(" · ")||t.na}</div></div>
+      <div class="deal-cell"><div class="deal-k">${t.market}</div><div class="deal-v">${L('region',g.region)||t.na}</div></div>
+      <div class="deal-cell"><div class="deal-k">${t.seeking}</div><div class="deal-seek">${(g.needs||[]).map(n=>`<span class="seekpill">${L('need',n)}</span>`).join("")||t.na}</div></div>
+      <div class="deal-cell deal-cta"><a href="${contactHref}" target="_blank" rel="noopener">${t.contact}</a></div>
+    </div>
+
+    <div class="section-h">${t.stage}</div>
+    ${renderTracker(g)}
+
+    <div class="section-h">${t.overview}</div>
+    <div class="overview cjk-swap">${full}</div>
+
+    ${g.developer||studioDesc?`
+    <div class="section-h">${t.studio}</div>
+    <div class="studio">
+      <div class="studio-logo">${g.studioLogo?`<img src="${g.studioLogo}" alt="">`:''}</div>
+      <div><div class="studio-name cjk-swap">${esc(g.developer)||t.na}</div>${studioDesc?`<div class="studio-desc cjk-swap">${esc(studioDesc)}</div>`:''}</div>
+    </div>`:''}
+
+    <div class="cta-band">
+      <div><h3 class="cjk-swap">${t.ctaH}</h3><p class="cjk-swap">${t.ctaP}</p></div>
+      <a href="${contactHref}" target="_blank" rel="noopener">${t.ctaBtn}</a>
+    </div>
+  `;
+
+  const pb=$("#playbtn"); if(pb) pb.addEventListener("click",()=>{playing=true; $("#mainview").innerHTML=renderMain();});
+  document.querySelectorAll(".thumb").forEach(el=>el.addEventListener("click",()=>{
+    activeIdx=+el.dataset.i; playing=false;
+    $("#mainview").innerHTML=renderMain();
+    document.querySelectorAll(".thumb").forEach(x=>x.classList.toggle("on", +x.dataset.i===activeIdx));
+    const np=$("#playbtn"); if(np) np.addEventListener("click",()=>{playing=true; $("#mainview").innerHTML=renderMain();});
+  }));
+}
+
+$("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
+  document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  lang=b.dataset.l; document.querySelectorAll(".nav-links [data-en]").forEach(el=>el.textContent=el.getAttribute("data-"+lang));
+  render();});
+
+(async function(){
+  const id=new URLSearchParams(location.search).get("id");
+  try{
+    const res=await fetch("/api/games",{headers:{Accept:"application/json"}});
+    const data=await res.json();
+    if(!Array.isArray(data)) throw new Error("bad data");
+    GAME=data.find(g=>slugify(g.t_en)===id) || data.find(g=>slugify(g.t_zh)===id) || null;
+    media=GAME?buildMedia(GAME):[];
+  }catch(e){ GAME=null; console.error(e); }
+  render();
+})();
+</script>
