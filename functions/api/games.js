@@ -40,7 +40,7 @@ function mapRecord(f){
     visible: txt(f["是否上架"]) !== "否",
     full_en:g("完整简介_EN"), full_zh:g("完整简介_中文"), full_ko:g("完整简介_韩文"),
     developer:g("开发商"), studioLogo:g("工作室Logo"),
-    studio_en:g("工作室简介_EN"), studio_zh:g("工作室简介_中文"),
+    studio_en:g("工作室简介_EN"), studio_zh:g("工作室简介_中文"), studio_ko:g("工作室简介_韩文"),
     video:g("预告片链接"),
     screenshots: g("截图链接").split(/\r?\n/).map(s=>s.trim()).filter(Boolean),
     contact:g("联系链接"),
