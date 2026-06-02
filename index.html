@@ -1,10 +1,10 @@
 <!-- SRY Interactive — Projects 首页(方案 B 精修版) -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SRY Interactive — Projects</title>
+<title>SRY Game Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 
 <style>
   :root{
@@ -12,7 +12,7 @@
     --line:#2c2e26; --line-soft:#1e1f19;
     --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
     --accent:#c6f24e; --accent-ink:#0c0d0a;
-    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   a{text-decoration:none;color:inherit;}
@@ -24,6 +24,7 @@
     -webkit-font-smoothing:antialiased;
   }
   body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
 
   /* ================= NAVBAR ================= */
   .nav{
@@ -33,9 +34,12 @@
     background:rgba(12,13,10,.82); backdrop-filter:blur(12px);
     border-bottom:1px solid var(--line);
   }
+  .brand{ display:flex; flex-direction:column; justify-content:center; gap:2px; }
   .logo{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-weight:900; font-size:17px; letter-spacing:-.01em; }
   .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
-  .logo b{ color:#fff; } .logo span{ color:var(--ink-dim); font-weight:700; }
+  .logo b{ color:var(--ink-dim); font-weight:700; } .logo .hub{ color:#fff; }
+  .poweredby{ font-family:var(--mono); font-size:9.5px; letter-spacing:.03em; color:var(--ink-faint); transition:color .15s; padding-left:20px; }
+  .poweredby:hover{ color:var(--accent); }
   .nav-links{ display:flex; align-items:center; gap:4px; }
   .nav-links a{
     font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
@@ -133,23 +137,27 @@
 
 <!-- ================= NAV ================= -->
 <nav class="nav">
-  <a class="logo" href="/"><span class="mark"></span><b>SRY</b><span>INTERACTIVE</span></a>
+  <div class="brand">
+    <a class="logo" href="/"><span class="mark"></span><b>SRY</b> <span class="hub">GAME HUB</span></a>
+    <a class="poweredby" href="https://sryinteractive.com" target="_blank" rel="noopener" data-en="powered by SRY Interactive ↗" data-zh="由 SRY Interactive 出品 ↗" data-ko="SRY Interactive 제공 ↗">powered by SRY Interactive ↗</a>
+  </div>
   <div class="nav-links">
-    <a href="#" class="active" data-en="Projects" data-zh="项目">Projects</a>
-    <a class="soon" data-en="Partners" data-zh="合作发行商">Partners<span class="soon-tag">SOON</span></a>
-    <a class="soon" data-en="Events" data-zh="行业活动">Events<span class="soon-tag">SOON</span></a>
+    <a href="/" class="active" data-en="Projects" data-zh="项目" data-ko="프로젝트">Projects</a>
+    <a class="soon" data-en="Partners" data-zh="合作发行商" data-ko="파트너">Partners<span class="soon-tag">SOON</span></a>
+    <a class="soon" data-en="Events" data-zh="行业活动" data-ko="행사">Events<span class="soon-tag">SOON</span></a>
   </div>
   <div class="nav-spacer"></div>
   <div class="lang" id="lang">
     <button data-l="en" class="on">EN</button>
     <button data-l="zh">中文</button>
+    <button data-l="ko">한국어</button>
   </div>
-  <a class="cta" href="https://tally.so/r/eqxrbQ" target="_blank" id="cta" data-en="Submit Your Game ↗" data-zh="提交你的游戏 ↗">Submit Your Game ↗</a>
+  <a class="cta" href="https://tally.so/r/eqxrbQ" target="_blank" id="cta" data-en="Submit Your Game ↗" data-zh="提交你的游戏 ↗" data-ko="게임 제출하기 ↗">Submit Your Game ↗</a>
 </nav>
 
 <div class="wrap">
   <header class="hero">
-    <div class="kicker">SRY INTERACTIVE // DEVELOPER × PUBLISHER</div>
+    <div class="kicker">SRY GAME HUB // DEVELOPER × PUBLISHER</div>
     <h1 id="ptitle">Project Index</h1>
     <p class="cjk-swap" id="lead"></p>
   </header>
@@ -161,13 +169,13 @@
         <input id="search" type="text">
       </label>
       <div class="nav-spacer"></div>
-      <span class="clear hide" id="clear" data-en="Clear all ✕" data-zh="清除全部 ✕">Clear all ✕</span>
+      <span class="clear hide" id="clear" data-en="Clear all ✕" data-zh="清除全部 ✕" data-ko="모두 지우기 ✕">Clear all ✕</span>
     </div>
-    <div class="facet"><div class="facet-label" data-en="Genre" data-zh="类型">Genre</div><div class="chips" id="f-genre"></div></div>
-    <div class="facet"><div class="facet-label" data-en="Stage" data-zh="进展">Stage</div><div class="chips" id="f-stage"></div></div>
-    <div class="facet"><div class="facet-label" data-en="Need" data-zh="需求">Need</div><div class="chips" id="f-need"></div></div>
-    <div class="facet"><div class="facet-label" data-en="Platform" data-zh="平台">Platform</div><div class="chips" id="f-platform"></div></div>
-    <div class="facet"><div class="facet-label" data-en="Target Market" data-zh="目标市场">Target Market</div><div class="chips" id="f-region"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Genre" data-zh="类型" data-ko="장르">Genre</div><div class="chips" id="f-genre"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Stage" data-zh="进展" data-ko="단계">Stage</div><div class="chips" id="f-stage"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Need" data-zh="需求" data-ko="니즈">Need</div><div class="chips" id="f-need"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Platform" data-zh="平台" data-ko="플랫폼">Platform</div><div class="chips" id="f-platform"></div></div>
+    <div class="facet"><div class="facet-label" data-en="Target Market" data-zh="目标市场" data-ko="타겟 시장">Target Market</div><div class="chips" id="f-region"></div></div>
   </section>
 
   <div class="grid" id="grid"></div>
@@ -198,7 +206,10 @@ const I18N = {
        note:"Demo detail view — a full detail page will be rebuilt for each title." },
   zh:{ title:"项目索引", lead:"精选的游戏索引，汇集寻找发行与投资合作的项目。按类型、进展、平台与地区筛选，找到契合的对象。",
        search:"按名称搜索…", count:(n)=>`${n} 款`, empty:"没有符合筛选条件的项目。",
-       note:"Demo 详情预览——最终会为每款游戏重建完整详情页。" }
+       note:"Demo 详情预览——最终会为每款游戏重建完整详情页。" },
+  ko:{ title:"프로젝트 인덱스", lead:"퍼블리싱 및 투자 파트너를 찾는 게임들을 선별한 인덱스입니다. 장르, 단계, 플랫폼, 지역으로 필터링하여 적합한 프로젝트를 찾아보세요.",
+       search:"이름으로 검색…", count:(n)=>`${n} 개`, empty:"필터 조건에 맞는 프로젝트가 없습니다.",
+       note:"" }
 };
 const ZH = {
   genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
@@ -206,6 +217,13 @@ const ZH = {
   stage:{"In Development":"开发中",Demo:"Demo",Playtest:"Playtest","Early Access":"EA",Released:"发布"},
   platform:{PC:"PC",Console:"主机",Mobile:"移动端"},
   region:{Global:"全球",China:"中国",Overseas:"海外"}
+};
+const KO = {
+  genre:{Action:"액션",Adventure:"어드벤처",RPG:"RPG",Strategy:"전략",Simulation:"시뮬레이션",Puzzle:"퍼즐",Platformer:"플랫포머",Shooter:"슈팅",Survival:"생존",Horror:"호러",Roguelite:"로그라이트",Metroidvania:"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드",Narrative:"내러티브",Comedy:"코미디","Co-op":"협동",Multiplayer:"멀티플레이어"},
+  need:{"Seeking Publisher":"퍼블리셔 모집","Seeking Publisher Partner":"공동 퍼블리셔 모집","Seeking Investment":"투자 유치"},
+  stage:{"In Development":"개발 중",Demo:"데모",Playtest:"플레이테스트","Early Access":"얼리 액세스",Released:"출시"},
+  platform:{PC:"PC",Console:"콘솔",Mobile:"모바일"},
+  region:{Global:"글로벌",China:"중국",Overseas:"해외"}
 };
 
 let lang="en", search="", page=1;
@@ -222,9 +240,11 @@ const OPTS={
 const $=s=>document.querySelector(s);
 const body=document.body;
 
-const L=(cat,v)=> lang==="zh" ? (ZH[cat][v]||v) : v;
-const title=g=> (lang==="zh"?g.t_zh:g.t_en)||g.t_en||g.t_zh||"";
-const desc=g=> (lang==="zh"?g.d_zh:g.d_en)||g.d_en||g.d_zh||"";
+const L=(cat,v)=> lang==="zh" ? (ZH[cat][v]||v) : lang==="ko" ? ((KO[cat]&&KO[cat][v])||v) : v;
+const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
+const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
+const title=g=> field(g,'t');
+const desc=g=> field(g,'d');
 
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return`linear-gradient(135deg,hsl(${h%360},45%,26%),hsl(${(h*3)%360},50%,16%))`;}
 const slugify=s=>(s||"").toLowerCase().trim().replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
