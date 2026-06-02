@@ -3,7 +3,7 @@
 // 密钥只存在 Cloudflare 环境变量里，永远不会出现在前端代码中。
 
 const GENRE={"动作":"Action","冒险":"Adventure","角色扮演":"RPG","策略":"Strategy","模拟":"Simulation","解谜":"Puzzle","平台":"Platformer","射击":"Shooter","生存":"Survival","恐怖":"Horror","Roguelite":"Roguelite","银河恶魔城":"Metroidvania","类魂":"Souls-like","视觉小说":"Visual Novel","卡牌":"Card Game","开放世界":"Open World","叙事":"Narrative","喜剧":"Comedy","合作":"Co-op","多人":"Multiplayer"};
-const NEED={"寻找发行":"Seeking Publisher","寻找投资":"Seeking Investment"};
+const NEED={"寻找发行":"Seeking Publisher","寻找联合发行":"Seeking Publisher Partner","寻找投资":"Seeking Investment"};
 const PLATFORM={"PC":"PC","主机":"Console","移动端":"Mobile"};
 const REGION={"全球":"Global","中国":"China","海外":"Overseas"};
 const STAGE={"开发中":"In Development","Demo":"Demo","Playtest":"Playtest","EA":"Early Access","发布":"Released"};
