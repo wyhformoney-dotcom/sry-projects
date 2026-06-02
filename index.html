@@ -91,7 +91,7 @@
   @media(max-width:560px){ .grid{ grid-template-columns:1fr; } .wrap{ padding:34px 16px 80px; }
     .nav-links{ display:none; } .nav{ gap:14px; padding:0 16px; } }
 
-  .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; min-width:0; overflow:hidden; }
+  .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; min-width:0; overflow:hidden; display:flex; flex-direction:column; }
   .card:hover{ border-color:var(--accent); transform:translateY(-2px); }
   .cover{ position:relative; aspect-ratio:16/10; overflow:hidden; background:#1a1a1a; }
   .cover img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.3,1); }
@@ -99,13 +99,12 @@
   .cover .fallback{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
   .stage-badge{ position:absolute; top:0; left:0; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:4px 11px; font-weight:700; }
   .region-badge{ position:absolute; top:0; right:0; font-family:var(--mono); font-size:10px; letter-spacing:.08em; background:rgba(12,13,10,.7); color:var(--ink); padding:4px 10px; border-left:1px solid var(--line); border-bottom:1px solid var(--line); }
-  .card-body{ padding:16px; }
+  .card-body{ padding:16px; display:flex; flex-direction:column; flex:1; }
   .card-title{ font-family:var(--sans); font-weight:800; font-size:18px; color:#fff; letter-spacing:-.01em; margin-bottom:7px; }
-  .card-desc{ font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); line-height:1.65; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .card-desc{ font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); line-height:1.65; min-height:calc(1.65em * 3); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
   .card-genres{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
-  .gtag{ font-family:var(--mono); font-size:10px; color:var(--ink-dim); }
-  .gtag::before{ content:"["; color:#4d4f44; } .gtag::after{ content:"]"; color:#4d4f44; }
-  .card-needs{ display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+  .gtag{ font-family:var(--mono); font-size:10px; letter-spacing:.03em; color:#d4d6cb; background:var(--panel2); border:1px solid #3a3c32; padding:4px 9px; }
+  .card-needs{ display:flex; flex-wrap:wrap; gap:10px; margin-top:auto; padding-top:14px; border-top:1px dashed var(--line); }
   .need{ font-family:var(--mono); font-size:10px; color:var(--accent); }
   .need::before{ content:"▸ "; }
 
@@ -203,7 +202,7 @@ const I18N = {
 };
 const ZH = {
   genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
-  need:{"Seeking Publisher":"寻找发行","Seeking Investment":"寻找投资"},
+  need:{"Seeking Publisher":"寻找发行","Seeking Publisher Partner":"寻找联合发行","Seeking Investment":"寻找投资"},
   stage:{"In Development":"开发中",Demo:"Demo",Playtest:"Playtest","Early Access":"EA",Released:"发布"},
   platform:{PC:"PC",Console:"主机",Mobile:"移动端"},
   region:{Global:"全球",China:"中国",Overseas:"海外"}
@@ -216,7 +215,7 @@ const uniq=(arr)=>[...new Set(arr)];
 const OPTS={
   genre:["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"],
   stage:["In Development","Demo","Playtest","Early Access","Released"],
-  need:["Seeking Publisher","Seeking Investment"],
+  need:["Seeking Publisher","Seeking Publisher Partner","Seeking Investment"],
   platform:["PC","Console","Mobile"],
   region:["Global","China","Overseas"],
 };
