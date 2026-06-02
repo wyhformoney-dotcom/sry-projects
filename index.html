@@ -218,9 +218,10 @@ const title=g=> (lang==="zh"?g.t_zh:g.t_en)||g.t_en||g.t_zh||"";
 const desc=g=> (lang==="zh"?g.d_zh:g.d_en)||g.d_en||g.d_zh||"";
 
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return`linear-gradient(135deg,hsl(${h%360},45%,26%),hsl(${(h*3)%360},50%,16%))`;}
+const slugify=s=>(s||"").toLowerCase().trim().replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 
 function cardHTML(g,i){
-  return `<a class="card" data-i="${i}" href="#">
+  return `<a class="card" data-i="${i}" href="game.html?id=${slugify(g.t_en||g.t_zh)}">
     <div class="cover">
       <span class="stage-badge">${L('stage',g.stage)}</span>
       <span class="region-badge">${L('region',g.region)}</span>
@@ -273,13 +274,6 @@ $("#search").addEventListener("input",e=>{search=e.target.value;renderChips();re
 document.querySelector(".filters").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;
   const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); renderChips();renderGrid();});
 $("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";$("#search").value="";renderChips();renderGrid();});
-$("#grid").addEventListener("click",e=>{const card=e.target.closest(".card");if(!card)return;e.preventDefault();
-  const g=GAMES[+card.dataset.i];
-  $("#mImg").src=g.cover; $("#mTitle").textContent=title(g); $("#mDesc").textContent=desc(g);
-  $("#mMeta").innerHTML=[...g.genres.map(x=>L('genre',x)),...g.needs.map(n=>L('need',n))].map(t=>`<span class="chip">${t}</span>`).join("");
-  $("#mNote").textContent=I18N[lang].note; $("#modal").classList.add("open");});
-$("#modalClose").addEventListener("click",()=>$("#modal").classList.remove("open"));
-$("#modal").addEventListener("click",e=>{if(e.target.id==="modal")$("#modal").classList.remove("open");});
 
 async function loadGames(){
   try{
