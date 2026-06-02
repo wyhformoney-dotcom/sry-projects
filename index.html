@@ -86,12 +86,12 @@
   .chip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
 
   /* ================= GRID ================= */
-  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-top:26px; }
-  @media(max-width:980px){ .grid{ grid-template-columns:repeat(2,1fr); } .facet-label{ width:100%; } .facet{ flex-direction:column; gap:8px; } }
+  .grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin-top:26px; }
+  @media(max-width:980px){ .grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } .facet-label{ width:100%; } .facet{ flex-direction:column; gap:8px; } }
   @media(max-width:560px){ .grid{ grid-template-columns:1fr; } .wrap{ padding:34px 16px 80px; }
     .nav-links{ display:none; } .nav{ gap:14px; padding:0 16px; } }
 
-  .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; }
+  .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; min-width:0; overflow:hidden; }
   .card:hover{ border-color:var(--accent); transform:translateY(-2px); }
   .cover{ position:relative; aspect-ratio:16/10; overflow:hidden; background:#1a1a1a; }
   .cover img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.3,1); }
@@ -111,6 +111,14 @@
 
   .empty{ text-align:center; padding:80px 0; color:var(--ink-faint); font-family:var(--mono); font-size:14px; }
 
+  /* ================= PAGER ================= */
+  .pager{ display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:8px; margin-top:42px; }
+  .pager.hide{ display:none; }
+  .pg{ font-family:var(--mono); font-size:12px; min-width:36px; height:36px; padding:0 12px; display:flex; align-items:center; justify-content:center; background:var(--panel); border:1px solid var(--line); color:var(--ink-dim); cursor:pointer; transition:all .13s; }
+  .pg:hover{ border-color:var(--accent); color:#fff; }
+  .pg.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .pg.dis{ opacity:.35; pointer-events:none; }
+
   /* ================= MODAL ================= */
   .modal{ position:fixed; inset:0; z-index:900; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
   .modal.open{ display:flex; }
@@ -126,7 +134,7 @@
 
 <!-- ================= NAV ================= -->
 <nav class="nav">
-  <a class="logo" href="#"><span class="mark"></span><b>SRY</b><span>INTERACTIVE</span></a>
+  <a class="logo" href="/"><span class="mark"></span><b>SRY</b><span>INTERACTIVE</span></a>
   <div class="nav-links">
     <a href="#" class="active" data-en="Projects" data-zh="项目">Projects</a>
     <a class="soon" data-en="Partners" data-zh="合作发行商">Partners<span class="soon-tag">SOON</span></a>
@@ -165,6 +173,7 @@
 
   <div class="grid" id="grid"></div>
   <div class="empty" id="empty" style="display:none"></div>
+  <div class="pager hide" id="pager"></div>
 </div>
 
 <div class="modal" id="modal">
@@ -200,7 +209,8 @@ const ZH = {
   region:{Global:"全球",China:"中国",Overseas:"海外"}
 };
 
-let lang="en", search="";
+let lang="en", search="", page=1;
+const PER_PAGE=12; // 每页显示数量（12 ≈ 桌面端 4 排；想改成 6 排=18，或 9、15 等，改这个数字即可）
 const sel={ genre:new Set(), stage:new Set(), need:new Set(), platform:new Set(), region:new Set() };
 const uniq=(arr)=>[...new Set(arr)];
 const OPTS={
@@ -255,10 +265,24 @@ function renderChips(){
 }
 function renderGrid(){
   const list=GAMES.map((g,i)=>({g,i})).filter(o=>matches(o.g));
-  const grid=$("#grid"),empty=$("#empty");
-  if(!list.length){grid.innerHTML="";empty.style.display="block";empty.textContent=I18N[lang].empty;return;}
+  const grid=$("#grid"),empty=$("#empty"),pager=$("#pager");
+  if(!list.length){grid.innerHTML="";empty.style.display="block";empty.textContent=I18N[lang].empty;pager.innerHTML="";pager.classList.add("hide");return;}
   empty.style.display="none";
-  grid.innerHTML=list.map(o=>cardHTML(o.g,o.i)).join("");
+  const total=Math.ceil(list.length/PER_PAGE);
+  if(page>total) page=total; if(page<1) page=1;
+  const start=(page-1)*PER_PAGE;
+  grid.innerHTML=list.slice(start,start+PER_PAGE).map(o=>cardHTML(o.g,o.i)).join("");
+  renderPager(total);
+}
+function renderPager(total){
+  const pager=$("#pager");
+  if(total<=1){ pager.innerHTML=""; pager.classList.add("hide"); return; }
+  pager.classList.remove("hide");
+  const prev=lang==="zh"?"上一页":"Prev", next=lang==="zh"?"下一页":"Next";
+  let h=`<span class="pg ${page===1?'dis':''}" data-pg="${page-1}">‹ ${prev}</span>`;
+  for(let p=1;p<=total;p++) h+=`<span class="pg ${p===page?'on':''}" data-pg="${p}">${p}</span>`;
+  h+=`<span class="pg ${page===total?'dis':''}" data-pg="${page+1}">${next} ›</span>`;
+  pager.innerHTML=h;
 }
 function renderText(){
   $("#ptitle").textContent=I18N[lang].title;
@@ -270,10 +294,13 @@ function renderAll(){ body.setAttribute("lang",lang); renderText(); renderChips(
 
 $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");lang=b.dataset.l;renderAll();});
-$("#search").addEventListener("input",e=>{search=e.target.value;renderChips();renderGrid();});
+$("#search").addEventListener("input",e=>{search=e.target.value;page=1;renderChips();renderGrid();});
 document.querySelector(".filters").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;
-  const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); renderChips();renderGrid();});
-$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";$("#search").value="";renderChips();renderGrid();});
+  const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); page=1; renderChips();renderGrid();});
+$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";page=1;$("#search").value="";renderChips();renderGrid();});
+$("#pager").addEventListener("click",e=>{const b=e.target.closest(".pg");if(!b||b.classList.contains("dis"))return;
+  const p=+b.dataset.pg; if(!p||p===page)return; page=p; renderGrid();
+  const y=$("#grid").getBoundingClientRect().top+window.pageYOffset-90; window.scrollTo({top:y,behavior:"smooth"});});
 
 async function loadGames(){
   try{
