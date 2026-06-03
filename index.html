@@ -100,9 +100,9 @@
   .cover{ position:relative; aspect-ratio:16/10; overflow:hidden; background:#1a1a1a; }
   .cover img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.3,1); }
   .card:hover .cover img{ transform:scale(1.05); }
-  .cover .fallback{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
-  .stage-badge{ position:absolute; top:0; left:0; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:4px 11px; font-weight:700; }
-  .region-badge{ position:absolute; top:0; right:0; font-family:var(--mono); font-size:10px; letter-spacing:.08em; background:rgba(12,13,10,.7); color:var(--ink); padding:4px 10px; border-left:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .cover .fallback{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
+  .stage-badge{ position:absolute; top:0; left:0; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:4px 11px; font-weight:700; }
+  .region-badge{ position:absolute; top:0; right:0; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.08em; background:rgba(12,13,10,.7); color:var(--ink); padding:4px 10px; border-left:1px solid var(--line); border-bottom:1px solid var(--line); }
   .card-body{ padding:16px; display:flex; flex-direction:column; flex:1; }
   .card-title{ font-family:var(--sans); font-weight:800; font-size:18px; color:#fff; letter-spacing:-.01em; margin-bottom:7px; }
   .card-desc{ font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); line-height:1.65; min-height:calc(1.65em * 3); display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
@@ -240,6 +240,26 @@ const OPTS={
 const $=s=>document.querySelector(s);
 const body=document.body;
 
+/* ===== 列表状态记忆：翻页/筛选/搜索/语言/滚动位置，进详情页后返回可还原 ===== */
+const SKEY='sry_list_v1'; let pendingScroll=null;
+function saveState(){
+  try{ sessionStorage.setItem(SKEY,JSON.stringify({
+    page, search, lang,
+    genre:[...sel.genre], stage:[...sel.stage], need:[...sel.need], platform:[...sel.platform], region:[...sel.region],
+    y: window.pageYOffset
+  })); }catch(e){}
+}
+function restoreState(){
+  let st=null; try{ st=JSON.parse(sessionStorage.getItem(SKEY)); }catch(e){}
+  if(!st) return;
+  page=st.page||1; search=st.search||""; if(st.lang) lang=st.lang;
+  ['genre','stage','need','platform','region'].forEach(c=>{ sel[c]=new Set(st[c]||[]); });
+  pendingScroll=(typeof st.y==='number')?st.y:null;
+  const si=$("#search"); if(si) si.value=search;
+  document.querySelectorAll("#lang button").forEach(x=>x.classList.toggle("on",x.dataset.l===lang));
+}
+window.addEventListener('pagehide',saveState);
+
 const L=(cat,v)=> lang==="zh" ? (ZH[cat][v]||v) : lang==="ko" ? ((KO[cat]&&KO[cat][v])||v) : v;
 const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
 const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
@@ -249,12 +269,13 @@ const desc=g=> field(g,'d');
 function hashColor(s){let h=0;for(let i=0;i<s.length;i++)h=s.charCodeAt(i)+((h<<5)-h);return`linear-gradient(135deg,hsl(${h%360},45%,26%),hsl(${(h*3)%360},50%,16%))`;}
 const slugify=s=>(s||"").toLowerCase().trim().replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
 
-function cardHTML(g,i){
+function cardHTML(g,i,pos){
+  const eager = pos<3;
   return `<a class="card" data-i="${i}" href="game.html?id=${slugify(g.t_en||g.t_zh)}">
     <div class="cover">
       <span class="stage-badge">${L('stage',g.stage)}</span>
       <span class="region-badge">${L('region',g.region)}</span>
-      <img src="${g.cover}" alt="" loading="lazy" data-t="${title(g).replace(/"/g,'&quot;')}"
+      <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="640" height="400" data-t="${title(g).replace(/"/g,'&quot;')}"
         onerror="this.style.display='none';this.parentElement.style.background='${hashColor(g.t_en)}';this.insertAdjacentHTML('afterend','<div class=\\'fallback cjk-swap\\'>'+this.dataset.t+'</div>')">
     </div>
     <div class="card-body">
@@ -290,7 +311,7 @@ function renderGrid(){
   const total=Math.ceil(list.length/PER_PAGE);
   if(page>total) page=total; if(page<1) page=1;
   const start=(page-1)*PER_PAGE;
-  grid.innerHTML=list.slice(start,start+PER_PAGE).map(o=>cardHTML(o.g,o.i)).join("");
+  grid.innerHTML=list.slice(start,start+PER_PAGE).map((o,pos)=>cardHTML(o.g,o.i,pos)).join("");
   renderPager(total);
 }
 function renderPager(total){
@@ -312,13 +333,13 @@ function renderText(){
 function renderAll(){ body.setAttribute("lang",lang); renderText(); renderChips(); renderGrid(); }
 
 $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
-  document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");lang=b.dataset.l;renderAll();});
-$("#search").addEventListener("input",e=>{search=e.target.value;page=1;renderChips();renderGrid();});
+  document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");lang=b.dataset.l;renderAll();saveState();});
+$("#search").addEventListener("input",e=>{search=e.target.value;page=1;renderChips();renderGrid();saveState();});
 document.querySelector(".filters").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;
-  const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); page=1; renderChips();renderGrid();});
-$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";page=1;$("#search").value="";renderChips();renderGrid();});
+  const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); page=1; renderChips();renderGrid();saveState();});
+$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";page=1;$("#search").value="";renderChips();renderGrid();saveState();});
 $("#pager").addEventListener("click",e=>{const b=e.target.closest(".pg");if(!b||b.classList.contains("dis"))return;
-  const p=+b.dataset.pg; if(!p||p===page)return; page=p; renderGrid();
+  const p=+b.dataset.pg; if(!p||p===page)return; page=p; renderGrid(); saveState();
   const y=$("#grid").getBoundingClientRect().top+window.pageYOffset-90; window.scrollTo({top:y,behavior:"smooth"});});
 
 async function loadGames(){
@@ -334,7 +355,9 @@ async function loadGames(){
     console.error("loadGames",e); return;
   }
   renderGrid();
+  if(pendingScroll!=null){ requestAnimationFrame(()=>{ window.scrollTo(0,pendingScroll); pendingScroll=null; }); }
 }
+restoreState();
 body.setAttribute("lang",lang); renderText(); renderChips();
 $("#grid").innerHTML='<div style="grid-column:1/-1;padding:70px 0;text-align:center;color:#6b6d62;font-family:Space Mono,monospace">加载中 / Loading…</div>';
 loadGames();
