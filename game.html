@@ -125,7 +125,8 @@
 <div class="wrap"><div id="app"></div></div>
 
 <script>
-const SUBMIT="https://tally.so/r/eqxrbQ"; // 没填联系链接时的兜底表单
+const SUBMIT="https://z5gxmjtpe7.feishu.cn/share/base/form/shrcnMt1EytDgy79CO7mgbrkIed"; // 提交游戏表单（飞书）
+const CONTACT_DOMAIN="srygamehub.com"; // 项目专属邮箱域名（Cloudflare Email Routing 兜底转发）
 const ZH={
   genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
   need:{"Seeking Publisher":"寻找发行","Seeking Publisher Partner":"寻找联合发行","Seeking Investment":"寻找投资"},
@@ -141,9 +142,9 @@ const KO={
   region:{Global:"글로벌",China:"중국",Overseas:"해외"}
 };
 const T={
-  en:{back:"← All Projects",developer:"Developer",platform:"Platform",market:"Target Market",seeking:"Seeking",overview:"Project Overview",studio:"Studio",stage:"Stage",contact:"Contact ↗",ctaH:"Interested in this project?",ctaP:"Get in touch to request the full pitch deck, build access, or partnership terms.",ctaBtn:"Contact us ↗",trailer:"TRAILER",na:"—",loading:"Loading…",nfH:"Project not found",nfP:"This project may have been moved, unlisted, or the link is incorrect."},
-  zh:{back:"← 返回项目列表",developer:"开发商",platform:"平台",market:"目标市场",seeking:"寻求合作",overview:"项目概览",studio:"开发团队",stage:"进展",contact:"联系洽谈 ↗",ctaH:"对这个项目感兴趣？",ctaP:"联系我们获取完整项目资料、试玩版本或合作条款。",ctaBtn:"联系我们 ↗",trailer:"预告片",na:"—",loading:"加载中…",nfH:"未找到该项目",nfP:"该项目可能已下架、未上架，或链接有误。"},
-  ko:{back:"← 전체 프로젝트",developer:"개발사",platform:"플랫폼",market:"타겟 시장",seeking:"모집",overview:"프로젝트 개요",studio:"스튜디오",stage:"단계",contact:"문의하기 ↗",ctaH:"이 프로젝트에 관심 있으신가요?",ctaP:"전체 피치 자료, 빌드 액세스 또는 파트너십 조건은 문의해 주세요.",ctaBtn:"문의하기 ↗",trailer:"트레일러",na:"—",loading:"불러오는 중…",nfH:"프로젝트를 찾을 수 없습니다",nfP:"이 프로젝트는 이동되었거나 목록에서 제외되었거나 링크가 잘못되었을 수 있습니다."}
+  en:{back:"← All Projects",developer:"Developer",platform:"Platform",market:"Target Market",seeking:"Seeking",overview:"Project Overview",studio:"Studio",stage:"Stage",contact:"Contact Developer ↗",ctaH:"Interested in this project?",ctaP:"Reach out to the team directly to request the full pitch deck, build access, or partnership terms.",ctaBtn:"Contact Developer ↗",trailer:"TRAILER",na:"—",loading:"Loading…",nfH:"Project not found",nfP:"This project may have been moved, unlisted, or the link is incorrect."},
+  zh:{back:"← 返回项目列表",developer:"开发商",platform:"平台",market:"目标市场",seeking:"寻求合作",overview:"项目概览",studio:"开发团队",stage:"进展",contact:"联系开发团队 ↗",ctaH:"对这个项目感兴趣？",ctaP:"直接联系开发团队，获取完整项目资料、试玩版本或合作条款。",ctaBtn:"联系开发团队 ↗",trailer:"预告片",na:"—",loading:"加载中…",nfH:"未找到该项目",nfP:"该项目可能已下架、未上架，或链接有误。"},
+  ko:{back:"← 전체 프로젝트",developer:"개발사",platform:"플랫폼",market:"타겟 시장",seeking:"모집",overview:"프로젝트 개요",studio:"스튜디오",stage:"단계",contact:"개발팀에 문의 ↗",ctaH:"이 프로젝트에 관심 있으신가요?",ctaP:"전체 피치 자료, 빌드 액세스, 파트너십 조건은 개발팀에 직접 문의해 주세요.",ctaBtn:"개발팀에 문의 ↗",trailer:"트레일러",na:"—",loading:"불러오는 중…",nfH:"프로젝트를 찾을 수 없습니다",nfP:"이 프로젝트는 이동되었거나 목록에서 제외되었거나 링크가 잘못되었을 수 있습니다."}
 };
 const STAGES=["In Development","Demo","Playtest","Early Access","Released"];
 
@@ -154,9 +155,14 @@ const L=(c,v)=> lang==="zh"?((ZH[c]&&ZH[c][v])||v):lang==="ko"?((KO[c]&&KO[c][v]
 const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
 const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
 function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
-function contactHref(g){ const c=((g&&g.contact)||"").trim(); if(!c) return SUBMIT;
-  if(/^https?:\/\//i.test(c)||/^mailto:/i.test(c)) return c;
-  if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c)) return "mailto:"+c; return c; }
+function contactHref(g){
+  const slug=slugify((g&&(g.t_en||g.t_zh))||"");
+  if(!slug) return SUBMIT;
+  const name=(g.t_en||g.t_zh||"").trim();
+  const subject=encodeURIComponent(`[${name}] Partnership Inquiry — via SRY Game Hub`);
+  const bodyTxt=encodeURIComponent(`Hi ${ (g.developer||"team") },\n\nI found ${name} on SRY Game Hub and would like to discuss a potential partnership.\n\n`);
+  return `mailto:${slug}@${CONTACT_DOMAIN}?subject=${subject}&body=${bodyTxt}`;
+}
 function videoEmbed(u){ if(!u) return null;
   let m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/); if(m) return {type:"iframe",src:`https://www.youtube.com/embed/${m[1]}?autoplay=1`};
   m=u.match(/bilibili\.com\/video\/(BV[\w]+)/); if(m) return {type:"iframe",src:`https://player.bilibili.com/player.html?bvid=${m[1]}&autoplay=1`};
