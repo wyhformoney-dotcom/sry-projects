@@ -163,7 +163,12 @@ async function handleVerify(env, request) {
   const headers = { "set-cookie": cookieHeader(token, SESSION_DAYS * 86400) };
 
   if (!account) return json({ ok: true, needsRole: true }, 200, headers);
-  return json({ ok: true, needsRole: false, role: account.role, status: account.status }, 200, headers);
+  const prof = await env.DB.prepare(
+    account.role === "developer"
+      ? "SELECT COUNT(*) AS c FROM developer_profiles WHERE account_id = ?"
+      : "SELECT COUNT(*) AS c FROM partner_profiles WHERE account_id = ?"
+  ).bind(account.id).first();
+  return json({ ok: true, needsRole: false, role: account.role, status: account.status, hasProfile: !!(prof && prof.c) }, 200, headers);
 }
 
 async function handleRegister(env, request) {
