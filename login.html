@@ -1,0 +1,329 @@
+<!-- SRY Game Hub — 登录/注册页(邮箱验证码) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign In · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; letter-spacing:-.01em; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; transition:all .15s; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+
+  .wrap{ max-width:430px; margin:0 auto; padding:56px 20px 80px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:10px; }
+  h1{ font-size:30px; font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+  .lead{ color:var(--ink-dim); font-size:13.5px; line-height:1.6; margin-bottom:30px; }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:24px 22px; }
+  .step{ display:none; }
+  .step.on{ display:block; }
+  label{ display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-dim); margin:0 0 8px; }
+  input{
+    width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-family:var(--mono); font-size:15px; padding:12px 14px; outline:none; transition:border .15s;
+  }
+  input:focus{ border-color:var(--accent); }
+  input.code{ font-size:24px; letter-spacing:12px; text-align:center; font-weight:700; }
+  .btn{
+    width:100%; margin-top:16px; padding:13px 0; border:none; border-radius:8px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px;
+    letter-spacing:.08em; text-transform:uppercase; transition:opacity .15s;
+  }
+  .btn:disabled{ opacity:.45; cursor:default; }
+  .btn.ghost{ background:transparent; color:var(--ink-dim); border:1px solid var(--line); margin-top:10px; }
+  .hint{ font-size:12px; color:var(--ink-faint); margin-top:12px; line-height:1.55; }
+  .msg{ font-size:12.5px; margin-top:12px; line-height:1.5; display:none; }
+  .msg.err{ display:block; color:var(--danger); }
+  .msg.ok{ display:block; color:var(--accent); }
+  .sentmail{ font-family:var(--mono); color:var(--accent); font-size:12px; word-break:break-all; }
+
+  .roles{ display:grid; gap:12px; margin-top:4px; }
+  .role{
+    text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
+    padding:16px 16px; cursor:pointer; transition:border .15s; color:var(--ink); width:100%;
+  }
+  .role:hover{ border-color:var(--accent); }
+  .role.sel{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .role .rt{ font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.08em; text-transform:uppercase; }
+  .role .rd{ font-size:12px; color:var(--ink-dim); margin-top:5px; line-height:1.5; }
+
+  .done{ text-align:center; padding:8px 0 4px; }
+  .done .big{ font-size:38px; margin-bottom:10px; }
+  .done .dt{ font-weight:800; font-size:17px; margin-bottom:6px; }
+  .done .dd{ font-size:12.5px; color:var(--ink-dim); line-height:1.6; }
+  .back{ display:inline-block; margin-top:22px; font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; color:var(--ink-dim); }
+  .back:hover{ color:var(--accent); }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="kicker">ACCOUNT // MAGIC CODE</div>
+  <h1 id="title">Sign in</h1>
+  <p class="lead cjk-swap" id="lead"></p>
+
+  <div class="card">
+    <!-- 第 1 步:输入邮箱 -->
+    <div class="step on" id="s-email">
+      <label id="l-email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@studio.com">
+      <button class="btn" id="b-send"></button>
+      <div class="msg" id="m1"></div>
+      <p class="hint cjk-swap" id="h1"></p>
+    </div>
+
+    <!-- 第 2 步:输入验证码 -->
+    <div class="step" id="s-code">
+      <label id="l-code">Verification Code</label>
+      <input id="code" class="code" inputmode="numeric" maxlength="6" placeholder="······" autocomplete="one-time-code">
+      <button class="btn" id="b-verify"></button>
+      <button class="btn ghost" id="b-resend"></button>
+      <div class="msg" id="m2"></div>
+      <p class="hint cjk-swap" id="h2"></p>
+    </div>
+
+    <!-- 第 3 步:新用户选身份 -->
+    <div class="step" id="s-role">
+      <label id="l-role">I am a…</label>
+      <div class="roles">
+        <button class="role" data-role="developer">
+          <div class="rt">DEVELOPER</div>
+          <div class="rd cjk-swap" id="rd-dev"></div>
+        </button>
+        <button class="role" data-role="partner">
+          <div class="rt">PARTNER</div>
+          <div class="rd cjk-swap" id="rd-par"></div>
+        </button>
+      </div>
+      <button class="btn" id="b-register" disabled></button>
+      <div class="msg" id="m3"></div>
+    </div>
+
+    <!-- 第 4 步:完成 -->
+    <div class="step" id="s-done">
+      <div class="done">
+        <div class="big">✦</div>
+        <div class="dt cjk-swap" id="d-title"></div>
+        <div class="dd cjk-swap" id="d-desc"></div>
+        <button class="btn" id="b-home"></button>
+        <button class="btn ghost" id="b-logout"></button>
+      </div>
+    </div>
+  </div>
+
+  <a class="back" href="/" id="back"></a>
+</div>
+
+<script>
+const I18N = {
+  en: {
+    title:"Sign in", lead:"Enter your email and we'll send you a 6-digit code. No password needed.",
+    lEmail:"Email", send:"Send Code", sending:"Sending…",
+    lCode:"Verification Code", verify:"Verify & Sign In", verifying:"Verifying…",
+    resend:"Resend Code", resendIn:(s)=>`Resend in ${s}s`,
+    h1:"New here? Signing in with a new email creates your account.",
+    h2:(e)=>`Code sent to <span class="sentmail">${e}</span> — check your inbox (and spam folder). Valid for 10 minutes.`,
+    lRole:"I am a…", rdDev:"Indie developer / studio. Showcase your games and get discovered by publishers & investors.",
+    rdPar:"Publisher / investor. Browse projects and connect with developers.",
+    register:"Create Account", registering:"Creating…",
+    dTitleNew:"Account created", dDescNew:"Your account is pending verification. Next step: complete your profile so we can review and activate it.",
+    dTitleBack:"You're signed in", dDescBack:(e,r)=>`Signed in as ${e} (${r}).`,
+    home:"Back to Home", logout:"Sign Out", back:"← Back to project index",
+    errors:{ invalid_email:"Please enter a valid email address.", cooldown:"Please wait a moment before requesting another code.",
+      hourly_limit:"Too many codes requested. Try again in an hour.", wrong_or_expired_code:"Wrong or expired code. Please try again.",
+      invalid_input:"Please enter the 6-digit code.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
+  },
+  zh: {
+    title:"登录", lead:"输入邮箱,我们会发送 6 位验证码,无需密码。",
+    lEmail:"邮箱", send:"发送验证码", sending:"发送中…",
+    lCode:"验证码", verify:"验证并登录", verifying:"验证中…",
+    resend:"重新发送", resendIn:(s)=>`${s} 秒后可重发`,
+    h1:"新用户?用新邮箱登录即自动创建账号。",
+    h2:(e)=>`验证码已发送至 <span class="sentmail">${e}</span>,请查收邮箱(注意垃圾邮件),10 分钟内有效。`,
+    lRole:"我的身份是…", rdDev:"独立开发者 / 工作室。展示你的游戏,被发行商和投资人发现。",
+    rdPar:"发行商 / 投资人。浏览项目库,与开发者建立联系。",
+    register:"创建账号", registering:"创建中…",
+    dTitleNew:"账号已创建", dDescNew:"账号待审核。下一步:完善资料,我们审核后即可激活。",
+    dTitleBack:"已登录", dDescBack:(e,r)=>`当前账号 ${e}(${r==="developer"?"开发者":"合作方"})。`,
+    home:"返回首页", logout:"退出登录", back:"← 返回项目库",
+    errors:{ invalid_email:"请输入有效的邮箱地址。", cooldown:"操作太频繁,请稍候再试。",
+      hourly_limit:"发送次数过多,请一小时后再试。", wrong_or_expired_code:"验证码错误或已过期,请重试。",
+      invalid_input:"请输入 6 位数字验证码。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
+  },
+  ko: {
+    title:"로그인", lead:"이메일을 입력하면 6자리 인증 코드를 보내드립니다. 비밀번호가 필요 없습니다.",
+    lEmail:"이메일", send:"인증 코드 보내기", sending:"전송 중…",
+    lCode:"인증 코드", verify:"확인 후 로그인", verifying:"확인 중…",
+    resend:"코드 재전송", resendIn:(s)=>`${s}초 후 재전송 가능`,
+    h1:"처음이신가요? 새 이메일로 로그인하면 계정이 자동으로 생성됩니다.",
+    h2:(e)=>`<span class="sentmail">${e}</span>(으)로 코드를 보냈습니다. 받은편지함(스팸함 포함)을 확인하세요. 10분간 유효합니다.`,
+    lRole:"나는…", rdDev:"인디 개발자 / 스튜디오. 게임을 소개하고 퍼블리셔와 투자자에게 발견되세요.",
+    rdPar:"퍼블리셔 / 투자자. 프로젝트를 둘러보고 개발자와 연결하세요.",
+    register:"계정 만들기", registering:"생성 중…",
+    dTitleNew:"계정이 생성되었습니다", dDescNew:"계정이 심사 대기 중입니다. 다음 단계: 프로필을 작성하면 심사 후 활성화됩니다.",
+    dTitleBack:"로그인되었습니다", dDescBack:(e,r)=>`현재 계정 ${e} (${r==="developer"?"개발자":"파트너"}).`,
+    home:"홈으로", logout:"로그아웃", back:"← 프로젝트 목록으로",
+    errors:{ invalid_email:"올바른 이메일 주소를 입력하세요.", cooldown:"잠시 후 다시 시도해 주세요.",
+      hourly_limit:"요청이 너무 많습니다. 1시간 후 다시 시도하세요.", wrong_or_expired_code:"코드가 틀렸거나 만료되었습니다.",
+      invalid_input:"6자리 숫자 코드를 입력하세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
+  }
+};
+
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+let email = "", pickedRole = "", cooldown = 0, cdTimer = null, isNew = false;
+
+function T(){ return I18N[lang]; }
+function show(step){ document.querySelectorAll(".step").forEach(x=>x.classList.remove("on")); $("#"+step).classList.add("on"); }
+function err(el, key){ const t=T(); el.className="msg err"; el.textContent = t.errors[key] || t.errors.server; }
+function clearMsg(el){ el.className="msg"; el.textContent=""; }
+
+function renderText(){
+  document.body.setAttribute("lang", lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on", b.dataset.l===lang));
+  const t = T();
+  $("#title").textContent = t.title; $("#lead").textContent = t.lead;
+  $("#l-email").textContent = t.lEmail; $("#b-send").textContent = t.send; $("#h1").textContent = t.h1;
+  $("#l-code").textContent = t.lCode; $("#b-verify").textContent = t.verify;
+  $("#b-resend").textContent = cooldown>0 ? t.resendIn(cooldown) : t.resend;
+  if(email) $("#h2").innerHTML = t.h2(email);
+  $("#l-role").textContent = t.lRole; $("#rd-dev").textContent = t.rdDev; $("#rd-par").textContent = t.rdPar;
+  $("#b-register").textContent = t.register;
+  $("#b-home").textContent = t.home; $("#b-logout").textContent = t.logout; $("#back").textContent = t.back;
+}
+
+async function api(path, opts){
+  const res = await fetch("/api/auth/"+path, { headers:{ "content-type":"application/json" }, ...opts });
+  let data = null; try{ data = await res.json(); }catch{}
+  if(!data) throw "network";
+  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  return data;
+}
+
+function startCooldown(){
+  cooldown = 60; $("#b-resend").disabled = true;
+  clearInterval(cdTimer);
+  cdTimer = setInterval(()=>{
+    cooldown--;
+    if(cooldown<=0){ clearInterval(cdTimer); $("#b-resend").disabled=false; }
+    $("#b-resend").textContent = cooldown>0 ? T().resendIn(cooldown) : T().resend;
+  },1000);
+}
+
+async function sendCode(msgEl){
+  const t = T();
+  clearMsg(msgEl);
+  email = $("#email").value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ err(msgEl,"invalid_email"); return false; }
+  $("#b-send").disabled = true; $("#b-send").textContent = t.sending;
+  try{
+    await api("send-code",{ method:"POST", body:JSON.stringify({email}) });
+    return true;
+  }catch(e){ err(msgEl, e); return false; }
+  finally{ $("#b-send").disabled=false; $("#b-send").textContent=t.send; }
+}
+
+$("#b-send").onclick = async ()=>{
+  if(await sendCode($("#m1"))){
+    $("#h2").innerHTML = T().h2(email);
+    show("s-code"); startCooldown(); $("#code").value=""; $("#code").focus(); clearMsg($("#m2"));
+  }
+};
+
+$("#b-resend").onclick = async ()=>{
+  clearMsg($("#m2"));
+  try{
+    await api("send-code",{ method:"POST", body:JSON.stringify({email}) });
+    startCooldown();
+    $("#m2").className="msg ok"; $("#m2").textContent="✓";
+  }catch(e){ err($("#m2"), e); }
+};
+
+$("#b-verify").onclick = async ()=>{
+  const t=T(); clearMsg($("#m2"));
+  const code = $("#code").value.trim();
+  if(!/^\d{6}$/.test(code)){ err($("#m2"),"invalid_input"); return; }
+  $("#b-verify").disabled=true; $("#b-verify").textContent=t.verifying;
+  try{
+    const d = await api("verify",{ method:"POST", body:JSON.stringify({email, code}) });
+    if(d.needsRole){ isNew = true; show("s-role"); }
+    else{ isNew = false; finishScreen(d.role); }
+  }catch(e){ err($("#m2"), e); }
+  finally{ $("#b-verify").disabled=false; $("#b-verify").textContent=t.verify; }
+};
+
+document.querySelectorAll(".role").forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll(".role").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel"); pickedRole = b.dataset.role; $("#b-register").disabled = false;
+  };
+});
+
+$("#b-register").onclick = async ()=>{
+  const t=T(); clearMsg($("#m3"));
+  $("#b-register").disabled=true; $("#b-register").textContent=t.registering;
+  try{
+    const d = await api("register",{ method:"POST", body:JSON.stringify({role:pickedRole}) });
+    finishScreen(d.role);
+  }catch(e){ err($("#m3"), e); $("#b-register").disabled=false; $("#b-register").textContent=t.register; }
+};
+
+function finishScreen(role){
+  const t=T();
+  $("#d-title").textContent = isNew ? t.dTitleNew : t.dTitleBack;
+  $("#d-desc").textContent = isNew ? t.dDescNew : t.dDescBack(email, role);
+  show("s-done");
+}
+
+$("#b-home").onclick = ()=>{ location.href = "/"; };
+$("#b-logout").onclick = async ()=>{
+  try{ await api("logout",{method:"POST"}); }catch{}
+  email=""; isNew=false; $("#email").value=""; $("#code").value=""; show("s-email"); clearMsg($("#m1"));
+};
+
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
+});
+
+$("#code").addEventListener("input", ()=>{ $("#code").value = $("#code").value.replace(/\D/g,"").slice(0,6); });
+$("#email").addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("#b-send").click(); });
+$("#code").addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("#b-verify").click(); });
+
+// 已登录用户直接进完成页
+(async ()=>{
+  renderText();
+  try{
+    const d = await api("me",{method:"GET"});
+    if(d.loggedIn && !d.needsRole){ email = d.email; isNew=false; finishScreen(d.role); }
+    else if(d.loggedIn && d.needsRole){ email = d.email; show("s-role"); }
+  }catch{}
+})();
+</script>
