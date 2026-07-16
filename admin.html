@@ -266,6 +266,7 @@ async function review(id, action, btn){
 
 function gameRowHtml(r){
   const name = r.t_en || r.t_zh || r.t_ko || "(未填名称)";
+  const isFeishu = !!r.feishu_id;
   const shots = (r.screenshots||[]).map(u=>`<img src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
   return `
   <div class="row" data-id="${r.id}">
@@ -273,7 +274,7 @@ function gameRowHtml(r){
       <div class="avatar" style="width:64px">${r.cover?`<img src="${esc(r.cover)}">`:"▢"}</div>
       <div class="rmain">
         <div class="rname">${esc(name)}${r.t_zh&&r.t_en?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(r.t_zh)}</span>`:""}</div>
-        <div class="rsub">${esc(r.studio_name||"")} · ${esc(r.login_email||"")} · ${esc(STAGE_ZH[r.stage]||r.stage||"")} · 提交 ${fmtTime(r.created_at)}</div>
+        <div class="rsub">${isFeishu ? "来源:飞书" : esc(r.studio_name||"")+" · "+esc(r.login_email||"")} · ${esc(STAGE_ZH[r.stage]||r.stage||"")}${isFeishu?(r.visible?" · 已上架":" · 未上架(是否上架=否)"):" · 提交 "+fmtTime(r.created_at)}</div>
       </div>
       <span class="pill ${r.status==="approved"?"verified":r.status}">${GSTATUS_ZH[r.status]||r.status}</span>
       <span class="arrow">▾</span>
@@ -293,7 +294,8 @@ function gameRowHtml(r){
         ${kvHtml("截图", shots||"—", true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
       </div>
-      ${r.status==="pending" ? `
+      ${isFeishu ? `
+      <div class="acts" style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">此游戏由飞书同步而来:内容和上/下架请在飞书表里改,然后点顶部"从飞书同步"刷新。</div>` : r.status==="pending" ? `
       <div class="acts">
         <button class="abtn ok" onclick="review(${r.id},'approve',this)">通过并上架</button>
         <button class="abtn no" onclick="toggleReject(${r.id})">驳回…</button>
