@@ -1,21 +1,31 @@
-// Cloudflare Pages Function —— 账号资料:读取/保存 + 认证材料上传(R2)
-//   GET  /api/profile/me       → 当前账号的资料(用于回显编辑)
-//   POST /api/profile/save     → 保存资料(按身份写入 developer_profiles / partner_profiles)
-//   POST /api/profile/upload   → 图片上传到 R2(multipart, 字段: file + kind[proof|logo]),返回公开 URL
-// 依赖:env.DB、env.R2、env.SESSION_SECRET;图片域名 assets.srygamehub.com
+// Cloudflare Pages Function —— 账号资料:读取/保存 + 认证材料上传(R2) + 企业邮箱验证
+//   GET  /api/profile/me               → 当前账号的资料(用于回显编辑)
+//   POST /api/profile/save             → 保存资料(按身份写入对应表)
+//   POST /api/profile/upload           → 图片上传到 R2(multipart: file + kind[proof|logo])
+//   POST /api/profile/send-work-code   → 向企业邮箱发验证码 { email }
+//   POST /api/profile/verify-work-code → 校验并给账号打"邮箱已验证"标记 { email, code }
+// 依赖:env.DB、env.R2、env.RESEND_API_KEY、env.SESSION_SECRET
 
 const COOKIE = "sry_session";
 const ASSET_HOST = "https://assets.srygamehub.com";
-const MAX_UPLOAD = 5 * 1024 * 1024; // 5MB
+const MAX_UPLOAD = 5 * 1024 * 1024;
 const ALLOWED_IMG = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+const CODE_TTL_MIN = 10;
+const SEND_COOLDOWN_S = 60;
+const SEND_HOURLY_MAX = 5;
+const FROM = "SRY Game Hub <noreply@srygamehub.com>";
 
-/* ---------- 基础工具(与 auth 保持一致) ---------- */
+/* ---------- 基础工具 ---------- */
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status, headers: { "content-type": "application/json; charset=utf-8" },
   });
 const bad = (error, status = 400) => json({ ok: false, error }, status);
 
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 async function hmacHex(secret, msg) {
   const key = await crypto.subtle.importKey(
     "raw", new TextEncoder().encode(secret),
@@ -55,9 +65,32 @@ const arrOf = (v, set, maxLen) => {
 const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
 const MARKETS = ["Global","China","Overseas"];
 const KINDS = ["publishing","investment"];
-const REGIONS = ["China","South Korea","Japan","Southeast Asia","North America","Europe","Other"];
-const DEV_PROOF = ["steamworks","project_file","license","other"];
-const PARTNER_PROOF = ["website","steam","steamworks","other"];
+const PARTNER_PROOF = ["work_email","steamworks","other"];
+const isRegion = (v) => /^[A-Z]{2}$/.test(v); // ISO 3166-1 alpha-2 国家/地区代码
+
+/* ---------- 发信(与登录验证码同模板) ---------- */
+async function sendCodeEmail(env, email, code) {
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: "Bearer " + env.RESEND_API_KEY, "content-type": "application/json" },
+    body: JSON.stringify({
+      from: FROM, to: [email],
+      subject: `${code} is your SRY Game Hub verification code`,
+      text: `Your verification code is: ${code}\n\nIt expires in ${CODE_TTL_MIN} minutes. If you didn't request this, you can safely ignore this email.\n\nSRY Game Hub · srygamehub.com`,
+      html:
+        `<div style="font-family:Arial,Helvetica,sans-serif;max-width:420px;margin:0 auto;padding:24px 8px;color:#111">` +
+        `<div style="font-weight:900;font-size:15px;margin-bottom:18px">▪ SRY GAME HUB</div>` +
+        `<p style="font-size:14px;margin:0 0 10px">Your verification code:</p>` +
+        `<div style="font-size:32px;font-weight:900;letter-spacing:8px;background:#0c0d0a;color:#c6f24e;padding:16px 0;text-align:center;border-radius:8px">${code}</div>` +
+        `<p style="font-size:12px;color:#666;margin:14px 0 0">This code expires in ${CODE_TTL_MIN} minutes. If you didn't request it, you can safely ignore this email.</p>` +
+        `<p style="font-size:11px;color:#999;margin:18px 0 0">SRY Game Hub · srygamehub.com</p></div>`,
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error("Resend " + res.status + " " + detail.slice(0, 200));
+  }
+}
 
 /* ---------- 各接口 ---------- */
 async function handleMe(env, s) {
@@ -68,12 +101,12 @@ async function handleMe(env, s) {
   let profile = null;
   if (account.role === "developer") {
     profile = await env.DB.prepare(
-      "SELECT studio_name, contact_email, proof_type, proof_image FROM developer_profiles WHERE account_id = ?"
+      "SELECT studio_name, contact_email, intro, logo FROM developer_profiles WHERE account_id = ?"
     ).bind(s.aid).first();
   } else {
     profile = await env.DB.prepare(
-      `SELECT name_zh, name_en, logo, kinds, region, intro, genres, markets,
-              steam_url, website, contact_email, proof_type, proof_image
+      `SELECT name_zh, name_en, name_ko, logo, kinds, region, intro, genres, markets,
+              steam_url, website, contact_email, proof_type, proof_image, verified_email
        FROM partner_profiles WHERE account_id = ?`
     ).bind(s.aid).first();
     if (profile) {
@@ -93,28 +126,29 @@ async function handleSave(env, s, request) {
   const b = await request.json().catch(() => ({}));
 
   if (account.role === "developer") {
+    // 工作室信息:随时可改,保存即生效,不走审核
     const studio_name = S(b.studio_name, 120);
     const contact_email = S(b.contact_email, 200).toLowerCase();
-    const proof_type = S(b.proof_type, 30);
-    const proof_image = S(b.proof_image, 500);
+    const intro = S(b.intro, 200);   // 选填
+    const logo = S(b.logo, 500);     // 选填
     if (!studio_name) return bad("studio_name_required");
     if (!isEmail(contact_email)) return bad("contact_email_invalid");
-    if (!inSet(proof_type, DEV_PROOF)) return bad("proof_type_invalid");
-    if (!proof_image) return bad("proof_image_required");
 
     await env.DB.prepare(
-      `INSERT INTO developer_profiles (account_id, studio_name, contact_email, proof_type, proof_image, updated_at)
+      `INSERT INTO developer_profiles (account_id, studio_name, contact_email, intro, logo, updated_at)
        VALUES (?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(account_id) DO UPDATE SET
          studio_name=excluded.studio_name, contact_email=excluded.contact_email,
-         proof_type=excluded.proof_type, proof_image=excluded.proof_image, updated_at=datetime('now')`
-    ).bind(s.aid, studio_name, contact_email, proof_type, proof_image).run();
+         intro=excluded.intro, logo=excluded.logo, updated_at=datetime('now')`
+    ).bind(s.aid, studio_name, contact_email, intro, logo).run();
+    return json({ ok: true });
   } else {
     const name_en = S(b.name_en, 120);
     const name_zh = S(b.name_zh, 120);
+    const name_ko = S(b.name_ko, 120);
     const logo = S(b.logo, 500);
     const kinds = arrOf(b.kinds, KINDS, 2);
-    const region = S(b.region, 40);
+    const region = S(b.region, 2).toUpperCase();
     const intro = S(b.intro, 600);
     const genres = Array.isArray(b.genres) && b.genres.length ? arrOf(b.genres, GENRES, 20) : [];
     const markets = arrOf(b.markets, MARKETS, 3);
@@ -124,34 +158,44 @@ async function handleSave(env, s, request) {
     const proof_type = S(b.proof_type, 30);
     const proof_image = S(b.proof_image, 500);
 
-    if (!name_en && !name_zh) return bad("name_required");
+    if (!name_en) return bad("name_required");
+    if (!logo) return bad("logo_required");
     if (!kinds) return bad("kinds_required");
-    if (!inSet(region, REGIONS)) return bad("region_invalid");
+    if (!isRegion(region)) return bad("region_invalid");
     if (!intro) return bad("intro_required");
     if (genres === null) return bad("genres_invalid");
     if (!markets) return bad("markets_required");
     if (!isUrl(steam_url) || !isUrl(website)) return bad("url_invalid");
     if (!isEmail(contact_email)) return bad("contact_email_invalid");
     if (!inSet(proof_type, PARTNER_PROOF)) return bad("proof_type_invalid");
-    if (!proof_image) return bad("proof_image_required");
+
+    // 验证方式:企业邮箱 → 必须已完成验证;其他 → 必须有材料图
+    if (proof_type === "work_email") {
+      const row = await env.DB.prepare(
+        "SELECT verified_email FROM partner_profiles WHERE account_id = ?"
+      ).bind(s.aid).first();
+      if (!row || !row.verified_email) return bad("work_email_not_verified");
+    } else if (!proof_image) {
+      return bad("proof_image_required");
+    }
 
     await env.DB.prepare(
-      `INSERT INTO partner_profiles (account_id, name_zh, name_en, logo, kinds, region, intro, genres, markets,
+      `INSERT INTO partner_profiles (account_id, name_zh, name_en, name_ko, logo, kinds, region, intro, genres, markets,
                                      steam_url, website, contact_email, proof_type, proof_image, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(account_id) DO UPDATE SET
-         name_zh=excluded.name_zh, name_en=excluded.name_en, logo=excluded.logo, kinds=excluded.kinds,
-         region=excluded.region, intro=excluded.intro, genres=excluded.genres, markets=excluded.markets,
-         steam_url=excluded.steam_url, website=excluded.website, contact_email=excluded.contact_email,
-         proof_type=excluded.proof_type, proof_image=excluded.proof_image, updated_at=datetime('now')`
+         name_zh=excluded.name_zh, name_en=excluded.name_en, name_ko=excluded.name_ko, logo=excluded.logo,
+         kinds=excluded.kinds, region=excluded.region, intro=excluded.intro, genres=excluded.genres,
+         markets=excluded.markets, steam_url=excluded.steam_url, website=excluded.website,
+         contact_email=excluded.contact_email, proof_type=excluded.proof_type, proof_image=excluded.proof_image,
+         updated_at=datetime('now')`
     ).bind(
-      s.aid, name_zh, name_en, logo, JSON.stringify(kinds), region, intro,
+      s.aid, name_zh, name_en, name_ko, logo, JSON.stringify(kinds), region, intro,
       JSON.stringify(genres), JSON.stringify(markets), steam_url, website,
       contact_email, proof_type, proof_image
     ).run();
   }
 
-  // 被驳回后重新提交 → 状态拉回待审核
   if (account.status === "rejected") {
     await env.DB.prepare("UPDATE accounts SET status='pending' WHERE id = ?").bind(s.aid).run();
   }
@@ -167,15 +211,68 @@ async function handleUpload(env, s, request) {
   if (kind !== "proof" && kind !== "logo") return bad("kind_invalid");
 
   const ext = ALLOWED_IMG[file.type];
-  if (!ext) return bad("type_not_allowed"); // 仅 jpg/png/webp
-  if (file.size > MAX_UPLOAD) return bad("too_large"); // ≤5MB
+  if (!ext) return bad("type_not_allowed");
+  if (file.size > MAX_UPLOAD) return bad("too_large");
 
-  // 随机文件名:不可猜测,认证材料不会被枚举到
   const key = `${kind}/${s.aid}-${crypto.randomUUID()}.${ext}`;
   await env.R2.put(key, file.stream(), {
     httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000" },
   });
   return json({ ok: true, url: `${ASSET_HOST}/${key}` });
+}
+
+async function handleSendWorkCode(env, s, request) {
+  const { email: raw } = await request.json().catch(() => ({}));
+  const email = String(raw || "").trim().toLowerCase();
+  if (!isEmail(email)) return bad("invalid_email");
+
+  const recent = await env.DB.prepare(
+    `SELECT
+       SUM(CASE WHEN created_at > datetime('now', ?) THEN 1 ELSE 0 END) AS in_cooldown,
+       SUM(CASE WHEN created_at > datetime('now','-1 hour') THEN 1 ELSE 0 END) AS in_hour
+     FROM login_codes WHERE email = ?`
+  ).bind(`-${SEND_COOLDOWN_S} seconds`, email).first();
+  if ((recent?.in_cooldown || 0) > 0) return bad("cooldown", 429);
+  if ((recent?.in_hour || 0) >= SEND_HOURLY_MAX) return bad("hourly_limit", 429);
+
+  const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1000000;
+  const code = String(n).padStart(6, "0");
+  const hash = await sha256hex(email + ":" + code);
+
+  await env.DB.prepare("UPDATE login_codes SET used = 1 WHERE email = ? AND used = 0").bind(email).run();
+  await env.DB.prepare(
+    `INSERT INTO login_codes (email, code, expires_at) VALUES (?, ?, datetime('now', ?))`
+  ).bind(email, hash, `+${CODE_TTL_MIN} minutes`).run();
+
+  await sendCodeEmail(env, email, code);
+  return json({ ok: true });
+}
+
+async function handleVerifyWorkCode(env, s, request) {
+  const { email: raw, code } = await request.json().catch(() => ({}));
+  const email = String(raw || "").trim().toLowerCase();
+  if (!isEmail(email) || !/^\d{6}$/.test(String(code || ""))) return bad("invalid_input");
+
+  const hash = await sha256hex(email + ":" + code);
+  const row = await env.DB.prepare(
+    `SELECT id FROM login_codes
+     WHERE email = ? AND code = ? AND used = 0 AND expires_at > datetime('now')
+     ORDER BY id DESC LIMIT 1`
+  ).bind(email, hash).first();
+  if (!row) {
+    await new Promise((r) => setTimeout(r, 400));
+    return bad("wrong_or_expired_code", 401);
+  }
+  await env.DB.prepare("UPDATE login_codes SET used = 1 WHERE email = ?").bind(email).run();
+
+  // 打标记:写入 partner_profiles.verified_email(行不存在则先建壳)
+  await env.DB.prepare(
+    `INSERT INTO partner_profiles (account_id, verified_email, updated_at)
+     VALUES (?, ?, datetime('now'))
+     ON CONFLICT(account_id) DO UPDATE SET verified_email=excluded.verified_email, updated_at=datetime('now')`
+  ).bind(s.aid, email).run();
+
+  return json({ ok: true, verified_email: email });
 }
 
 /* ---------- 路由 ---------- */
@@ -192,6 +289,8 @@ export async function onRequest(context) {
     if (method === "GET" && path === "me") return await handleMe(env, s);
     if (method === "POST" && path === "save") return await handleSave(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
+    if (method === "POST" && path === "send-work-code") return await handleSendWorkCode(env, s, request);
+    if (method === "POST" && path === "verify-work-code") return await handleVerifyWorkCode(env, s, request);
     return bad("not_found", 404);
   } catch (e) {
     return bad("server_error: " + String(e.message || e).slice(0, 300), 500);
