@@ -182,10 +182,12 @@ async function handleRegister(env, request) {
   // 并发/重复保护:若邮箱已有账号,直接沿用
   let account = await env.DB.prepare("SELECT id, role, status FROM accounts WHERE email = ?").bind(s.email).first();
   if (!account) {
+    // 开发者注册即激活;合作方需人工审核
+    const initStatus = role === "developer" ? "verified" : "pending";
     const r = await env.DB.prepare(
-      "INSERT INTO accounts (email, role, status) VALUES (?, ?, 'pending')"
-    ).bind(s.email, role).run();
-    account = { id: r.meta.last_row_id, role, status: "pending" };
+      "INSERT INTO accounts (email, role, status) VALUES (?, ?, ?)"
+    ).bind(s.email, role, initStatus).run();
+    account = { id: r.meta.last_row_id, role, status: initStatus };
   }
 
   const exp = Date.now() + SESSION_DAYS * 864e5;
