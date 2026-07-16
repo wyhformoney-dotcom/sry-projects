@@ -155,7 +155,7 @@ const I18N = {
     register:"Create Account", registering:"Creating…",
     dTitleNew:"Account created", dDescNew:(r)=> r==="developer" ? "You are all set. Next: fill in your studio info, then you can submit your games." : "Your account is pending verification. Next step: complete your profile so we can review and activate it.",
     dTitleBack:"You're signed in", dDescBack:(e,r)=>`Signed in as ${e} (${r}).`,
-    home:"Back to Home", profile:"Complete Profile →", logout:"Sign Out", back:"← Back to project index",
+    home:"My Account →", profile:"Complete Profile →", logout:"Sign Out", back:"← Back to project index",
     errors:{ invalid_email:"Please enter a valid email address.", cooldown:"Please wait a moment before requesting another code.",
       hourly_limit:"Too many codes requested. Try again in an hour.", wrong_or_expired_code:"Wrong or expired code. Please try again.",
       invalid_input:"Please enter the 6-digit code.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
@@ -172,7 +172,7 @@ const I18N = {
     register:"创建账号", registering:"创建中…",
     dTitleNew:"账号已创建", dDescNew:(r)=> r==="developer" ? "注册完成,账号已激活。下一步:填写工作室信息,之后就可以提交游戏了。" : "账号待审核。下一步:完善资料,我们审核后即可激活。",
     dTitleBack:"已登录", dDescBack:(e,r)=>`当前账号 ${e}(${r==="developer"?"开发者":"合作方"})。`,
-    home:"返回首页", profile:"完善资料 →", logout:"退出登录", back:"← 返回项目库",
+    home:"我的账号 →", profile:"完善资料 →", logout:"退出登录", back:"← 返回项目库",
     errors:{ invalid_email:"请输入有效的邮箱地址。", cooldown:"操作太频繁,请稍候再试。",
       hourly_limit:"发送次数过多,请一小时后再试。", wrong_or_expired_code:"验证码错误或已过期,请重试。",
       invalid_input:"请输入 6 位数字验证码。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
@@ -189,7 +189,7 @@ const I18N = {
     register:"계정 만들기", registering:"생성 중…",
     dTitleNew:"계정이 생성되었습니다", dDescNew:(r)=> r==="developer" ? "가입이 완료되어 계정이 활성화되었습니다. 다음: 스튜디오 정보를 작성하면 게임을 제출할 수 있습니다." : "계정이 심사 대기 중입니다. 다음 단계: 프로필을 작성하면 심사 후 활성화됩니다.",
     dTitleBack:"로그인되었습니다", dDescBack:(e,r)=>`현재 계정 ${e} (${r==="developer"?"개발자":"파트너"}).`,
-    home:"홈으로", profile:"프로필 작성 →", logout:"로그아웃", back:"← 프로젝트 목록으로",
+    home:"내 계정 →", profile:"프로필 작성 →", logout:"로그아웃", back:"← 프로젝트 목록으로",
     errors:{ invalid_email:"올바른 이메일 주소를 입력하세요.", cooldown:"잠시 후 다시 시도해 주세요.",
       hourly_limit:"요청이 너무 많습니다. 1시간 후 다시 시도하세요.", wrong_or_expired_code:"코드가 틀렸거나 만료되었습니다.",
       invalid_input:"6자리 숫자 코드를 입력하세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
@@ -302,7 +302,7 @@ function finishScreen(role){
   $("#d-desc").textContent = isNew ? t.dDescNew(role) : t.dDescBack(email, role);
   const toProfile = isNew || !hasProfile;
   $("#b-home").textContent = toProfile ? t.profile : t.home;
-  $("#b-home").dataset.goto = toProfile ? "/profile.html" : "/";
+  $("#b-home").dataset.goto = toProfile ? "/profile.html" : "/account.html";
   show("s-done");
 }
 

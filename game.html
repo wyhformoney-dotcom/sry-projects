@@ -267,7 +267,7 @@ $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   const a = document.getElementById("acct");
   if(a && d && d.loggedIn && !d.needsRole){
     const label = "▸ " + (d.email||"").split("@")[0].slice(0,14);
-    a.href = "/profile.html";
+    a.href = "/account.html";
     a.dataset.en = label; a.dataset.zh = label; a.dataset.ko = label;
     a.textContent = label;
   }

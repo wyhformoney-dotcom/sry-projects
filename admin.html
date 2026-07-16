@@ -1,0 +1,334 @@
+<!-- SRY Game Hub — 审核后台(仅管理员,中文界面) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>审核后台 · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b; --warn:#f2c94c;
+    --mono:'Space Mono',monospace; --sans:'Archivo','Noto Sans SC',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo .adm{ font-family:var(--mono); font-size:10px; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:2px 6px; margin-left:4px; letter-spacing:.1em; }
+
+  .wrap{ max-width:880px; margin:0 auto; padding:36px 20px 90px; }
+  h1{ font-size:26px; font-weight:900; margin-bottom:6px; }
+  .lead{ color:var(--ink-dim); font-size:13px; margin-bottom:24px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .tab{ font-family:var(--mono); font-size:12px; padding:8px 14px; border:1px solid var(--line); border-radius:8px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .tab.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .tab .n{ opacity:.75; margin-left:4px; }
+
+  .empty{ text-align:center; color:var(--ink-faint); padding:60px 0; font-size:13.5px; }
+
+  .row{ background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:12px; overflow:hidden; }
+  .rhead{ display:flex; align-items:center; gap:14px; padding:14px 16px; cursor:pointer; }
+  .rhead:hover{ background:rgba(198,242,78,.03); }
+  .avatar{ width:44px; height:44px; border-radius:9px; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; font-size:18px; color:var(--ink-faint); }
+  .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .rmain{ flex:1; min-width:0; }
+  .rname{ font-weight:800; font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .rname .flag{ font-size:15px; }
+  .rsub{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pill{ font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:12px; border:1px solid var(--line); color:var(--ink-dim); white-space:nowrap; }
+  .pill.pending{ color:var(--warn); border-color:var(--warn); }
+  .pill.verified{ color:var(--accent); border-color:var(--accent); }
+  .pill.rejected{ color:var(--danger); border-color:var(--danger); }
+  .pill.mail{ color:var(--accent); border-color:var(--line); }
+  .arrow{ color:var(--ink-faint); font-family:var(--mono); font-size:12px; }
+
+  .detail{ display:none; border-top:1px solid var(--line-soft); padding:18px 16px 20px; }
+  .row.open .detail{ display:block; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 22px; margin-bottom:16px; }
+  @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
+  .kv .k{ font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .kv .v{ font-size:13.5px; line-height:1.55; word-break:break-word; }
+  .kv .v a{ color:var(--accent); }
+  .kv.full{ grid-column:1 / -1; }
+  .chipline{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chipline .c{ font-family:var(--mono); font-size:10.5px; padding:4px 9px; border:1px solid var(--line); border-radius:12px; color:var(--ink-dim); }
+
+  .proofbox{ border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--panel2); }
+  .proofbox .ok{ font-family:var(--mono); font-size:12.5px; color:var(--accent); }
+  .proofbox img{ max-width:280px; max-height:180px; border-radius:6px; display:block; cursor:zoom-in; }
+  .proofbox .tip{ font-size:11px; color:var(--ink-faint); margin-top:6px; }
+
+  .acts{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .abtn{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.06em; padding:10px 22px;
+    border-radius:8px; cursor:pointer; border:none; }
+  .abtn.ok{ background:var(--accent); color:var(--accent-ink); }
+  .abtn.no{ background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .abtn:disabled{ opacity:.4; cursor:default; }
+  .rejbox{ display:none; margin-top:12px; }
+  .rejbox.on{ display:block; }
+  .rejbox textarea{ width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:13px; padding:10px 12px; min-height:64px; outline:none; font-family:inherit; }
+  .rejbox textarea:focus{ border-color:var(--danger); }
+  .rejbox .abtn{ margin-top:8px; }
+  .note{ font-size:12px; color:var(--warn); margin-top:10px; }
+  .amsg{ font-size:12.5px; margin-top:10px; display:none; }
+  .amsg.err{ display:block; color:var(--danger); }
+
+  .locked{ text-align:center; padding:80px 10px; display:none; }
+  .locked p{ color:var(--ink-dim); font-size:14px; line-height:1.8; }
+  .locked a{ color:var(--accent); }
+
+  .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:100; cursor:zoom-out; }
+  .lightbox.on{ display:flex; }
+  .lightbox img{ max-width:92vw; max-height:92vh; border-radius:8px; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB <span class="adm">ADMIN</span></a>
+</nav>
+
+<div class="wrap">
+  <h1>审核后台</h1>
+  <div class="tabs" id="modes" style="margin-bottom:10px">
+    <button class="tab on" data-m="partners">合作方审核</button>
+    <button class="tab" data-m="games">游戏审核</button>
+  </div>
+  <p class="lead" id="modelead">审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到"待审核"。</p>
+
+  <div class="locked" id="locked"><p>没有权限或未登录。<br>请先用管理员邮箱<a href="/login.html">登录</a>,再回到本页。</p></div>
+
+  <div id="main" style="display:none">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-s="pending">待审核<span class="n" id="n-pending"></span></button>
+      <button class="tab" data-s="verified" id="tab-verified">已通过<span class="n" id="n-verified"></span></button>
+      <button class="tab" data-s="rejected">已驳回<span class="n" id="n-rejected"></span></button>
+      <button class="tab" data-s="all">全部</button>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('on')"><img id="lightbox-img"></div>
+
+<script>
+const KIND_ZH = { publishing:"发行", investment:"投资" };
+const MARKET_ZH = { Global:"全球", China:"中国", Overseas:"海外" };
+const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"};
+const PROOF_ZH = { work_email:"企业邮箱验证", steamworks:"Steamworks 后台截图", other:"其他(图片)", steam:"Steam 发行页截图(旧)", website:"官网截图(旧)" };
+const STATUS_ZH = { pending:"待审核", verified:"已通过", rejected:"已驳回", suspended:"已停用" };
+const flagOf = (cc)=>/^[A-Z]{2}$/.test(cc||"") ? String.fromCodePoint(...[...cc].map(c=>0x1F1A5+c.charCodeAt(0))) : "";
+let regionName = (cc)=>cc||"—";
+try{ const dn = new Intl.DisplayNames(["zh-Hans"],{type:"region"}); regionName = (cc)=>{ try{ return (cc && dn.of(cc)) || cc || "—"; }catch{ return cc||"—"; } }; }catch{}
+
+const STAGE_ZH = { "In Development":"开发中", "Demo":"Demo", "Playtest":"Playtest", "Early Access":"抢先体验", "Released":"已发售" };
+const PLATFORM_ZH = { PC:"PC", Console:"主机", Mobile:"移动端" };
+const NEED_ZH = { "Seeking Publisher":"寻找发行", "Seeking Publisher Partner":"寻找联合发行", "Seeking Investment":"寻找投资" };
+const GSTATUS_ZH = { pending:"待审核", approved:"已上架", rejected:"已驳回" };
+const $ = (s)=>document.querySelector(s);
+let curTab = "pending";
+let curMode = "partners";
+
+async function api(path, opts){
+  const res = await fetch("/api/admin/"+path, opts);
+  let data=null; try{ data=await res.json(); }catch{}
+  if(!data) throw "network";
+  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  return data;
+}
+
+const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtTime = (t)=>t ? String(t).replace("T"," ").slice(0,16) : "—";
+
+function kvHtml(k,v,full){ return `<div class="kv${full?" full":""}"><div class="k">${k}</div><div class="v">${v||"—"}</div></div>`; }
+function chipsHtml(arr, map){ return arr && arr.length ? `<div class="chipline">${arr.map(x=>`<span class="c">${esc(map[x]||x)}</span>`).join("")}</div>` : "—"; }
+function linkHtml(u){ return u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : "—"; }
+
+function proofHtml(r){
+  if(r.proof_type === "work_email"){
+    return `<div class="proofbox">${
+      r.verified_email
+        ? `<div class="ok">✓ 企业邮箱已验证:${esc(r.verified_email)}</div><div class="tip">对照公司官网/名称核对邮箱域名即可</div>`
+        : `<div style="color:var(--danger);font-size:12.5px">选择了邮箱验证,但尚未完成验证</div>`
+    }</div>`;
+  }
+  return `<div class="proofbox">${
+    r.proof_image
+      ? `<img src="${esc(r.proof_image)}" onclick="showLightbox(this.src)"><div class="tip">${esc(PROOF_ZH[r.proof_type]||r.proof_type||"")} · 点击放大</div>`
+      : `<div style="color:var(--danger);font-size:12.5px">未上传认证材料</div>`
+  }</div>`;
+}
+
+function showLightbox(src){ $("#lightbox-img").src = src; $("#lightbox").classList.add("on"); }
+
+function rowHtml(r){
+  const name = r.name_en || r.name_zh || r.name_ko || "(未填名称)";
+  const zhko = [r.name_zh, r.name_ko].filter(Boolean).join(" / ");
+  const mailPill = r.proof_type==="work_email" && r.verified_email ? `<span class="pill mail">✓ 邮箱已验证</span>` : "";
+  return `
+  <div class="row" data-id="${r.id}">
+    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <div class="avatar">${r.logo?`<img src="${esc(r.logo)}">`:"▢"}</div>
+      <div class="rmain">
+        <div class="rname"><span class="flag">${flagOf(r.region)}</span>${esc(name)}${zhko?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(zhko)}</span>`:""}</div>
+        <div class="rsub">${esc(r.login_email)} · ${(r.kinds||[]).map(k=>KIND_ZH[k]||k).join("+")||"—"} · 注册 ${fmtTime(r.created_at)}</div>
+      </div>
+      ${mailPill}
+      <span class="pill ${r.status}">${STATUS_ZH[r.status]||r.status}</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="detail">
+      <div class="grid">
+        ${kvHtml("国家/地区", `${flagOf(r.region)} ${esc(regionName(r.region))}`)}
+        ${kvHtml("业务类型", chipsHtml(r.kinds, KIND_ZH))}
+        ${kvHtml("关注市场", chipsHtml(r.markets, MARKET_ZH))}
+        ${kvHtml("关注品类", chipsHtml(r.genres, GENRE_ZH))}
+        ${kvHtml("Steam 发行页", linkHtml(r.steam_url))}
+        ${kvHtml("官网", linkHtml(r.website))}
+        ${kvHtml("对外联系邮箱", esc(r.contact_email))}
+        ${kvHtml("登录邮箱", esc(r.login_email))}
+        ${kvHtml("简介", esc(r.intro), true)}
+        ${kvHtml("认证", proofHtml(r), true)}
+        ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
+      </div>
+      ${r.status==="pending" ? `
+      <div class="acts">
+        <button class="abtn ok" onclick="review(${r.id},'approve',this)">通过</button>
+        <button class="abtn no" onclick="toggleReject(${r.id})">驳回…</button>
+      </div>
+      <div class="rejbox" id="rej-${r.id}">
+        <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到,请写清楚需要补充或修改什么)"></textarea>
+        <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+      </div>` : `
+      <div class="acts">
+        ${r.status!=="verified" ? `<button class="abtn ok" onclick="review(${r.id},'approve',this)">改为通过</button>` : ""}
+        ${r.status!=="rejected" ? `<button class="abtn no" onclick="toggleReject(${r.id})">改为驳回…</button>
+        <div class="rejbox" id="rej-${r.id}" style="width:100%">
+          <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到)"></textarea>
+          <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+        </div>` : ""}
+      </div>`}
+      <div class="amsg" id="amsg-${r.id}"></div>
+    </div>
+  </div>`;
+}
+
+function toggleReject(id){ document.getElementById("rej-"+id).classList.toggle("on"); }
+
+async function review(id, action, btn){
+  const msg = document.getElementById("amsg-"+id);
+  msg.className="amsg";
+  const note = action==="reject" ? (document.getElementById("rejnote-"+id)?.value||"").trim() : "";
+  if(action==="reject" && !note){ msg.className="amsg err"; msg.textContent="请填写驳回原因。"; return; }
+  btn.disabled=true;
+  try{
+    await api(curMode==="games" ? "review-game" : "review",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id, action, note }) });
+    await load();
+  }catch(e){
+    msg.className="amsg err"; msg.textContent="操作失败:"+e; btn.disabled=false;
+  }
+}
+
+function gameRowHtml(r){
+  const name = r.t_en || r.t_zh || r.t_ko || "(未填名称)";
+  const shots = (r.screenshots||[]).map(u=>`<img src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
+  return `
+  <div class="row" data-id="${r.id}">
+    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <div class="avatar" style="width:64px">${r.cover?`<img src="${esc(r.cover)}">`:"▢"}</div>
+      <div class="rmain">
+        <div class="rname">${esc(name)}${r.t_zh&&r.t_en?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(r.t_zh)}</span>`:""}</div>
+        <div class="rsub">${esc(r.studio_name||"")} · ${esc(r.login_email||"")} · ${esc(STAGE_ZH[r.stage]||r.stage||"")} · 提交 ${fmtTime(r.created_at)}</div>
+      </div>
+      <span class="pill ${r.status==="approved"?"verified":r.status}">${GSTATUS_ZH[r.status]||r.status}</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="detail">
+      <div class="grid">
+        ${kvHtml("开发阶段", esc(STAGE_ZH[r.stage]||r.stage))}
+        ${kvHtml("目标市场", esc({Global:"全球",China:"中国",Overseas:"海外"}[r.region]||r.region))}
+        ${kvHtml("品类", chipsHtml(r.genres, GENRE_ZH))}
+        ${kvHtml("平台", chipsHtml(r.platforms, PLATFORM_ZH))}
+        ${kvHtml("寻求", chipsHtml(r.needs, NEED_ZH), true)}
+        ${kvHtml("Steam 页面", linkHtml(r.steam_url))}
+        ${kvHtml("预告片", linkHtml(r.video))}
+        ${kvHtml("一句话简介", esc(r.d_en), true)}
+        ${kvHtml("完整介绍", esc(r.full_en), true)}
+        ${kvHtml("封面", r.cover?`<img src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
+        ${kvHtml("截图", shots||"—", true)}
+        ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
+      </div>
+      ${r.status==="pending" ? `
+      <div class="acts">
+        <button class="abtn ok" onclick="review(${r.id},'approve',this)">通过并上架</button>
+        <button class="abtn no" onclick="toggleReject(${r.id})">驳回…</button>
+      </div>
+      <div class="rejbox" id="rej-${r.id}">
+        <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到,请写清楚需要补充或修改什么)"></textarea>
+        <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+      </div>` : `
+      <div class="acts">
+        ${r.status!=="approved" ? `<button class="abtn ok" onclick="review(${r.id},'approve',this)">改为通过并上架</button>` : ""}
+        ${r.status!=="rejected" ? `<button class="abtn no" onclick="toggleReject(${r.id})">改为驳回…</button>
+        <div class="rejbox" id="rej-${r.id}" style="width:100%">
+          <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到)"></textarea>
+          <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+        </div>` : ""}
+      </div>`}
+      <div class="amsg" id="amsg-${r.id}"></div>
+    </div>
+  </div>`;
+}
+
+async function load(){
+  const ep = curMode==="games" ? "games" : "partners";
+  const st = (curMode==="games" && curTab==="verified") ? "approved" : curTab;
+  const d = await api(ep+"?status="+st, { method:"GET" });
+  const c = d.counts||{};
+  $("#n-pending").textContent = c.pending?`(${c.pending})`:"";
+  $("#n-verified").textContent = (curMode==="games" ? (c.approved?`(${c.approved})`:"") : (c.verified?`(${c.verified})`:""));
+  $("#n-rejected").textContent = c.rejected?`(${c.rejected})`:"";
+  $("#list").innerHTML = d.rows.length
+    ? d.rows.map(curMode==="games" ? gameRowHtml : rowHtml).join("")
+    : `<div class="empty">这个状态下没有${curMode==="games"?"游戏":"账号"}</div>`;
+}
+
+$("#modes").addEventListener("click",(e)=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  curMode=b.dataset.m; curTab="pending";
+  document.querySelectorAll("#modes .tab").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("on",x.dataset.s==="pending"));
+  $("#modelead").textContent = curMode==="games"
+    ? "审核开发者提交的游戏。通过即上架到项目库;驳回需填写原因,对方能在账号中心看到。"
+    : "审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到\"待审核\"。";
+  load();
+});
+$("#tabs").addEventListener("click",(e)=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  curTab=b.dataset.s;
+  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
+  load();
+});
+
+(async ()=>{
+  try{
+    await load();
+    $("#main").style.display="block";
+  }catch(e){
+    $("#locked").style.display="block";
+  }
+})();
+</script>

@@ -1,0 +1,292 @@
+<!-- SRY Game Hub — 账号中心(登录后的承接页) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Account · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b; --warn:#f2c94c;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+
+  .wrap{ max-width:560px; margin:0 auto; padding:48px 20px 90px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:10px; }
+  h1{ font-size:28px; font-weight:900; letter-spacing:-.02em; margin-bottom:24px; }
+
+  .idcard{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; display:flex; gap:16px; align-items:center; margin-bottom:14px; }
+  .idcard .avatar{ width:64px; height:64px; border-radius:11px; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; font-size:24px; color:var(--ink-faint); }
+  .idcard .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .idcard .who{ flex:1; min-width:0; }
+  .idcard .nm{ font-weight:800; font-size:17px; }
+  .idcard .em{ font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); margin-top:3px; word-break:break-all; }
+  .idcard .tags{ display:flex; gap:6px; margin-top:8px; flex-wrap:wrap; }
+  .pill{ font-family:var(--mono); font-size:10px; padding:3px 9px; border-radius:12px; border:1px solid var(--line); color:var(--ink-dim); }
+  .pill.role{ color:var(--ink); }
+  .pill.pending{ color:var(--warn); border-color:var(--warn); }
+  .pill.verified{ color:var(--accent); border-color:var(--accent); }
+  .pill.rejected{ color:var(--danger); border-color:var(--danger); }
+
+  .notice{ border:1px solid var(--line); border-radius:12px; padding:14px 16px; font-size:13px; line-height:1.65; color:var(--ink-dim); margin-bottom:14px; }
+  .notice.warn{ border-color:var(--warn); }
+  .notice.bad{ border-color:var(--danger); }
+  .notice.good{ border-color:var(--accent); }
+  .notice b{ color:var(--ink); }
+  .notice .why{ color:var(--danger); }
+
+  .menu{ background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+  .mi{ display:flex; align-items:center; gap:12px; padding:15px 18px; border-bottom:1px solid var(--line-soft); cursor:pointer; width:100%; background:transparent; border-left:none; border-right:none; border-top:none; color:var(--ink); font-family:inherit; font-size:14px; text-align:left; }
+  .mi:last-child{ border-bottom:none; }
+  .mi:hover{ background:rgba(198,242,78,.04); }
+  .mi .ic{ font-family:var(--mono); color:var(--accent); width:18px; text-align:center; }
+  .mi .tx{ flex:1; }
+  .mi .sub{ display:block; font-size:11px; color:var(--ink-faint); margin-top:2px; }
+  .mi .arr{ font-family:var(--mono); color:var(--ink-faint); font-size:12px; }
+  .mi.soon{ cursor:default; color:var(--ink-faint); }
+  .mi.soon:hover{ background:transparent; }
+  .mi.soon .ic{ color:var(--ink-faint); }
+  .mi.soon .soon-tag{ font-family:var(--mono); font-size:9px; color:var(--accent); border:1px solid var(--line); border-radius:4px; padding:2px 6px; letter-spacing:.1em; }
+  .mi.out{ color:var(--danger); }
+  .mi.out .ic{ color:var(--danger); }
+
+  .gi{ display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--line-soft); }
+  .gi:last-child{ border-bottom:none; }
+  .gi .thumb{ width:58px; height:33px; border-radius:5px; background:var(--panel2); border:1px solid var(--line);
+    object-fit:cover; flex:none; }
+  .gi .gt{ flex:1; min-width:0; }
+  .gi .gn{ font-weight:700; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gi .gs{ font-size:11px; color:var(--danger); margin-top:2px; line-height:1.4; }
+  .mhead{ font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; color:var(--ink-faint); padding:12px 18px 4px; }
+  .locked{ text-align:center; padding:60px 10px; display:none; }
+  .locked p{ color:var(--ink-dim); font-size:13.5px; line-height:1.8; }
+  .locked a{ color:var(--accent); }
+  #main{ display:none; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="kicker">ACCOUNT // HOME</div>
+  <h1 id="title"></h1>
+
+  <div class="locked" id="locked"><p class="cjk-swap" id="locked-text"></p></div>
+
+  <div id="main">
+    <div class="idcard">
+      <div class="avatar" id="avatar">▢</div>
+      <div class="who">
+        <div class="nm cjk-swap" id="nm"></div>
+        <div class="em" id="em"></div>
+        <div class="tags">
+          <span class="pill role" id="rolepill"></span>
+          <span class="pill" id="statuspill"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="notice cjk-swap" id="notice" style="display:none"></div>
+
+    <div class="menu" id="mygames" style="display:none">
+      <div class="mhead" id="mygames-t"></div>
+      <div id="mygames-list"></div>
+    </div>
+
+    <div class="menu">
+      <button class="mi" id="m-profile">
+        <span class="ic">✎</span>
+        <span class="tx" id="m-profile-t"></span>
+        <span class="arr">→</span>
+      </button>
+      <button class="mi" id="m-games" style="display:none">
+        <span class="ic">▣</span>
+        <span class="tx" id="m-games-t"></span>
+        <span class="arr">→</span>
+      </button>
+      <button class="mi" id="m-browse">
+        <span class="ic">◈</span>
+        <span class="tx" id="m-browse-t"></span>
+        <span class="arr">→</span>
+      </button>
+      <button class="mi out" id="m-logout">
+        <span class="ic">⏻</span>
+        <span class="tx" id="m-logout-t"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+const I18N = {
+  en:{
+    title:"My Account",
+    locked:'You are not signed in. <a href="/login.html">Sign in</a> first.',
+    roleDev:"DEVELOPER", rolePar:"PARTNER",
+    st:{ pending:"PENDING REVIEW", verified:"VERIFIED", rejected:"REJECTED", suspended:"SUSPENDED", active:"ACTIVE" },
+    nmDev:"(studio name not set)", nmPar:"(company name not set)",
+    noticePending:"Your profile is <b>under review</b>. We usually respond within 1–2 business days. You can still edit your profile — resubmitting keeps you in the queue.",
+    noticeVerified:"Your account is <b>verified</b>. Your company card will appear in the Partners directory, and you can unlock developer contacts.",
+    noticeRejected:(why)=>`Your submission was <b>not approved</b>.${why?` Reason: <span class="why">${why}</span>`:""} Please update your profile and resubmit.`,
+    noticeNoProfileDev:"Tip: complete your studio info so publishers can recognize you.",
+    noticeNoProfilePar:"Next step: complete your company profile and submit it for review.",
+    mProfileDev:"Studio Info", mProfileDevSub:"Name, contact email, logo & intro — edit anytime",
+    mProfilePar:"Company Profile", mProfileParSub:"Edit and resubmit your profile",
+    mGames:"Submit a Game", mGamesSub:"Goes into review, then appears in the library", myGames:"MY GAMES", gst:{pending:"IN REVIEW",approved:"LIVE",rejected:"REJECTED"},
+    mBrowse:"Browse Projects", mBrowseSub:"Back to the game library",
+    mLogout:"Sign Out"
+  },
+  zh:{
+    title:"账号中心",
+    locked:'尚未登录,请先<a href="/login.html">登录</a>。',
+    roleDev:"开发者", rolePar:"合作方",
+    st:{ pending:"待审核", verified:"已认证", rejected:"未通过", suspended:"已停用", active:"已激活" },
+    nmDev:"(未填写工作室名称)", nmPar:"(未填写公司名称)",
+    noticePending:"资料<b>审核中</b>,通常 1–2 个工作日内处理。期间仍可修改资料,重新提交不影响排队。",
+    noticeVerified:"账号<b>已认证</b>。你的公司卡片将出现在 Partners 列表,并可解锁开发者联系方式。",
+    noticeRejected:(why)=>`提交<b>未通过</b>。${why?`原因:<span class="why">${why}</span>`:""} 请修改资料后重新提交。`,
+    noticeNoProfileDev:"提示:完善工作室信息,让发行商更容易认识你。",
+    noticeNoProfilePar:"下一步:填写公司资料并提交审核。",
+    mProfileDev:"工作室信息", mProfileDevSub:"名称、联系邮箱、Logo 与简介,随时可改",
+    mProfilePar:"公司资料", mProfileParSub:"修改资料、重新提交审核",
+    mGames:"提交新游戏", mGamesSub:"提交后审核,通过即上架项目库", myGames:"我的游戏", gst:{pending:"待审核",approved:"已上架",rejected:"未通过"},
+    mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表",
+    mLogout:"退出登录"
+  },
+  ko:{
+    title:"내 계정",
+    locked:'로그인되어 있지 않습니다. 먼저 <a href="/login.html">로그인</a>하세요.',
+    roleDev:"개발자", rolePar:"파트너",
+    st:{ pending:"심사 대기", verified:"인증 완료", rejected:"반려됨", suspended:"정지됨", active:"활성화됨" },
+    nmDev:"(스튜디오 이름 미설정)", nmPar:"(회사명 미설정)",
+    noticePending:"프로필이 <b>심사 중</b>입니다. 보통 1–2 영업일 내 처리됩니다. 심사 중에도 프로필을 수정할 수 있습니다.",
+    noticeVerified:"계정이 <b>인증되었습니다</b>. 회사 카드가 Partners 목록에 표시되며 개발자 연락처를 열람할 수 있습니다.",
+    noticeRejected:(why)=>`제출이 <b>반려되었습니다</b>.${why?` 사유: <span class="why">${why}</span>`:""} 프로필을 수정 후 다시 제출해 주세요.`,
+    noticeNoProfileDev:"팁: 스튜디오 정보를 작성하면 퍼블리셔가 알아보기 쉽습니다.",
+    noticeNoProfilePar:"다음 단계: 회사 프로필을 작성하고 심사에 제출하세요.",
+    mProfileDev:"스튜디오 정보", mProfileDevSub:"이름, 이메일, 로고, 소개 — 언제든 수정 가능",
+    mProfilePar:"회사 프로필", mProfileParSub:"프로필 수정 및 재제출",
+    mGames:"게임 제출", mGamesSub:"심사 후 라이브러리에 등록됩니다", myGames:"내 게임", gst:{pending:"심사 중",approved:"등록됨",rejected:"반려됨"},
+    mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로",
+    mLogout:"로그아웃"
+  }
+};
+
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+let role="", status="", email="", profile=null, myGames=[];
+
+function T(){ return I18N[lang]; }
+const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function render(){
+  document.body.setAttribute("lang",lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  const t=T();
+  $("#title").textContent=t.title;
+  $("#locked-text").innerHTML=t.locked;
+  if(!role) return;
+
+  const isDev = role==="developer";
+  const name = isDev ? (profile?.studio_name || t.nmDev)
+                     : (profile?.name_en || profile?.name_zh || profile?.name_ko || t.nmPar);
+  $("#nm").textContent=name;
+  $("#em").textContent=email;
+  $("#rolepill").textContent = isDev ? t.roleDev : t.rolePar;
+  const logo = profile?.logo;
+  $("#avatar").innerHTML = logo ? `<img src="${esc(logo)}">` : "▢";
+
+  // 状态徽标:开发者恒为"已激活",合作方按审核状态
+  const sp = $("#statuspill");
+  if(isDev){ sp.textContent=t.st.active; sp.className="pill verified"; }
+  else{ sp.textContent=t.st[status]||status; sp.className="pill "+status; }
+
+  // 提示条
+  const n = $("#notice"); n.style.display="none"; n.className="notice cjk-swap";
+  if(isDev){
+    if(!profile || !profile.studio_name){ n.innerHTML=t.noticeNoProfileDev; n.style.display="block"; }
+  }else{
+    if(!profile || !profile.contact_email){ n.innerHTML=t.noticeNoProfilePar; n.classList.add("warn"); n.style.display="block"; }
+    else if(status==="pending"){ n.innerHTML=t.noticePending; n.classList.add("warn"); n.style.display="block"; }
+    else if(status==="verified"){ n.innerHTML=t.noticeVerified; n.classList.add("good"); n.style.display="block"; }
+    else if(status==="rejected"){ n.innerHTML=t.noticeRejected(esc(profile?.review_note||"")); n.classList.add("bad"); n.style.display="block"; }
+  }
+
+  // 菜单
+  $("#m-profile-t").innerHTML = (isDev?t.mProfileDev:t.mProfilePar) + `<span class="sub">${isDev?t.mProfileDevSub:t.mProfileParSub}</span>`;
+  $("#m-games").style.display = isDev ? "flex" : "none";
+  $("#m-games-t").innerHTML = t.mGames + `<span class="sub">${t.mGamesSub}</span>`;
+  // 我的游戏列表
+  if(isDev && myGames.length){
+    $("#mygames").style.display="block";
+    $("#mygames-t").textContent=t.myGames;
+    $("#mygames-list").innerHTML = myGames.map(g=>{
+      const name = g.t_en || g.t_zh || g.t_ko || "—";
+      const stClass = g.status==="approved" ? "verified" : g.status;
+      return `<div class="gi">
+        ${g.cover?`<img class="thumb" src="${esc(g.cover)}">`:`<div class="thumb"></div>`}
+        <div class="gt"><div class="gn">${esc(name)}</div>${g.status==="rejected"&&g.review_note?`<div class="gs">${esc(g.review_note)}</div>`:""}</div>
+        <span class="pill ${stClass}">${t.gst[g.status]||g.status}</span>
+      </div>`;
+    }).join("");
+  } else { $("#mygames").style.display="none"; }
+  $("#m-browse-t").innerHTML = t.mBrowse + `<span class="sub">${t.mBrowseSub}</span>`;
+  $("#m-logout-t").textContent = t.mLogout;
+}
+
+$("#m-profile").onclick = ()=>{ location.href="/profile.html"; };
+$("#m-games").onclick = ()=>{ location.href="/submit-game.html"; };
+$("#m-browse").onclick = ()=>{ location.href="/"; };
+$("#m-logout").onclick = async ()=>{
+  try{ await fetch("/api/auth/logout",{method:"POST"}); }catch{}
+  location.href="/";
+};
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); render();
+});
+
+(async ()=>{
+  render();
+  try{
+    const r1 = await fetch("/api/auth/me"); const a = await r1.json();
+    if(!a.loggedIn){ $("#locked").style.display="block"; return; }
+    if(a.needsRole){ location.href="/login.html"; return; }
+    const r2 = await fetch("/api/profile/me"); const d = await r2.json();
+    if(!d.ok){ $("#locked").style.display="block"; return; }
+    role=d.role; status=d.status; email=d.email; profile=d.profile;
+    if(role==="developer"){
+      try{ const r3=await fetch("/api/games-submit/mine"); const g=await r3.json(); if(g.ok) myGames=g.rows||[]; }catch(e){}
+    }
+    $("#main").style.display="block";
+    render();
+  }catch(e){
+    $("#locked").style.display="block";
+  }
+})();
+</script>

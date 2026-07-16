@@ -1,0 +1,429 @@
+<!-- SRY Game Hub — 游戏提交表单(开发者) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Submit Your Game · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+
+  .wrap{ max-width:600px; margin:0 auto; padding:48px 20px 90px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:10px; }
+  h1{ font-size:28px; font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+  .lead{ color:var(--ink-dim); font-size:13.5px; line-height:1.6; margin-bottom:24px; }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px 24px 26px; }
+  .sec{ display:flex; align-items:center; gap:12px; margin:30px 0 20px; }
+  .sec .num{ font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-ink); background:var(--accent); padding:3px 8px; border-radius:4px; }
+  .sec .st{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+  .sec .rule{ flex:1; height:1px; background:var(--line-soft); }
+
+  /* 题号:每个字段自动编号,漏填一眼可见 */
+  .card{ counter-reset:q; }
+  .f{ margin-bottom:28px; }
+  .f > label{ display:flex; align-items:baseline; gap:9px; font-size:14px; font-weight:800; margin:0 0 5px; }
+  .f > label::before{ counter-increment:q; content:counter(q,decimal-leading-zero);
+    font-family:var(--mono); font-size:10px; font-weight:700; color:var(--accent);
+    border:1px solid var(--accent); border-radius:4px; padding:2px 6px; flex:none; }
+  label{ display:block; font-size:13px; font-weight:700; margin:0 0 4px; }
+  label .req{ color:var(--accent); }
+  label .multi{ font-family:var(--mono); font-size:10px; font-weight:400; color:var(--ink-faint); margin-left:6px; }
+  .sub{ font-size:11.5px; color:var(--ink-faint); line-height:1.55; margin:0 0 9px; }
+  input[type=text], input[type=url], textarea{
+    width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:14px; padding:11px 13px; outline:none; font-family:inherit;
+  }
+  input::placeholder, textarea::placeholder{ color:var(--ink-faint); }
+  input:focus, textarea:focus{ border-color:var(--accent); }
+  textarea{ min-height:110px; resize:vertical; line-height:1.6; }
+  .cnt{ font-family:var(--mono); font-size:10px; color:var(--ink-faint); text-align:right; margin-top:4px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:520px){ .row2{ grid-template-columns:1fr; } }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:var(--mono); font-size:11.5px; padding:7px 12px; border:1px solid var(--line); border-radius:20px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; transition:all .12s; }
+  .chip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+
+  /* 封面(横图) */
+  .coverup{ border:1px dashed var(--line); border-radius:10px; background:var(--panel2); aspect-ratio:16/9;
+    display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; color:var(--ink-faint); }
+  .coverup:hover{ border-color:var(--accent); }
+  .coverup img{ width:100%; height:100%; object-fit:cover; }
+  /* 截图九宫 */
+  .shots{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .shot{ position:relative; aspect-ratio:16/9; border:1px dashed var(--line); border-radius:8px; background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; color:var(--ink-faint); font-size:20px; cursor:pointer; }
+  .shot:hover{ border-color:var(--accent); }
+  .shot img{ width:100%; height:100%; object-fit:cover; }
+  .shot .rm{ position:absolute; top:4px; right:4px; width:20px; height:20px; border-radius:5px; background:rgba(0,0,0,.7);
+    color:var(--danger); border:none; cursor:pointer; font-size:12px; line-height:1; display:none; }
+  .shot.has .rm{ display:block; }
+
+  .btn{ width:100%; margin-top:8px; padding:14px 0; border:none; border-radius:8px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px;
+    letter-spacing:.08em; text-transform:uppercase; }
+  .btn:disabled{ opacity:.45; cursor:default; }
+  .msg{ font-size:12.5px; margin-top:12px; display:none; }
+  .msg.err{ display:block; color:var(--danger); }
+  .msg.ok{ display:block; color:var(--accent); }
+  .back{ display:inline-block; margin-top:22px; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
+  .back:hover{ color:var(--accent); }
+  .locked{ text-align:center; padding:60px 10px; display:none; }
+  .locked p{ color:var(--ink-dim); font-size:13.5px; line-height:1.8; }
+  .locked a{ color:var(--accent); }
+  #form{ display:none; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="kicker">DEVELOPER // SUBMIT</div>
+  <h1 id="title"></h1>
+  <p class="lead cjk-swap" id="lead"></p>
+
+  <div class="locked" id="locked"><p class="cjk-swap" id="locked-text"></p></div>
+
+  <div class="card" id="form">
+    <div class="sec"><span class="num">01</span><span class="st" id="s1"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="g1"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="g1n"></p>
+      <div id="tp"><input type="text" id="t-en" maxlength="120"></div>
+      <div class="row2" style="margin-top:8px" id="to">
+        <input type="text" id="t-zh" maxlength="120">
+        <input type="text" id="t-ko" maxlength="120">
+      </div></div>
+    <div class="f"><label><span id="g2"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="g2n"></p>
+      <input type="text" id="d-en" maxlength="160">
+      <div class="cnt"><span id="d-cnt">0</span>/160</div></div>
+    <div class="f"><label><span id="g3"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="g3n"></p>
+      <textarea id="full-en" maxlength="2000"></textarea>
+      <div class="cnt"><span id="full-cnt">0</span>/2000</div></div>
+
+    <div class="sec"><span class="num">02</span><span class="st" id="s2"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="g4"></span> <span class="req">*</span></label>
+      <div class="chips" id="stage"></div></div>
+    <div class="f"><label><span id="g5"></span> <span class="req">*</span><span class="multi" id="g5m"></span></label>
+      <div class="chips" id="genres"></div></div>
+    <div class="f"><label><span id="g6"></span> <span class="req">*</span><span class="multi" id="g6m"></span></label>
+      <div class="chips" id="platforms"></div></div>
+    <div class="f"><label><span id="g7"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="g7n"></p>
+      <div class="chips" id="market"></div></div>
+    <div class="f"><label><span id="g8"></span> <span class="req">*</span><span class="multi" id="g8m"></span></label>
+      <div class="chips" id="needs"></div></div>
+
+    <div class="sec"><span class="num">03</span><span class="st" id="s3"></span><span class="rule"></span></div>
+    <div class="f"><label id="g9"></label>
+      <input type="url" id="steam" placeholder="https://store.steampowered.com/app/..."></div>
+    <div class="f"><label id="g10"></label>
+      <p class="sub cjk-swap" id="g10n"></p>
+      <input type="url" id="video" placeholder="https://youtube.com/watch?v=..."></div>
+
+    <div class="sec"><span class="num">04</span><span class="st" id="s4"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="g11"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="g11n"></p>
+      <div class="coverup" id="coverbox">+</div>
+      <input type="file" id="coverfile" accept="image/jpeg,image/png,image/webp" hidden></div>
+    <div class="f"><label id="g12"></label>
+      <p class="sub cjk-swap" id="g12n"></p>
+      <div class="shots" id="shots"></div>
+      <input type="file" id="shotfile" accept="image/jpeg,image/png,image/webp" hidden></div>
+
+    <button class="btn" id="submit"></button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <a class="back" href="/account.html" id="back"></a>
+</div>
+
+<script>
+const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
+const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"};
+const GENRE_KO = {"Action":"액션","Adventure":"어드벤처","RPG":"RPG","Strategy":"전략","Simulation":"시뮬레이션","Puzzle":"퍼즐","Platformer":"플랫포머","Shooter":"슈터","Survival":"생존","Horror":"호러","Roguelite":"로그라이트","Metroidvania":"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드","Narrative":"내러티브","Comedy":"코미디","Co-op":"협동","Multiplayer":"멀티플레이어"};
+const GENRE_L = { en:Object.fromEntries(GENRES.map(g=>[g,g])), zh:GENRE_ZH, ko:GENRE_KO };
+const STAGES = ["In Development","Demo","Playtest","Early Access","Released"];
+const STAGE_L = { en:Object.fromEntries(STAGES.map(x=>[x,x])),
+  zh:{"In Development":"开发中","Demo":"Demo","Playtest":"Playtest","Early Access":"抢先体验","Released":"已发售"},
+  ko:{"In Development":"개발 중","Demo":"데모","Playtest":"플레이테스트","Early Access":"얼리 액세스","Released":"출시됨"} };
+const PLATFORMS = ["PC","Console","Mobile"];
+const PLATFORM_L = { en:{PC:"PC",Console:"Console",Mobile:"Mobile"}, zh:{PC:"PC",Console:"主机",Mobile:"移动端"}, ko:{PC:"PC",Console:"콘솔",Mobile:"모바일"} };
+const MARKETS = ["Global","China","Overseas"];
+const MARKET_L = { en:{Global:"Global",China:"China",Overseas:"Overseas"}, zh:{Global:"全球",China:"中国",Overseas:"海外"}, ko:{Global:"글로벌",China:"중국",Overseas:"해외"} };
+const NEEDS = ["Seeking Publisher","Seeking Publisher Partner","Seeking Investment"];
+const NEED_L = { en:Object.fromEntries(NEEDS.map(x=>[x,x])),
+  zh:{"Seeking Publisher":"寻找发行","Seeking Publisher Partner":"寻找联合发行","Seeking Investment":"寻找投资"},
+  ko:{"Seeking Publisher":"퍼블리셔 찾기","Seeking Publisher Partner":"공동 퍼블리셔 찾기","Seeking Investment":"투자 유치"} };
+const MAX_SHOTS = 5;
+
+const I18N = {
+  en:{
+    title:"Submit Your Game",
+    lead:"Tell us about your game. We review every submission before it appears in the library — usually within 1–2 business days.",
+    locked:'Please <a href="/login.html">sign in</a> with a developer account first.',
+    lockedRole:'Game submission is for developer accounts. You are signed in as a partner.',
+    s1:"Basic Info", s2:"Game Details", s3:"Links", s4:"Media",
+    g1:"Game Title", g1n:"English title is required. Chinese / Korean are optional — leave blank and our team will localize them for you.",
+    ph_t_en:"Game title (English)", ph_t_zh:"Chinese title (optional)", ph_t_ko:"Korean title (optional)",
+    g2:"One-line Pitch", g2n:"Shown on your game card in the library.",
+    ph_d:"e.g. A hand-drawn narrative puzzle game about restoring forgotten bronze-age myths.",
+    g3:"Full Description", g3n:"Gameplay, story, current progress, team size — anything a publisher should know.",
+    ph_full:"What is the game? What makes it special? Where are you in development?",
+    g4:"Development Stage", g5:"Genres", g6:"Platforms", g7:"Target Market",
+    g7n:"Where do you want this game to go?",
+    g8:"What are you looking for?",
+    g9:"Steam Page", g10:"Trailer / Gameplay Video", g10n:"YouTube, Bilibili or a direct link.",
+    g11:"Cover Image", g11n:"Landscape 16:9 recommended (e.g. your Steam capsule). JPG/PNG/WebP, up to 5MB.",
+    g12:"Screenshots", g12n:"Up to 5 images. JPG/PNG/WebP, up to 5MB each.",
+    submit:"Submit for Review", submitting:"Submitting…",
+    ok:"Submitted! We'll review it and get back to you soon.",
+    back:"← Back to My Account", multi:"(multi-select)",
+    errors:{ title_required:"Please enter the English title.", pitch_required:"Please write the one-line pitch.",
+      desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
+      genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
+      market_required:"Please pick a target market.", needs_required:"Please pick what you are looking for.",
+      cover_required:"Please upload a cover image.", url_invalid:"Please check the URL format (http/https).",
+      too_large:"Image is too large (max 5MB).", type_not_allowed:"Only JPG/PNG/WebP images are allowed.",
+      not_logged_in:"Please sign in first.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
+  },
+  zh:{
+    title:"提交你的游戏",
+    lead:"介绍一下你的游戏。所有提交都会经过审核后上架,通常 1–2 个工作日内处理。",
+    locked:'请先用开发者账号<a href="/login.html">登录</a>。',
+    lockedRole:"游戏提交仅面向开发者账号,你当前是合作方身份。",
+    s1:"基本信息", s2:"游戏属性", s3:"相关链接", s4:"素材",
+    g1:"游戏名称", g1n:"中文名必填;英文名、韩文名选填,留空我们帮你本地化。",
+    ph_t_en:"英文名(选填)", ph_t_zh:"游戏名称(中文)", ph_t_ko:"韩文名(选填)",
+    g2:"一句话简介", g2n:"显示在项目库的游戏卡片上。",
+    ph_d:"例:一款手绘风叙事解谜游戏,修复被遗忘的青铜时代神话。",
+    g3:"完整介绍", g3n:"玩法、故事、当前进度、团队规模——任何发行商需要知道的信息。",
+    ph_full:"这是一款什么游戏?特别在哪?开发到什么阶段了?",
+    g4:"开发阶段", g5:"品类", g6:"平台", g7:"目标市场",
+    g7n:"你希望这款游戏去哪个市场?",
+    g8:"你在寻找什么?",
+    g9:"Steam 页面", g10:"预告片 / 实机视频", g10n:"YouTube、B 站或直链均可。",
+    g11:"封面图", g11n:"建议 16:9 横图(比如 Steam 胶囊图)。JPG/PNG/WebP,最大 5MB。",
+    g12:"游戏截图", g12n:"最多 5 张,每张最大 5MB。",
+    submit:"提交审核", submitting:"提交中…",
+    ok:"已提交!我们会尽快审核并回复你。",
+    back:"← 返回账号中心", multi:"(可多选)",
+    errors:{ title_required:"请填写中文名称。", pitch_required:"请填写一句话简介。",
+      desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
+      genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
+      market_required:"请选择目标市场。", needs_required:"请选择你在寻找什么。",
+      cover_required:"请上传封面图。", url_invalid:"链接格式不对(需以 http/https 开头)。",
+      too_large:"图片太大(最大 5MB)。", type_not_allowed:"仅支持 JPG/PNG/WebP 图片。",
+      not_logged_in:"请先登录。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
+  },
+  ko:{
+    title:"게임 제출",
+    lead:"게임을 소개해 주세요. 모든 제출은 심사 후 등록되며 보통 1–2 영업일 내 처리됩니다.",
+    locked:'먼저 개발자 계정으로 <a href="/login.html">로그인</a>하세요.',
+    lockedRole:"게임 제출은 개발자 계정 전용입니다. 현재 파트너 계정으로 로그인되어 있습니다.",
+    s1:"기본 정보", s2:"게임 정보", s3:"링크", s4:"미디어",
+    g1:"게임 이름", g1n:"한글명은 필수입니다. 영문·중문명은 선택이며 비워두면 현지화해 드립니다.",
+    ph_t_en:"영문명(선택)", ph_t_zh:"중문명(선택)", ph_t_ko:"게임 이름(한글)",
+    g2:"한 줄 소개", g2n:"라이브러리의 게임 카드에 표시됩니다.",
+    ph_d:"예: 잊혀진 청동기 신화를 복원하는 손그림 내러티브 퍼즐 게임.",
+    g3:"상세 소개", g3n:"게임플레이, 스토리, 현재 진행 상황, 팀 규모 — 퍼블리셔가 알아야 할 모든 것.",
+    ph_full:"어떤 게임인가요? 무엇이 특별한가요? 개발은 어느 단계인가요?",
+    g4:"개발 단계", g5:"장르", g6:"플랫폼", g7:"목표 시장",
+    g7n:"이 게임을 어느 시장에 내고 싶나요?",
+    g8:"무엇을 찾고 있나요?",
+    g9:"Steam 페이지", g10:"트레일러 / 게임플레이 영상", g10n:"YouTube, Bilibili 또는 직접 링크.",
+    g11:"커버 이미지", g11n:"16:9 가로 이미지 권장(Steam 캡슐 등). JPG/PNG/WebP, 최대 5MB.",
+    g12:"스크린샷", g12n:"최대 5장, 각 5MB 이하.",
+    submit:"심사 제출", submitting:"제출 중…",
+    ok:"제출되었습니다! 곧 심사 후 연락드리겠습니다.",
+    back:"← 내 계정으로", multi:"(복수 선택 가능)",
+    errors:{ title_required:"한글 이름을 입력하세요.", pitch_required:"한 줄 소개를 입력하세요.",
+      desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
+      genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
+      market_required:"목표 시장을 선택하세요.", needs_required:"찾고 있는 것을 선택하세요.",
+      cover_required:"커버 이미지를 업로드하세요.", url_invalid:"URL 형식을 확인하세요(http/https).",
+      too_large:"이미지가 너무 큽니다(최대 5MB).", type_not_allowed:"JPG/PNG/WebP 이미지만 지원합니다.",
+      not_logged_in:"먼저 로그인해 주세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
+  }
+};
+
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+let selStage=[], selGenres=[], selPlatforms=[], selMarket=[], selNeeds=[];
+let coverUrl="", shotUrls=[];
+
+function T(){ return I18N[lang]; }
+function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||T().errors.server; }
+function okmsg(){ const m=$("#msg"); m.className="msg ok"; m.textContent=T().ok; }
+function clearMsg(){ const m=$("#msg"); m.className="msg"; m.textContent=""; }
+
+async function api(path, opts){
+  const res = await fetch(path, opts);
+  let data=null; try{ data=await res.json(); }catch{}
+  if(!data) throw "network";
+  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  return data;
+}
+
+function chips(el, list, labels, selected, single){
+  el.innerHTML="";
+  list.forEach(v=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="chip"+(selected.includes(v)?" on":""); b.textContent=labels[lang][v]||v;
+    b.onclick=()=>{ const i=selected.indexOf(v);
+      if(i>=0) selected.splice(i,1); else { if(single) selected.length=0; selected.push(v); }
+      chips(el,list,labels,selected,single); };
+    el.appendChild(b);
+  });
+}
+
+/* 封面上传 */
+$("#coverbox").onclick = ()=>$("#coverfile").click();
+$("#coverfile").onchange = async ()=>{
+  const f=$("#coverfile").files[0]; if(!f) return; clearMsg();
+  if(f.size>5*1024*1024){ err("too_large"); $("#coverfile").value=""; return; }
+  try{
+    const fd=new FormData(); fd.append("file",f); fd.append("kind","cover");
+    const d=await api("/api/games-submit/upload",{method:"POST",body:fd});
+    coverUrl=d.url; $("#coverbox").innerHTML=`<img src="${d.url}">`;
+  }catch(e){ err(e); }
+  finally{ $("#coverfile").value=""; }
+};
+
+/* 截图九宫 */
+function renderShots(){
+  const el=$("#shots"); el.innerHTML="";
+  shotUrls.forEach((u,i)=>{
+    const d=document.createElement("div"); d.className="shot has";
+    d.innerHTML=`<img src="${u}"><button class="rm" type="button">✕</button>`;
+    d.querySelector(".rm").onclick=(e)=>{ e.stopPropagation(); shotUrls.splice(i,1); renderShots(); };
+    el.appendChild(d);
+  });
+  if(shotUrls.length<MAX_SHOTS){
+    const d=document.createElement("div"); d.className="shot"; d.textContent="+";
+    d.onclick=()=>$("#shotfile").click();
+    el.appendChild(d);
+  }
+}
+$("#shotfile").onchange = async ()=>{
+  const f=$("#shotfile").files[0]; if(!f) return; clearMsg();
+  if(f.size>5*1024*1024){ err("too_large"); $("#shotfile").value=""; return; }
+  try{
+    const fd=new FormData(); fd.append("file",f); fd.append("kind","shot");
+    const d=await api("/api/games-submit/upload",{method:"POST",body:fd});
+    shotUrls.push(d.url); renderShots();
+  }catch(e){ err(e); }
+  finally{ $("#shotfile").value=""; }
+};
+
+function renderText(){
+  document.body.setAttribute("lang",lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  const t=T();
+  $("#title").textContent=t.title; $("#lead").textContent=t.lead; $("#back").textContent=t.back;
+  $("#s1").textContent=t.s1; $("#s2").textContent=t.s2; $("#s3").textContent=t.s3; $("#s4").textContent=t.s4;
+  $("#g1").textContent=t.g1; $("#g1n").textContent=t.g1n;
+  $("#t-en").placeholder=t.ph_t_en; $("#t-zh").placeholder=t.ph_t_zh; $("#t-ko").placeholder=t.ph_t_ko;
+  const ord = lang==="zh" ? ["zh","en","ko"] : lang==="ko" ? ["ko","en","zh"] : ["en","zh","ko"];
+  $("#tp").appendChild(document.getElementById("t-"+ord[0]));
+  $("#to").appendChild(document.getElementById("t-"+ord[1]));
+  $("#to").appendChild(document.getElementById("t-"+ord[2]));
+  $("#g2").textContent=t.g2; $("#g2n").textContent=t.g2n; $("#d-en").placeholder=t.ph_d;
+  $("#g3").textContent=t.g3; $("#g3n").textContent=t.g3n; $("#full-en").placeholder=t.ph_full;
+  $("#g4").textContent=t.g4; $("#g5").textContent=t.g5; $("#g5m").textContent=t.multi;
+  $("#g6").textContent=t.g6; $("#g6m").textContent=t.multi;
+  $("#g7").textContent=t.g7; $("#g7n").textContent=t.g7n;
+  $("#g8").textContent=t.g8; $("#g8m").textContent=t.multi;
+  $("#g9").textContent=t.g9; $("#g10").textContent=t.g10; $("#g10n").textContent=t.g10n;
+  $("#g11").textContent=t.g11; $("#g11n").textContent=t.g11n;
+  $("#g12").textContent=t.g12; $("#g12n").textContent=t.g12n;
+  $("#submit").textContent=t.submit;
+  chips($("#stage"), STAGES, STAGE_L, selStage, true);
+  chips($("#genres"), GENRES, GENRE_L, selGenres);
+  chips($("#platforms"), PLATFORMS, PLATFORM_L, selPlatforms);
+  chips($("#market"), MARKETS, MARKET_L, selMarket, true);
+  chips($("#needs"), NEEDS, NEED_L, selNeeds);
+  renderShots();
+}
+
+const isUrl=(v)=>v===""||/^https?:\/\/\S+$/i.test(v);
+
+$("#submit").onclick = async ()=>{
+  const t=T(); clearMsg();
+  const primary = lang==="zh" ? "#t-zh" : lang==="ko" ? "#t-ko" : "#t-en";
+  if(!$(primary).value.trim()) return err("title_required");
+  if(!$("#d-en").value.trim()) return err("pitch_required");
+  if(!$("#full-en").value.trim()) return err("desc_required");
+  if(!selStage.length) return err("stage_required");
+  if(!selGenres.length) return err("genres_required");
+  if(!selPlatforms.length) return err("platforms_required");
+  if(!selMarket.length) return err("market_required");
+  if(!selNeeds.length) return err("needs_required");
+  if(!isUrl($("#steam").value.trim())||!isUrl($("#video").value.trim())) return err("url_invalid");
+  if(!coverUrl) return err("cover_required");
+  $("#submit").disabled=true; $("#submit").textContent=t.submitting;
+  try{
+    await api("/api/games-submit/create",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        t_en:$("#t-en").value, t_zh:$("#t-zh").value, t_ko:$("#t-ko").value,
+        d_en:$("#d-en").value, full_en:$("#full-en").value,
+        stage:selStage[0], genres:selGenres, platforms:selPlatforms,
+        region:selMarket[0], needs:selNeeds,
+        steam_url:$("#steam").value.trim(), video:$("#video").value.trim(),
+        cover:coverUrl, screenshots:shotUrls
+      })});
+    okmsg();
+    window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
+  }catch(e){ err(e); }
+  finally{ $("#submit").disabled=false; $("#submit").textContent=t.submit; }
+};
+
+$("#d-en").addEventListener("input",()=>{ $("#d-cnt").textContent=$("#d-en").value.length; });
+$("#full-en").addEventListener("input",()=>{ $("#full-cnt").textContent=$("#full-en").value.length; });
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
+});
+
+(async ()=>{
+  renderText();
+  try{
+    const r=await fetch("/api/auth/me"); const d=await r.json();
+    if(!d.loggedIn || d.needsRole){ $("#locked-text").innerHTML=T().locked; $("#locked").style.display="block"; return; }
+    if(d.role!=="developer"){ $("#locked-text").textContent=T().lockedRole; $("#locked").style.display="block"; return; }
+    $("#form").style.display="block";
+  }catch(e){
+    $("#locked-text").innerHTML=T().locked; $("#locked").style.display="block";
+  }
+})();
+</script>

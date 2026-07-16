@@ -48,7 +48,13 @@
   .sec .st{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink); }
   .sec .rule{ flex:1; height:1px; background:var(--line-soft); }
 
-  .f{ margin-bottom:22px; }
+  /* 题号:每个字段自动编号,漏填一眼可见 */
+  .card{ counter-reset:q; }
+  .f{ margin-bottom:28px; }
+  .f > label{ color:var(--ink); display:flex; align-items:baseline; gap:9px; font-size:14px; font-weight:800; margin:0 0 5px; }
+  .f > label::before{ counter-increment:q; content:counter(q,decimal-leading-zero);
+    font-family:var(--mono); font-size:10px; font-weight:700; color:var(--accent);
+    border:1px solid var(--accent); border-radius:4px; padding:2px 6px; flex:none; }
   label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin:0 0 4px; }
   label .req{ color:var(--accent); }
   label .multi{ font-family:var(--mono); font-size:10px; font-weight:400; color:var(--ink-faint); letter-spacing:.05em; margin-left:6px; }
