@@ -106,7 +106,7 @@ async function handleMe(env, s) {
   } else {
     profile = await env.DB.prepare(
       `SELECT name_zh, name_en, name_ko, logo, kinds, region, intro, genres, markets,
-              steam_url, website, contact_email, proof_type, proof_image, verified_email
+              steam_url, website, contact_email, proof_type, proof_image, verified_email, review_note
        FROM partner_profiles WHERE account_id = ?`
     ).bind(s.aid).first();
     if (profile) {
