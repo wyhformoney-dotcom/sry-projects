@@ -131,7 +131,7 @@
 </nav>
 
 <div class="wrap">
-  <div class="kicker">ACCOUNT // PROFILE</div>
+  <div class="kicker" id="kicker">ACCOUNT // PROFILE</div>
   <h1 id="title"></h1>
   <p class="lead cjk-swap" id="lead"></p>
   <div class="statusbar" id="statusbar"></div>
@@ -279,7 +279,7 @@ function buildRegionNames(){
 
 const I18N = {
   en:{
-    titleDev:"Studio Info", titlePar:"Partner Profile",
+    kicker:"ACCOUNT // PROFILE", titleDev:"Studio Info", titlePar:"Partner Profile",
     leadDev:"Your studio info. Edit anytime — changes take effect when you save.", leadPar:"Complete your profile so we can verify and activate your account. Verification materials are only visible to our review team.",
     status:(s)=>({pending:"Status: <b>PENDING REVIEW</b>",verified:"Status: <b>VERIFIED</b>",rejected:"Status: <b>REJECTED</b> — please update and resubmit",suspended:"Status: <b>SUSPENDED</b>"}[s]||""),
     locked:'Please <a href="/login.html">sign in</a> first.',
@@ -318,7 +318,7 @@ const I18N = {
       not_logged_in:"Please sign in first.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
   },
   zh:{
-    titleDev:"工作室信息", titlePar:"合作方资料",
+    kicker:"账号 // 资料", titleDev:"工作室信息", titlePar:"合作方资料",
     leadDev:"这是你的工作室信息,随时可以修改,保存即生效。", leadPar:"完善资料后我们会尽快审核并激活账号。认证材料仅审核团队可见。",
     status:(s)=>({pending:"状态:<b>待审核</b>",verified:"状态:<b>已认证</b>",rejected:"状态:<b>未通过</b> — 请修改后重新提交",suspended:"状态:<b>已停用</b>"}[s]||""),
     locked:'请先<a href="/login.html">登录</a>。',
@@ -357,7 +357,7 @@ const I18N = {
       not_logged_in:"请先登录。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
   },
   ko:{
-    titleDev:"스튜디오 정보", titlePar:"파트너 프로필",
+    kicker:"계정 // 프로필", titleDev:"스튜디오 정보", titlePar:"파트너 프로필",
     leadDev:"스튜디오 정보입니다. 언제든지 수정할 수 있으며 저장 즉시 반영됩니다.", leadPar:"프로필을 작성하면 심사 후 계정이 활성화됩니다. 인증 자료는 심사팀에게만 공개됩니다.",
     status:(s)=>({pending:"상태: <b>심사 대기</b>",verified:"상태: <b>인증 완료</b>",rejected:"상태: <b>반려됨</b> — 수정 후 다시 제출해 주세요",suspended:"상태: <b>정지됨</b>"}[s]||""),
     locked:'먼저 <a href="/login.html">로그인</a>해 주세요.',
@@ -522,7 +522,7 @@ function renderText(){
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   buildRegionNames();
   const t=T();
-  $("#title").textContent = role==="partner" ? t.titlePar : t.titleDev;
+  $("#kicker").textContent = t.kicker; $("#title").textContent = role==="partner" ? t.titlePar : t.titleDev;
   $("#lead").textContent = role==="partner" ? t.leadPar : t.leadDev;
   $("#back").textContent = t.back;
   $("#locked-text").innerHTML = t.locked;

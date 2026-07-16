@@ -93,7 +93,7 @@
 </nav>
 
 <div class="wrap">
-  <div class="kicker">ACCOUNT // HOME</div>
+  <div class="kicker" id="kicker">ACCOUNT // HOME</div>
   <h1 id="title"></h1>
 
   <div class="locked" id="locked"><p class="cjk-swap" id="locked-text"></p></div>
@@ -145,7 +145,7 @@
 <script>
 const I18N = {
   en:{
-    title:"My Account",
+    kicker:"ACCOUNT // HOME", title:"My Account",
     locked:'You are not signed in. <a href="/login.html">Sign in</a> first.',
     roleDev:"DEVELOPER", rolePar:"PARTNER",
     st:{ pending:"PENDING REVIEW", verified:"VERIFIED", rejected:"REJECTED", suspended:"SUSPENDED", active:"ACTIVE" },
@@ -162,7 +162,7 @@ const I18N = {
     mLogout:"Sign Out"
   },
   zh:{
-    title:"账号中心",
+    kicker:"账号 // 主页", title:"账号中心",
     locked:'尚未登录,请先<a href="/login.html">登录</a>。',
     roleDev:"开发者", rolePar:"合作方",
     st:{ pending:"待审核", verified:"已认证", rejected:"未通过", suspended:"已停用", active:"已激活" },
@@ -179,7 +179,7 @@ const I18N = {
     mLogout:"退出登录"
   },
   ko:{
-    title:"내 계정",
+    kicker:"계정 // 홈", title:"내 계정",
     locked:'로그인되어 있지 않습니다. 먼저 <a href="/login.html">로그인</a>하세요.',
     roleDev:"개발자", rolePar:"파트너",
     st:{ pending:"심사 대기", verified:"인증 완료", rejected:"반려됨", suspended:"정지됨", active:"활성화됨" },
@@ -208,7 +208,7 @@ function render(){
   document.body.setAttribute("lang",lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   const t=T();
-  $("#title").textContent=t.title;
+  $("#kicker").textContent=t.kicker; $("#title").textContent=t.title;
   $("#locked-text").innerHTML=t.locked;
   if(!role) return;
 

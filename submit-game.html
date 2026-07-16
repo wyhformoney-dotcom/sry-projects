@@ -107,7 +107,7 @@
 </nav>
 
 <div class="wrap">
-  <div class="kicker">DEVELOPER // SUBMIT</div>
+  <div class="kicker" id="kicker">DEVELOPER // SUBMIT GAME</div>
   <h1 id="title"></h1>
   <p class="lead cjk-swap" id="lead"></p>
 
@@ -189,7 +189,7 @@ const MAX_SHOTS = 5;
 
 const I18N = {
   en:{
-    title:"Submit Your Game",
+    kicker:"DEVELOPER // SUBMIT GAME", title:"Submit Your Game",
     lead:"Tell us about your game. We review every submission before it appears in the library — usually within 1–2 business days.",
     locked:'Please <a href="/login.html">sign in</a> with a developer account first.',
     lockedRole:'Game submission is for developer accounts. You are signed in as a partner.',
@@ -218,7 +218,7 @@ const I18N = {
       not_logged_in:"Please sign in first.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
   },
   zh:{
-    title:"提交你的游戏",
+    kicker:"开发者 // 提交游戏", title:"提交你的游戏",
     lead:"介绍一下你的游戏。所有提交都会经过审核后上架,通常 1–2 个工作日内处理。",
     locked:'请先用开发者账号<a href="/login.html">登录</a>。',
     lockedRole:"游戏提交仅面向开发者账号,你当前是合作方身份。",
@@ -247,7 +247,7 @@ const I18N = {
       not_logged_in:"请先登录。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
   },
   ko:{
-    title:"게임 제출",
+    kicker:"개발자 // 게임 제출", title:"게임 제출",
     lead:"게임을 소개해 주세요. 모든 제출은 심사 후 등록되며 보통 1–2 영업일 내 처리됩니다.",
     locked:'먼저 개발자 계정으로 <a href="/login.html">로그인</a>하세요.',
     lockedRole:"게임 제출은 개발자 계정 전용입니다. 현재 파트너 계정으로 로그인되어 있습니다.",
@@ -350,7 +350,7 @@ function renderText(){
   document.body.setAttribute("lang",lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   const t=T();
-  $("#title").textContent=t.title; $("#lead").textContent=t.lead; $("#back").textContent=t.back;
+  $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead; $("#back").textContent=t.back;
   $("#s1").textContent=t.s1; $("#s2").textContent=t.s2; $("#s3").textContent=t.s3; $("#s4").textContent=t.s4;
   $("#g1").textContent=t.g1; $("#g1n").textContent=t.g1n;
   $("#t-en").placeholder=t.ph_t_en; $("#t-zh").placeholder=t.ph_t_zh; $("#t-ko").placeholder=t.ph_t_ko;

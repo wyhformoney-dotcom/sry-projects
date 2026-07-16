@@ -85,7 +85,7 @@
 </nav>
 
 <div class="wrap">
-  <div class="kicker">ACCOUNT // MAGIC CODE</div>
+  <div class="kicker" id="kicker">ACCOUNT // SIGN IN</div>
   <h1 id="title">Sign in</h1>
   <p class="lead cjk-swap" id="lead"></p>
 
@@ -144,7 +144,7 @@
 <script>
 const I18N = {
   en: {
-    title:"Sign in", lead:"Enter your email and we'll send you a 6-digit code. No password needed.",
+    kicker:"ACCOUNT // SIGN IN", title:"Sign in", lead:"Enter your email and we'll send you a 6-digit code. No password needed.",
     lEmail:"Email", send:"Send Code", sending:"Sending…",
     lCode:"Verification Code", verify:"Verify & Sign In", verifying:"Verifying…",
     resend:"Resend Code", resendIn:(s)=>`Resend in ${s}s`,
@@ -161,7 +161,7 @@ const I18N = {
       invalid_input:"Please enter the 6-digit code.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
   },
   zh: {
-    title:"登录", lead:"输入邮箱,我们会发送 6 位验证码,无需密码。",
+    kicker:"账号 // 验证码登录", title:"登录", lead:"输入邮箱,我们会发送 6 位验证码,无需密码。",
     lEmail:"邮箱", send:"发送验证码", sending:"发送中…",
     lCode:"验证码", verify:"验证并登录", verifying:"验证中…",
     resend:"重新发送", resendIn:(s)=>`${s} 秒后可重发`,
@@ -178,7 +178,7 @@ const I18N = {
       invalid_input:"请输入 6 位数字验证码。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
   },
   ko: {
-    title:"로그인", lead:"이메일을 입력하면 6자리 인증 코드를 보내드립니다. 비밀번호가 필요 없습니다.",
+    kicker:"계정 // 코드 로그인", title:"로그인", lead:"이메일을 입력하면 6자리 인증 코드를 보내드립니다. 비밀번호가 필요 없습니다.",
     lEmail:"이메일", send:"인증 코드 보내기", sending:"전송 중…",
     lCode:"인증 코드", verify:"확인 후 로그인", verifying:"확인 중…",
     resend:"코드 재전송", resendIn:(s)=>`${s}초 후 재전송 가능`,
@@ -209,7 +209,7 @@ function renderText(){
   document.body.setAttribute("lang", lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on", b.dataset.l===lang));
   const t = T();
-  $("#title").textContent = t.title; $("#lead").textContent = t.lead;
+  $("#kicker").textContent = t.kicker; $("#title").textContent = t.title; $("#lead").textContent = t.lead;
   $("#l-email").textContent = t.lEmail; $("#b-send").textContent = t.send; $("#h1").textContent = t.h1;
   $("#l-code").textContent = t.lCode; $("#b-verify").textContent = t.verify;
   $("#b-resend").textContent = cooldown>0 ? t.resendIn(cooldown) : t.resend;
@@ -274,7 +274,7 @@ $("#b-verify").onclick = async ()=>{
   try{
     const d = await api("verify",{ method:"POST", body:JSON.stringify({email, code}) });
     if(d.needsRole){ isNew = true; show("s-role"); }
-    else{ isNew = false; hasProfile = !!d.hasProfile; finishScreen(d.role); }
+    else{ location.replace("/account.html"); return; }
   }catch(e){ err($("#m2"), e); }
   finally{ $("#b-verify").disabled=false; $("#b-verify").textContent=t.verify; }
 };
@@ -326,7 +326,7 @@ $("#code").addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("#b-verify").
   renderText();
   try{
     const d = await api("me",{method:"GET"});
-    if(d.loggedIn && !d.needsRole){ email = d.email; isNew=false; hasProfile = !!d.hasProfile; finishScreen(d.role); }
+    if(d.loggedIn && !d.needsRole){ location.replace("/account.html"); return; }
     else if(d.loggedIn && d.needsRole){ email = d.email; show("s-role"); }
   }catch{}
 })();
