@@ -51,7 +51,7 @@ async function handleList(env, request) {
   }
   const { results } = await env.DB.prepare(
     `SELECT a.id, a.email AS login_email, a.status, a.created_at,
-            p.name_zh, p.name_en, p.name_ko, p.logo, p.kinds, p.region, p.intro,
+            p.name_zh, p.name_en, p.name_ko, p.logo, p.kinds, p.region, p.intro, p.intro_en, p.intro_zh, p.intro_ko,
             p.genres, p.markets, p.steam_url, p.website, p.contact_email,
             p.proof_type, p.proof_image, p.verified_email, p.review_note, p.updated_at
      FROM accounts a
@@ -163,6 +163,111 @@ async function handleReviewGame(env, request) {
   return json({ ok: true });
 }
 
+/* ---------- 从飞书同步游戏库 ---------- */
+const F_GENRE={"动作":"Action","冒险":"Adventure","角色扮演":"RPG","策略":"Strategy","模拟":"Simulation","解谜":"Puzzle","平台":"Platformer","射击":"Shooter","生存":"Survival","恐怖":"Horror","Roguelite":"Roguelite","银河恶魔城":"Metroidvania","类魂":"Souls-like","视觉小说":"Visual Novel","卡牌":"Card Game","开放世界":"Open World","叙事":"Narrative","喜剧":"Comedy","合作":"Co-op","多人":"Multiplayer"};
+const F_NEED={"寻找发行":"Seeking Publisher","寻找联合发行":"Seeking Publisher Partner","寻找投资":"Seeking Investment"};
+const F_PLATFORM={"PC":"PC","主机":"Console","移动端":"Mobile"};
+const F_REGION={"全球":"Global","中国":"China","海外":"Overseas"};
+const F_STAGE={"开发中":"In Development","Demo":"Demo","Playtest":"Playtest","EA":"Early Access","发布":"Released"};
+const F_VIEW="veww4ZRIvj";
+
+function fTxt(v){
+  if(v==null) return "";
+  if(typeof v==="string") return v;
+  if(typeof v==="number") return String(v);
+  if(Array.isArray(v)) return v.map(x=> typeof x==="string"? x : (x&&(x.text||x.name))||"").join("");
+  if(typeof v==="object") return v.text||v.name||v.link||v.value||"";
+  return String(v);
+}
+function fArr(v){
+  if(v==null) return [];
+  if(Array.isArray(v)) return v.map(x=> typeof x==="string"? x : (x&&(x.text||x.name))||"").filter(Boolean);
+  if(typeof v==="string") return v? [v] : [];
+  return [];
+}
+const fMp=(d)=>(x)=> d[x]||x;
+const fSlug=(t)=>{
+  const base=String(t||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,60);
+  return (base||"game")+"-"+crypto.randomUUID().slice(0,6);
+};
+
+async function handleImportFeishu(env) {
+  const {FEISHU_APP_ID,FEISHU_APP_SECRET,FEISHU_APP_TOKEN,FEISHU_TABLE_ID}=env;
+  if(!FEISHU_APP_ID||!FEISHU_APP_SECRET||!FEISHU_APP_TOKEN||!FEISHU_TABLE_ID) return bad("feishu_env_missing",500);
+
+  const tr=await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({app_id:FEISHU_APP_ID,app_secret:FEISHU_APP_SECRET})
+  });
+  const td=await tr.json();
+  if(!td.tenant_access_token) return bad("feishu_token_failed",500);
+  const token=td.tenant_access_token;
+
+  let items=[],pageToken="";
+  do{
+    let url=`https://open.feishu.cn/open-apis/bitable/v1/apps/${FEISHU_APP_TOKEN}/tables/${FEISHU_TABLE_ID}/records?page_size=100&view_id=${encodeURIComponent(F_VIEW)}`;
+    if(pageToken) url+=`&page_token=${encodeURIComponent(pageToken)}`;
+    const rr=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+    const rd=await rr.json();
+    if(rd.code!==0) return bad("feishu_records_failed",500);
+    items=items.concat((rd.data&&rd.data.items)||[]);
+    pageToken=(rd.data&&rd.data.has_more)? rd.data.page_token : "";
+  }while(pageToken);
+
+  let n=0;
+  for(let i=0;i<items.length;i++){
+    const f=items[i].fields||{}, rid=items[i].record_id;
+    const g=(k)=>fTxt(f[k]);
+    if(!g("游戏名_EN") && !g("游戏名_中文")) continue;
+    await env.DB.prepare(
+      `INSERT INTO games (feishu_id, slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko,
+                          full_en, full_zh, full_ko, studio_en, studio_zh, studio_ko,
+                          developer, stage, genres, needs, platforms, region,
+                          cover, screenshots, studio_logo, video, contact,
+                          visible, sort, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
+       ON CONFLICT(feishu_id) DO UPDATE SET
+         t_en=excluded.t_en, t_zh=excluded.t_zh, t_ko=excluded.t_ko,
+         d_en=excluded.d_en, d_zh=excluded.d_zh, d_ko=excluded.d_ko,
+         full_en=excluded.full_en, full_zh=excluded.full_zh, full_ko=excluded.full_ko,
+         studio_en=excluded.studio_en, studio_zh=excluded.studio_zh, studio_ko=excluded.studio_ko,
+         developer=excluded.developer, stage=excluded.stage, genres=excluded.genres,
+         needs=excluded.needs, platforms=excluded.platforms, region=excluded.region,
+         cover=excluded.cover, screenshots=excluded.screenshots, studio_logo=excluded.studio_logo,
+         video=excluded.video, contact=excluded.contact, visible=excluded.visible, sort=excluded.sort`
+    ).bind(
+      rid, fSlug(g("游戏名_EN")||g("游戏名_中文")),
+      g("游戏名_EN"), g("游戏名_中文"), g("游戏名_韩文"),
+      g("简介_EN"), g("简介_中文"), g("简介_韩文"),
+      g("完整简介_EN"), g("完整简介_中文"), g("完整简介_韩文"),
+      g("工作室简介_EN"), g("工作室简介_中文"), g("工作室简介_韩文"),
+      g("开发商"), F_STAGE[g("进展")]||g("进展")||"Demo",
+      JSON.stringify(fArr(f["类型"]).map(fMp(F_GENRE))),
+      JSON.stringify(fArr(f["需求"]).map(fMp(F_NEED))),
+      JSON.stringify(fArr(f["平台"]).map(fMp(F_PLATFORM))),
+      F_REGION[g("目标市场")]||g("目标市场"),
+      g("封面链接"),
+      JSON.stringify(g("截图链接").split(/\r?\n/).map(x=>x.trim()).filter(Boolean)),
+      g("工作室Logo"), g("预告片链接"), g("联系链接"),
+      g("是否上架")!=="否" ? 1 : 0,
+      i+1
+    ).run();
+    n++;
+  }
+  return json({ ok:true, imported:n, total:items.length });
+}
+
+async function handleIntroSave(env, request) {
+  const { id, intro_en, intro_zh, intro_ko } = await request.json().catch(() => ({}));
+  const aid = parseInt(id, 10);
+  if (!aid) return bad("invalid_id");
+  const T = (v) => String(v || "").trim().slice(0, 600);
+  await env.DB.prepare(
+    `UPDATE partner_profiles SET intro_en=?, intro_zh=?, intro_ko=?, updated_at=datetime('now') WHERE account_id=?`
+  ).bind(T(intro_en), T(intro_zh), T(intro_ko), aid).run();
+  return json({ ok: true });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -176,7 +281,9 @@ export async function onRequest(context) {
 
     if (method === "GET" && path === "partners") return await handleList(env, request);
     if (method === "POST" && path === "review") return await handleReview(env, request);
+    if (method === "POST" && path === "intro") return await handleIntroSave(env, request);
     if (method === "GET" && path === "games") return await handleGamesList(env, request);
+    if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
     return bad("not_found", 404);
   } catch (e) {
