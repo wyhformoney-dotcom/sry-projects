@@ -1,0 +1,629 @@
+<!-- SRY Game Hub — 资料填写页 v2(开发者/合作方) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Profile · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; letter-spacing:-.01em; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+
+  .wrap{ max-width:600px; margin:0 auto; padding:48px 20px 90px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:10px; }
+  h1{ font-size:28px; font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+  .lead{ color:var(--ink-dim); font-size:13.5px; line-height:1.6; margin-bottom:24px; }
+  .statusbar{ font-family:var(--mono); font-size:11px; letter-spacing:.08em; padding:8px 12px; border:1px solid var(--line);
+    border-radius:8px; margin-bottom:22px; color:var(--ink-dim); display:none; }
+  .statusbar b{ color:var(--accent); font-weight:700; }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px 24px 26px; display:none; }
+
+  /* 分区标题 */
+  .sec{ display:flex; align-items:center; gap:12px; margin:30px 0 20px; }
+  .sec .num{ font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-ink); background:var(--accent);
+    padding:3px 8px; border-radius:4px; letter-spacing:.06em; }
+  .sec .st{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink); }
+  .sec .rule{ flex:1; height:1px; background:var(--line-soft); }
+
+  .f{ margin-bottom:22px; }
+  label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin:0 0 4px; }
+  label .req{ color:var(--accent); }
+  label .multi{ font-family:var(--mono); font-size:10px; font-weight:400; color:var(--ink-faint); letter-spacing:.05em; margin-left:6px; }
+  .sub{ font-size:11.5px; color:var(--ink-faint); line-height:1.55; margin:0 0 9px; }
+  input[type=text], input[type=email], input[type=url], select, textarea{
+    width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:14px; padding:11px 13px; outline:none; transition:border .15s; font-family:inherit;
+  }
+  input::placeholder, textarea::placeholder{ color:var(--ink-faint); }
+  input:focus, select:focus, textarea:focus{ border-color:var(--accent); }
+  textarea{ min-height:86px; resize:vertical; line-height:1.6; }
+  select{ appearance:none; }
+  .cnt{ font-family:var(--mono); font-size:10px; color:var(--ink-faint); text-align:right; margin-top:4px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:520px){ .row2{ grid-template-columns:1fr; } }
+
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:var(--mono); font-size:11.5px; padding:7px 12px; border:1px solid var(--line); border-radius:20px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; transition:all .12s; }
+  .chip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+
+  /* 国家/地区可搜索下拉 */
+  .combo{ position:relative; }
+  .combo .list{ position:absolute; z-index:30; left:0; right:0; top:calc(100% + 4px); max-height:240px; overflow:auto;
+    background:var(--panel2); border:1px solid var(--line); border-radius:8px; display:none; }
+  .combo .list.open{ display:block; }
+  .combo .item{ padding:9px 13px; font-size:13.5px; cursor:pointer; display:flex; gap:9px; align-items:center; }
+  .combo .item:hover{ background:rgba(198,242,78,.09); }
+  .combo .item .flag{ font-size:16px; }
+
+  .up{ display:flex; align-items:center; gap:14px; }
+  .up .preview{ width:76px; height:76px; border:1px dashed var(--line); border-radius:10px; background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; color:var(--ink-faint); font-size:22px; }
+  .up .preview img{ width:100%; height:100%; object-fit:cover; }
+  .upbtn{ font-family:var(--mono); font-size:11px; letter-spacing:.06em; padding:8px 14px; border:1px solid var(--line);
+    border-radius:7px; background:transparent; color:var(--ink); cursor:pointer; }
+  .upbtn:hover{ border-color:var(--accent); color:var(--accent); }
+
+  /* 企业邮箱验证块 */
+  .vbox{ background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:16px 14px; }
+  .vrow{ display:flex; gap:8px; margin-top:8px; }
+  .vrow input{ flex:1; }
+  .vbtn{ font-family:var(--mono); font-size:11px; letter-spacing:.05em; padding:0 16px; border:1px solid var(--line);
+    border-radius:8px; background:transparent; color:var(--ink); cursor:pointer; white-space:nowrap; }
+  .vbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .vbtn:disabled{ opacity:.45; cursor:default; }
+  .vbadge{ display:none; align-items:center; gap:8px; font-family:var(--mono); font-size:12px; color:var(--accent);
+    border:1px solid var(--accent); border-radius:8px; padding:10px 12px; margin-top:10px; }
+  .vbadge.on{ display:flex; }
+
+  .btn{ width:100%; margin-top:8px; padding:14px 0; border:none; border-radius:8px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px;
+    letter-spacing:.08em; text-transform:uppercase; }
+  .btn:disabled{ opacity:.45; cursor:default; }
+  .msg{ font-size:12.5px; margin-top:12px; line-height:1.5; display:none; }
+  .msg.err{ display:block; color:var(--danger); }
+  .msg.ok{ display:block; color:var(--accent); }
+  .smsg{ font-size:11.5px; margin-top:8px; display:none; }
+  .smsg.err{ display:block; color:var(--danger); }
+  .smsg.ok{ display:block; color:var(--accent); }
+  .back{ display:inline-block; margin-top:22px; font-family:var(--mono); font-size:11.5px; letter-spacing:.08em; color:var(--ink-dim); }
+  .back:hover{ color:var(--accent); }
+  .locked{ text-align:center; padding:34px 10px; display:none; }
+  .locked .big{ font-size:34px; margin-bottom:12px; }
+  .locked p{ color:var(--ink-dim); font-size:13.5px; line-height:1.7; }
+  .locked a{ color:var(--accent); }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="kicker">ACCOUNT // PROFILE</div>
+  <h1 id="title"></h1>
+  <p class="lead cjk-swap" id="lead"></p>
+  <div class="statusbar" id="statusbar"></div>
+
+  <div class="locked" id="locked">
+    <div class="big">✳</div>
+    <p class="cjk-swap" id="locked-text"></p>
+  </div>
+
+  <!-- ================= 开发者表单 ================= -->
+  <div class="card" id="f-dev" style="padding-top:24px">
+    <div class="f"><label><span id="d1"></span> <span class="req">*</span></label>
+      <input type="text" id="dev-studio" maxlength="120"></div>
+    <div class="f"><label><span id="d2"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="d2n"></p>
+      <input type="email" id="dev-email"></div>
+    <div class="f"><label id="d5"></label>
+      <p class="sub cjk-swap" id="d5n"></p>
+      <div class="up">
+        <div class="preview" id="dev-logoprev">+</div>
+        <div><button class="upbtn" id="dev-logobtn" type="button"></button></div>
+      </div>
+      <input type="file" id="dev-logofile" accept="image/jpeg,image/png,image/webp" hidden></div>
+    <div class="f"><label id="d6"></label>
+      <p class="sub cjk-swap" id="d6n"></p>
+      <textarea id="dev-intro" maxlength="200" style="min-height:72px"></textarea>
+      <div class="cnt"><span id="dev-introcnt">0</span>/200</div></div>
+
+    <button class="btn" id="dev-save"></button>
+    <div class="msg" id="dev-msg"></div>
+  </div>
+
+  <!-- ================= 合作方表单 ================= -->
+  <div class="card" id="f-par">
+    <div class="sec"><span class="num">01</span><span class="st" id="psec1"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="p1"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p1n"></p>
+      <input type="text" id="par-name-en" maxlength="120">
+      <div class="row2" style="margin-top:8px">
+        <input type="text" id="par-name-zh" maxlength="120">
+        <input type="text" id="par-name-ko" maxlength="120">
+      </div></div>
+    <div class="f"><label><span id="p2"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p2n"></p>
+      <div class="up">
+        <div class="preview" id="par-logoprev">+</div>
+        <div><button class="upbtn" id="par-logobtn" type="button"></button></div>
+      </div>
+      <input type="file" id="par-logofile" accept="image/jpeg,image/png,image/webp" hidden></div>
+    <div class="f"><label><span id="p4"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p4n"></p>
+      <div class="combo">
+        <input type="text" id="par-region" autocomplete="off">
+        <div class="list" id="region-list"></div>
+      </div></div>
+
+    <div class="sec"><span class="num">02</span><span class="st" id="psec2"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="p3"></span> <span class="req">*</span><span class="multi" id="p3m"></span></label>
+      <div class="chips" id="par-kinds"></div></div>
+    <div class="f"><label><span id="p5"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p5n"></p>
+      <textarea id="par-intro" maxlength="600"></textarea>
+      <div class="cnt"><span id="par-introcnt">0</span>/600</div></div>
+    <div class="f"><label><span id="p6"></span><span class="multi" id="p6m"></span></label>
+      <div class="chips" id="par-genres"></div></div>
+    <div class="f"><label><span id="p7"></span> <span class="req">*</span><span class="multi" id="p7m"></span></label>
+      <div class="chips" id="par-markets"></div></div>
+
+    <div class="sec"><span class="num">03</span><span class="st" id="psec3"></span><span class="rule"></span></div>
+    <div class="f"><label id="p8"></label>
+      <input type="url" id="par-steam" placeholder="https://store.steampowered.com/publisher/..."></div>
+    <div class="f"><label id="p9"></label>
+      <input type="url" id="par-web" placeholder="https://..."></div>
+    <div class="f"><label><span id="p10"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p10n"></p>
+      <input type="email" id="par-email"></div>
+
+    <div class="sec"><span class="num">04</span><span class="st" id="psec4"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="p11"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p11n"></p>
+      <select id="par-prooftype"></select></div>
+
+    <!-- 方式 A:企业邮箱验证 -->
+    <div class="f" id="p-workmail" style="display:none">
+      <div class="vbox">
+        <label style="margin-bottom:2px"><span id="pw1"></span></label>
+        <p class="sub cjk-swap" id="pw1n"></p>
+        <div class="vrow">
+          <input type="email" id="work-email">
+          <button class="vbtn" id="work-send" type="button"></button>
+        </div>
+        <div class="vrow" id="work-coderow" style="display:none">
+          <input type="text" id="work-code" inputmode="numeric" maxlength="6">
+          <button class="vbtn" id="work-verify" type="button"></button>
+        </div>
+        <div class="vbadge" id="work-badge">✓ <span id="work-badge-mail"></span></div>
+        <div class="smsg" id="work-msg"></div>
+      </div>
+    </div>
+
+    <!-- 方式 B:材料截图 -->
+    <div class="f" id="p-proofimg" style="display:none">
+      <label><span id="p12"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="p12n"></p>
+      <div class="up">
+        <div class="preview" id="par-preview">+</div>
+        <div><button class="upbtn" id="par-upbtn" type="button"></button></div>
+      </div>
+      <input type="file" id="par-file" accept="image/jpeg,image/png,image/webp" hidden>
+    </div>
+
+    <button class="btn" id="par-save"></button>
+    <div class="msg" id="par-msg"></div>
+  </div>
+
+  <a class="back" href="/" id="back"></a>
+</div>
+
+<script>
+const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
+const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"};
+const GENRE_KO = {"Action":"액션","Adventure":"어드벤처","RPG":"RPG","Strategy":"전략","Simulation":"시뮬레이션","Puzzle":"퍼즐","Platformer":"플랫포머","Shooter":"슈터","Survival":"생존","Horror":"호러","Roguelite":"로그라이트","Metroidvania":"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드","Narrative":"내러티브","Comedy":"코미디","Co-op":"협동","Multiplayer":"멀티플레이어"};
+const GENRE_L = { en:Object.fromEntries(GENRES.map(g=>[g,g])), zh:GENRE_ZH, ko:GENRE_KO };
+const MARKETS = ["Global","China","Overseas"];
+const MARKET_L = { en:{Global:"Global",China:"China",Overseas:"Overseas"}, zh:{Global:"全球",China:"中国",Overseas:"海外"}, ko:{Global:"글로벌",China:"중국",Overseas:"해외"} };
+const KINDS = ["publishing","investment"];
+const KIND_L = { en:{publishing:"Publishing",investment:"Investment"}, zh:{publishing:"发行",investment:"投资"}, ko:{publishing:"퍼블리싱",investment:"투자"} };
+const PARTNER_PROOF = ["work_email","steamworks","other"];
+const PARTNER_PROOF_L = {
+  en:{work_email:"Work email verification (recommended)",steamworks:"Steamworks backend screenshot",other:"Other (image)"},
+  zh:{work_email:"企业邮箱验证(推荐)",steamworks:"Steamworks 后台截图",other:"其他(图片)"},
+  ko:{work_email:"회사 이메일 인증(권장)",steamworks:"Steamworks 백엔드 스크린샷",other:"기타(이미지)"}
+};
+
+// ISO 3166-1 alpha-2 国家/地区代码;名称用浏览器 Intl 本地化,国旗由代码生成
+const CC = "AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FR GA GB GD GE GH GM GN GQ GR GT GW GY HK HN HR HT HU ID IE IL IN IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MR MT MU MV MW MX MY MZ NA NE NG NI NL NO NP NZ OM PA PE PG PH PK PL PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VC VE VN VU WS YE ZA ZM ZW".split(" ");
+const flagOf = (cc)=>String.fromCodePoint(...[...cc].map(c=>0x1F1A5+c.charCodeAt(0)));
+let regionNames = {};
+function buildRegionNames(){
+  let dn=null; try{ dn = new Intl.DisplayNames([lang==="zh"?"zh-Hans":lang], {type:"region"}); }catch{}
+  let dnEn=null; try{ dnEn = new Intl.DisplayNames(["en"], {type:"region"}); }catch{}
+  regionNames = {};
+  CC.forEach(c=>{ regionNames[c] = { local:(dn&&dn.of(c))||c, en:(dnEn&&dnEn.of(c))||c }; });
+}
+
+const I18N = {
+  en:{
+    titleDev:"Studio Info", titlePar:"Partner Profile",
+    leadDev:"Your studio info. Edit anytime — changes take effect when you save.", leadPar:"Complete your profile so we can verify and activate your account. Verification materials are only visible to our review team.",
+    status:(s)=>({pending:"Status: <b>PENDING REVIEW</b>",verified:"Status: <b>VERIFIED</b>",rejected:"Status: <b>REJECTED</b> — please update and resubmit",suspended:"Status: <b>SUSPENDED</b>"}[s]||""),
+    locked:'Please <a href="/login.html">sign in</a> first.',
+    multi:"(multi-select)",
+    d1:"Studio Name", d2:"Contact Email", d2n:"Shown to verified partners who unlock your contact.",
+    d5:"Studio Logo (optional)", d5n:"Square image works best. JPG/PNG/WebP, up to 5MB.", d6:"Studio Intro (optional)", d6n:"A short line about your studio and games.", ph_dev_intro:"e.g. Two-person studio from Seoul making cozy narrative games.", saveDev:"Save", savedDev:"Saved.",
+    psec1:"Basic Info", psec2:"Business", psec3:"Links & Contact", psec4:"Verification",
+    p1:"Company / Organization Name", p1n:"English name is required; Chinese and Korean names are optional.",
+    ph_name_en:"Company name (English)", ph_name_zh:"Chinese name (optional)", ph_name_ko:"Korean name (optional)",
+    p2:"Logo", p2n:"Square image works best. JPG/PNG/WebP, up to 5MB.",
+    p3:"Business Type", p4:"Country / Region", p4n:"Where your company is based. Type to search.",
+    ph_region:"Type to search…",
+    p5:"Intro", p5n:"Tell developers: who you are, what kind of games you are looking for, your requirements, and what support you can offer. Shown on your public card.",
+    ph_intro:"e.g. Indie publisher, 12 titles shipped. Looking for: narrative & puzzle games with a playable demo, PC first. We offer: full China publishing — localization, marketing, platform relations, MG negotiable.",
+    p6:"Genres of Interest", p7:"Target Markets", p8:"Steam Publisher Page", p9:"Official Website",
+    p10:"Contact Email", p10n:"Shown to developers who unlock your contact.",
+    p11:"Verification Method", p11n:"Work email verification is the fastest way to get approved.",
+    pw1:"Work Email", pw1n:"Use your company-domain email (e.g. you@yourcompany.com). We'll send a 6-digit code.",
+    sendCode:"Send Code", verify:"Verify", verified:"Verified:",
+    p12:"Proof Image", p12n:"JPG/PNG/WebP, up to 5MB. Only visible to the review team.",
+    upload:"Choose Image", uploading:"Uploading…", save:"Submit for Review", saving:"Submitting…",
+    saved:"Submitted. We'll review your profile shortly.",
+    codeSent:"Code sent — check the inbox (and spam folder).",
+    back:"← Back to home",
+    errors:{ studio_name_required:"Studio name is required.", contact_email_invalid:"Please enter a valid contact email.",
+      proof_type_invalid:"Please choose a verification method.", proof_image_required:"Please upload a proof image.",
+      name_required:"Please enter the company name in English.", logo_required:"Please upload a logo.",
+      kinds_required:"Please select your business type.", region_invalid:"Please pick a country / region from the list.",
+      intro_required:"Please write a short intro.", markets_required:"Please select at least one market.",
+      url_invalid:"Please check the URL format (must start with http/https).",
+      work_email_not_verified:"Please verify your work email first.",
+      invalid_email:"Please enter a valid email.", cooldown:"Please wait a moment before requesting another code.",
+      hourly_limit:"Too many codes requested. Try again in an hour.", wrong_or_expired_code:"Wrong or expired code.",
+      invalid_input:"Please enter the 6-digit code.",
+      too_large:"Image is too large (max 5MB).", type_not_allowed:"Only JPG/PNG/WebP images are allowed.",
+      not_logged_in:"Please sign in first.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
+  },
+  zh:{
+    titleDev:"工作室信息", titlePar:"合作方资料",
+    leadDev:"这是你的工作室信息,随时可以修改,保存即生效。", leadPar:"完善资料后我们会尽快审核并激活账号。认证材料仅审核团队可见。",
+    status:(s)=>({pending:"状态:<b>待审核</b>",verified:"状态:<b>已认证</b>",rejected:"状态:<b>未通过</b> — 请修改后重新提交",suspended:"状态:<b>已停用</b>"}[s]||""),
+    locked:'请先<a href="/login.html">登录</a>。',
+    multi:"(可多选)",
+    d1:"工作室名称", d2:"对外联系邮箱", d2n:"通过认证的合作方解锁联系方式后看到的邮箱。",
+    d5:"工作室 Logo(选填)", d5n:"建议方形图。JPG/PNG/WebP,最大 5MB。", d6:"工作室简介(选填)", d6n:"一两句话介绍你们的团队和作品方向。", ph_dev_intro:"例:来自成都的三人小团队,专注叙事解谜游戏。", saveDev:"保存", savedDev:"已保存。",
+    psec1:"基本信息", psec2:"业务方向", psec3:"链接与联系", psec4:"资质验证",
+    p1:"公司 / 机构名称", p1n:"英文名必填,中文名、韩文名选填。",
+    ph_name_en:"公司名称(英文)", ph_name_zh:"中文名称(选填)", ph_name_ko:"韩文名称(选填)",
+    p2:"Logo", p2n:"建议方形图。JPG/PNG/WebP,最大 5MB。",
+    p3:"业务类型", p4:"国家 / 地区", p4n:"公司所在地,输入文字可搜索。",
+    ph_region:"输入搜索…",
+    p5:"简介", p5n:"告诉开发者:你是谁、正在寻找什么样的游戏、对游戏的要求、能提供哪些支持。会显示在你的公开卡片上。",
+    ph_intro:"例:独立游戏发行商,已发行 12 款作品。正在寻找:叙事、解谜品类,有可玩 Demo,PC 优先。我们提供:中国区全案发行——本地化、营销、平台关系,MG 可谈。",
+    p6:"关注品类", p7:"关注市场", p8:"Steam 发行页", p9:"官网",
+    p10:"对外联系邮箱", p10n:"开发者解锁联系方式后看到的邮箱。",
+    p11:"验证方式", p11n:"企业邮箱验证通过最快。",
+    pw1:"企业邮箱", pw1n:"使用公司域名邮箱(如 you@yourcompany.com),我们会发送 6 位验证码。",
+    sendCode:"发送验证码", verify:"验证", verified:"已验证:",
+    p12:"认证材料图片", p12n:"JPG/PNG/WebP,最大 5MB,仅审核团队可见。",
+    upload:"选择图片", uploading:"上传中…", save:"提交审核", saving:"提交中…",
+    saved:"已提交,我们会尽快审核。",
+    codeSent:"验证码已发送,请查收(注意垃圾邮件)。",
+    back:"← 返回首页",
+    errors:{ studio_name_required:"请填写工作室名称。", contact_email_invalid:"请填写有效的联系邮箱。",
+      proof_type_invalid:"请选择验证方式。", proof_image_required:"请上传认证材料图片。",
+      name_required:"请填写公司英文名称。", logo_required:"请上传 Logo。",
+      kinds_required:"请选择业务类型。", region_invalid:"请从列表中选择国家/地区。",
+      intro_required:"请填写简介。", markets_required:"请至少选择一个市场。",
+      url_invalid:"链接格式不对(需以 http/https 开头)。",
+      work_email_not_verified:"请先完成企业邮箱验证。",
+      invalid_email:"请填写有效邮箱。", cooldown:"操作太频繁,请稍候再试。",
+      hourly_limit:"发送次数过多,请一小时后再试。", wrong_or_expired_code:"验证码错误或已过期。",
+      invalid_input:"请输入 6 位数字验证码。",
+      too_large:"图片太大(最大 5MB)。", type_not_allowed:"仅支持 JPG/PNG/WebP 图片。",
+      not_logged_in:"请先登录。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
+  },
+  ko:{
+    titleDev:"스튜디오 정보", titlePar:"파트너 프로필",
+    leadDev:"스튜디오 정보입니다. 언제든지 수정할 수 있으며 저장 즉시 반영됩니다.", leadPar:"프로필을 작성하면 심사 후 계정이 활성화됩니다. 인증 자료는 심사팀에게만 공개됩니다.",
+    status:(s)=>({pending:"상태: <b>심사 대기</b>",verified:"상태: <b>인증 완료</b>",rejected:"상태: <b>반려됨</b> — 수정 후 다시 제출해 주세요",suspended:"상태: <b>정지됨</b>"}[s]||""),
+    locked:'먼저 <a href="/login.html">로그인</a>해 주세요.',
+    multi:"(복수 선택 가능)",
+    d1:"스튜디오 이름", d2:"공개 연락 이메일", d2n:"인증된 파트너가 연락처를 열람할 때 보이는 이메일입니다.",
+    d5:"스튜디오 로고(선택)", d5n:"정사각형 이미지 권장. JPG/PNG/WebP, 최대 5MB.", d6:"스튜디오 소개(선택)", d6n:"팀과 작품 방향에 대한 한두 문장.", ph_dev_intro:"예: 서울의 2인 스튜디오, 코지 내러티브 게임을 만듭니다.", saveDev:"저장", savedDev:"저장되었습니다.",
+    psec1:"기본 정보", psec2:"비즈니스", psec3:"링크 및 연락처", psec4:"자격 인증",
+    p1:"회사 / 기관명", p1n:"영문명은 필수, 중문명·한글명은 선택입니다.",
+    ph_name_en:"회사명(영문)", ph_name_zh:"중문명(선택)", ph_name_ko:"한글명(선택)",
+    p2:"로고", p2n:"정사각형 이미지 권장. JPG/PNG/WebP, 최대 5MB.",
+    p3:"업무 유형", p4:"국가 / 지역", p4n:"회사 소재지입니다. 입력하여 검색하세요.",
+    ph_region:"입력하여 검색…",
+    p5:"소개", p5n:"개발자에게 알려주세요: 어떤 회사인지, 어떤 게임을 찾는지, 요구 조건과 제공 가능한 지원. 공개 카드에 표시됩니다.",
+    ph_intro:"예: 인디 퍼블리셔, 12개 타이틀 출시. 찾는 게임: 내러티브·퍼즐, 플레이 가능한 데모 보유, PC 우선. 제공: 중국 전역 퍼블리싱 — 현지화, 마케팅, 플랫폼 관계, MG 협의 가능.",
+    p6:"관심 장르", p7:"관심 시장", p8:"Steam 퍼블리셔 페이지", p9:"공식 웹사이트",
+    p10:"공개 연락 이메일", p10n:"개발자가 연락처를 열람할 때 보이는 이메일입니다.",
+    p11:"인증 방식", p11n:"회사 이메일 인증이 가장 빠릅니다.",
+    pw1:"회사 이메일", pw1n:"회사 도메인 이메일(예: you@yourcompany.com)을 사용하세요. 6자리 코드를 보내드립니다.",
+    sendCode:"코드 보내기", verify:"확인", verified:"인증됨:",
+    p12:"인증 이미지", p12n:"JPG/PNG/WebP, 최대 5MB. 심사팀에게만 공개됩니다.",
+    upload:"이미지 선택", uploading:"업로드 중…", save:"심사 제출", saving:"제출 중…",
+    saved:"제출되었습니다. 곧 심사하겠습니다.",
+    codeSent:"코드를 보냈습니다. 받은편지함(스팸함 포함)을 확인하세요.",
+    back:"← 홈으로",
+    errors:{ studio_name_required:"스튜디오 이름을 입력하세요.", contact_email_invalid:"올바른 이메일을 입력하세요.",
+      proof_type_invalid:"인증 방식을 선택하세요.", proof_image_required:"인증 이미지를 업로드하세요.",
+      name_required:"회사 영문명을 입력하세요.", logo_required:"로고를 업로드하세요.",
+      kinds_required:"업무 유형을 선택하세요.", region_invalid:"목록에서 국가/지역을 선택하세요.",
+      intro_required:"소개를 입력하세요.", markets_required:"시장을 하나 이상 선택하세요.",
+      url_invalid:"URL 형식을 확인하세요(http/https로 시작).",
+      work_email_not_verified:"먼저 회사 이메일 인증을 완료하세요.",
+      invalid_email:"올바른 이메일을 입력하세요.", cooldown:"잠시 후 다시 시도해 주세요.",
+      hourly_limit:"요청이 너무 많습니다. 1시간 후 다시 시도하세요.", wrong_or_expired_code:"코드가 틀렸거나 만료되었습니다.",
+      invalid_input:"6자리 숫자 코드를 입력하세요.",
+      too_large:"이미지가 너무 큽니다(최대 5MB).", type_not_allowed:"JPG/PNG/WebP 이미지만 지원합니다.",
+      not_logged_in:"먼저 로그인해 주세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
+  }
+};
+
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+let role = "", status = "";
+let devLogoUrl = "", parProofUrl = "", parLogoUrl = "", regionCode = "", verifiedEmail = "";
+let selKinds = [], selGenres = [], selMarkets = [];
+
+function T(){ return I18N[lang]; }
+function err(el,key){ el.className=el.classList.contains("smsg")||el.id==="work-msg"?"smsg err":"msg err"; el.textContent = T().errors[key] || T().errors.server; }
+function ok(el,text){ el.className=el.id==="work-msg"?"smsg ok":"msg ok"; el.textContent = text; }
+function clearMsg(el){ el.className=el.id==="work-msg"?"smsg":"msg"; el.textContent=""; }
+
+async function api(path, opts){
+  const res = await fetch("/api/profile/"+path, opts);
+  let data=null; try{ data=await res.json(); }catch{}
+  if(!data) throw "network";
+  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  return data;
+}
+
+function chips(el, list, labels, selected){
+  el.innerHTML = "";
+  list.forEach(v=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="chip"+(selected.includes(v)?" on":""); b.textContent=labels[lang][v]||v;
+    b.onclick=()=>{ const i=selected.indexOf(v); if(i>=0) selected.splice(i,1); else selected.push(v); chips(el,list,labels,selected); };
+    el.appendChild(b);
+  });
+}
+
+function fillSelect(el, list, labels){
+  const cur = el.value;
+  el.innerHTML = "";
+  list.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=labels[lang][v]||v; el.appendChild(o); });
+  if(list.includes(cur)) el.value=cur;
+}
+
+/* ---------- 国家/地区可搜索下拉 ---------- */
+function setRegion(code){
+  regionCode = code;
+  $("#par-region").value = code ? `${flagOf(code)}  ${regionNames[code].local}` : "";
+}
+function renderRegionList(q){
+  const list = $("#region-list");
+  const s = (q||"").trim().toLowerCase();
+  const hits = CC.filter(c=>{
+    if(!s) return true;
+    const n = regionNames[c];
+    return n.local.toLowerCase().includes(s) || n.en.toLowerCase().includes(s) || c.toLowerCase()===s;
+  }).sort((a,b)=>regionNames[a].local.localeCompare(regionNames[b].local, lang==="zh"?"zh-Hans":lang));
+  list.innerHTML = "";
+  hits.slice(0,200).forEach(c=>{
+    const d=document.createElement("div");
+    d.className="item"; d.innerHTML=`<span class="flag">${flagOf(c)}</span><span>${regionNames[c].local}</span>`;
+    d.onmousedown=(e)=>{ e.preventDefault(); setRegion(c); list.classList.remove("open"); };
+    list.appendChild(d);
+  });
+  list.classList.toggle("open", hits.length>0);
+}
+$("#par-region").addEventListener("focus",()=>{ $("#par-region").value=""; regionCode=""; renderRegionList(""); });
+$("#par-region").addEventListener("input",()=>renderRegionList($("#par-region").value));
+$("#par-region").addEventListener("blur",()=>{ setTimeout(()=>{ $("#region-list").classList.remove("open"); if(regionCode) setRegion(regionCode); },120); });
+
+/* ---------- 上传 ---------- */
+function bindUpload(fileEl, btnEl, prevEl, kind, onDone, msgEl){
+  btnEl.onclick = ()=>fileEl.click();
+  fileEl.onchange = async ()=>{
+    const f = fileEl.files[0]; if(!f) return;
+    clearMsg(msgEl);
+    if(f.size > 5*1024*1024){ err(msgEl,"too_large"); fileEl.value=""; return; }
+    btnEl.disabled=true; btnEl.textContent=T().uploading;
+    try{
+      const fd = new FormData(); fd.append("file", f); fd.append("kind", kind);
+      const d = await api("upload",{ method:"POST", body:fd });
+      onDone(d.url);
+      prevEl.innerHTML = `<img src="${d.url}" alt="">`;
+    }catch(e){ err(msgEl,e); }
+    finally{ btnEl.disabled=false; btnEl.textContent=T().upload; fileEl.value=""; }
+  };
+}
+
+/* ---------- 企业邮箱验证 ---------- */
+function renderWorkBadge(){
+  const on = !!verifiedEmail;
+  $("#work-badge").classList.toggle("on", on);
+  if(on) $("#work-badge-mail").textContent = T().verified + " " + verifiedEmail;
+}
+$("#work-send").onclick = async ()=>{
+  const m=$("#work-msg"); clearMsg(m);
+  const email = $("#work-email").value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ err(m,"invalid_email"); return; }
+  $("#work-send").disabled=true;
+  try{
+    await api("send-work-code",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({email}) });
+    $("#work-coderow").style.display="flex"; ok(m, T().codeSent); $("#work-code").focus();
+  }catch(e){ err(m,e); }
+  finally{ setTimeout(()=>{ $("#work-send").disabled=false; }, 3000); }
+};
+$("#work-verify").onclick = async ()=>{
+  const m=$("#work-msg"); clearMsg(m);
+  const email = $("#work-email").value.trim().toLowerCase();
+  const code = $("#work-code").value.trim();
+  if(!/^\d{6}$/.test(code)){ err(m,"invalid_input"); return; }
+  $("#work-verify").disabled=true;
+  try{
+    const d = await api("verify-work-code",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({email, code}) });
+    verifiedEmail = d.verified_email; renderWorkBadge();
+    $("#work-coderow").style.display="none"; clearMsg(m);
+  }catch(e){ err(m,e); }
+  finally{ $("#work-verify").disabled=false; }
+};
+
+/* ---------- 验证方式切换 ---------- */
+function renderProofSwitch(){
+  const v = $("#par-prooftype").value;
+  $("#p-workmail").style.display = v==="work_email" ? "block" : "none";
+  $("#p-proofimg").style.display = v==="work_email" ? "none" : "block";
+}
+$("#par-prooftype").addEventListener("change", renderProofSwitch);
+
+/* ---------- 文案渲染 ---------- */
+function renderText(){
+  document.body.setAttribute("lang",lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  buildRegionNames();
+  const t=T();
+  $("#title").textContent = role==="partner" ? t.titlePar : t.titleDev;
+  $("#lead").textContent = role==="partner" ? t.leadPar : t.leadDev;
+  $("#back").textContent = t.back;
+  $("#locked-text").innerHTML = t.locked;
+  if(status && role==="partner"){ $("#statusbar").style.display="block"; $("#statusbar").innerHTML = t.status(status); }
+  // 开发者
+  $("#d1").textContent=t.d1; $("#d2").textContent=t.d2; $("#d2n").textContent=t.d2n;
+  $("#d5").textContent=t.d5; $("#d5n").textContent=t.d5n;
+  $("#d6").textContent=t.d6; $("#d6n").textContent=t.d6n; $("#dev-intro").placeholder=t.ph_dev_intro;
+  $("#dev-logobtn").textContent=t.upload; $("#dev-save").textContent=t.saveDev;
+  // 合作方
+  $("#psec1").textContent=t.psec1; $("#psec2").textContent=t.psec2; $("#psec3").textContent=t.psec3; $("#psec4").textContent=t.psec4;
+  $("#p1").textContent=t.p1; $("#p1n").textContent=t.p1n;
+  $("#par-name-en").placeholder=t.ph_name_en; $("#par-name-zh").placeholder=t.ph_name_zh; $("#par-name-ko").placeholder=t.ph_name_ko;
+  $("#p2").textContent=t.p2; $("#p2n").textContent=t.p2n;
+  $("#p3").textContent=t.p3; $("#p3m").textContent=t.multi;
+  $("#p4").textContent=t.p4; $("#p4n").textContent=t.p4n; $("#par-region").placeholder=t.ph_region;
+  $("#p5").textContent=t.p5; $("#p5n").textContent=t.p5n; $("#par-intro").placeholder=t.ph_intro;
+  $("#p6").textContent=t.p6; $("#p6m").textContent=t.multi;
+  $("#p7").textContent=t.p7; $("#p7m").textContent=t.multi;
+  $("#p8").textContent=t.p8; $("#p9").textContent=t.p9;
+  $("#p10").textContent=t.p10; $("#p10n").textContent=t.p10n;
+  $("#p11").textContent=t.p11; $("#p11n").textContent=t.p11n;
+  $("#pw1").textContent=t.pw1; $("#pw1n").textContent=t.pw1n;
+  $("#work-send").textContent=t.sendCode; $("#work-verify").textContent=t.verify;
+  $("#p12").textContent=t.p12; $("#p12n").textContent=t.p12n;
+  $("#par-logobtn").textContent=t.upload; $("#par-upbtn").textContent=t.upload; $("#par-save").textContent=t.save;
+  fillSelect($("#par-prooftype"), PARTNER_PROOF, PARTNER_PROOF_L);
+  chips($("#par-kinds"), KINDS, KIND_L, selKinds);
+  chips($("#par-genres"), GENRES, GENRE_L, selGenres);
+  chips($("#par-markets"), MARKETS, MARKET_L, selMarkets);
+  if(regionCode) setRegion(regionCode);
+  renderWorkBadge();
+  renderProofSwitch();
+}
+
+/* ---------- 保存 ---------- */
+$("#dev-save").onclick = async ()=>{
+  const t=T(), m=$("#dev-msg"); clearMsg(m);
+  $("#dev-save").disabled=true;
+  try{
+    await api("save",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        studio_name:$("#dev-studio").value, contact_email:$("#dev-email").value,
+        intro:$("#dev-intro").value, logo:devLogoUrl
+      })});
+    ok(m, t.savedDev);
+  }catch(e){ err(m,e); }
+  finally{ $("#dev-save").disabled=false; $("#dev-save").textContent=t.saveDev; }
+};
+
+$("#par-save").onclick = async ()=>{
+  const t=T(), m=$("#par-msg"); clearMsg(m);
+  $("#par-save").disabled=true; $("#par-save").textContent=t.saving;
+  try{
+    await api("save",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        name_en:$("#par-name-en").value, name_zh:$("#par-name-zh").value, name_ko:$("#par-name-ko").value,
+        logo:parLogoUrl, kinds:selKinds, region:regionCode, intro:$("#par-intro").value,
+        genres:selGenres, markets:selMarkets,
+        steam_url:$("#par-steam").value.trim(), website:$("#par-web").value.trim(),
+        contact_email:$("#par-email").value, proof_type:$("#par-prooftype").value, proof_image:parProofUrl
+      })});
+    status="pending"; renderText(); ok(m, t.saved);
+  }catch(e){ err(m,e); }
+  finally{ $("#par-save").disabled=false; $("#par-save").textContent=t.save; }
+};
+
+$("#par-intro").addEventListener("input",()=>{ $("#par-introcnt").textContent=$("#par-intro").value.length; });
+$("#dev-intro").addEventListener("input",()=>{ $("#dev-introcnt").textContent=$("#dev-intro").value.length; });
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
+});
+
+bindUpload($("#dev-logofile"), $("#dev-logobtn"), $("#dev-logoprev"), "logo", (u)=>{devLogoUrl=u;}, $("#dev-msg"));
+bindUpload($("#par-file"), $("#par-upbtn"), $("#par-preview"), "proof", (u)=>{parProofUrl=u;}, $("#par-msg"));
+bindUpload($("#par-logofile"), $("#par-logobtn"), $("#par-logoprev"), "logo", (u)=>{parLogoUrl=u;}, $("#par-msg"));
+
+(async ()=>{
+  renderText();
+  try{
+    const d = await api("me",{method:"GET"});
+    role = d.role; status = d.status;
+    const p = d.profile || {};
+    if(role==="developer"){
+      $("#f-dev").style.display="block";
+      $("#dev-studio").value=p.studio_name||""; $("#dev-email").value=p.contact_email||"";
+      $("#dev-intro").value=(p.intro||"").slice(0,200); $("#dev-introcnt").textContent=$("#dev-intro").value.length;
+      if(p.logo){ devLogoUrl=p.logo; $("#dev-logoprev").innerHTML=`<img src="${p.logo}">`; }
+    }else{
+      $("#f-par").style.display="block";
+      $("#par-name-en").value=p.name_en||""; $("#par-name-zh").value=p.name_zh||""; $("#par-name-ko").value=p.name_ko||"";
+      selKinds = Array.isArray(p.kinds)?p.kinds.filter(k=>KINDS.includes(k)):[];
+      if(p.region && CC.includes(p.region)) regionCode = p.region;
+      $("#par-intro").value=(p.intro||"").slice(0,600); $("#par-introcnt").textContent=$("#par-intro").value.length;
+      selGenres = Array.isArray(p.genres)?p.genres.filter(g=>GENRES.includes(g)):[];
+      selMarkets = Array.isArray(p.markets)?p.markets.filter(m=>MARKETS.includes(m)):[];
+      $("#par-steam").value=p.steam_url||""; $("#par-web").value=p.website||"";
+      $("#par-email").value=p.contact_email||"";
+      if(p.proof_type) $("#par-prooftype").value=p.proof_type;
+      if(p.proof_image){ parProofUrl=p.proof_image; $("#par-preview").innerHTML=`<img src="${p.proof_image}">`; }
+      if(p.logo){ parLogoUrl=p.logo; $("#par-logoprev").innerHTML=`<img src="${p.logo}">`; }
+      verifiedEmail = p.verified_email || "";
+    }
+    renderText();
+  }catch(e){
+    $("#locked").style.display="block";
+  }
+})();
+</script>
