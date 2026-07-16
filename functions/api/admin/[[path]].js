@@ -106,13 +106,13 @@ async function handleReview(env, request) {
 async function handleGamesList(env, request) {
   const url = new URL(request.url);
   const status = url.searchParams.get("status") || "pending";
-  const where = ["g.claimed_by IS NOT NULL"];
+  const where = ["1=1"];
   const binds = [];
   if (["pending", "approved", "rejected"].includes(status)) {
     where.push("g.status = ?"); binds.push(status);
   }
   const { results } = await env.DB.prepare(
-    `SELECT g.id, g.slug, g.t_en, g.t_zh, g.t_ko, g.d_en, g.full_en, g.stage,
+    `SELECT g.id, g.slug, g.feishu_id, g.visible, g.t_en, g.t_zh, g.t_ko, g.d_en, g.full_en, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
             g.video, g.steam_url, g.status, g.review_note, g.created_at,
             a.email AS login_email, dp.studio_name
@@ -131,7 +131,7 @@ async function handleGamesList(env, request) {
   });
 
   const { results: cnt } = await env.DB.prepare(
-    "SELECT status, COUNT(*) AS c FROM games WHERE claimed_by IS NOT NULL GROUP BY status"
+    "SELECT status, COUNT(*) AS c FROM games GROUP BY status"
   ).all();
   const counts = {};
   (cnt || []).forEach((x) => { counts[x.status] = x.c; });
