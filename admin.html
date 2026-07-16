@@ -107,6 +107,10 @@
     <button class="tab" data-m="games">游戏审核</button>
   </div>
   <p class="lead" id="modelead">审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到"待审核"。</p>
+  <div id="syncbar" style="display:none;margin:-8px 0 16px">
+    <button class="abtn ok" id="syncbtn" style="padding:9px 18px">⟳ 从飞书同步游戏库</button>
+    <span id="syncmsg" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-left:10px"></span>
+  </div>
 
   <div class="locked" id="locked"><p>没有权限或未登录。<br>请先用管理员邮箱<a href="/login.html">登录</a>,再回到本页。</p></div>
 
@@ -199,7 +203,14 @@ function rowHtml(r){
         ${kvHtml("官网", linkHtml(r.website))}
         ${kvHtml("对外联系邮箱", esc(r.contact_email))}
         ${kvHtml("登录邮箱", esc(r.login_email))}
-        ${kvHtml("简介", esc(r.intro), true)}
+        ${kvHtml("简介(对方提交的原文)", esc(r.intro), true)}
+        <div class="kv full"><div class="k">简介三语版(网站按界面语言显示;没填的语言不显示)</div>
+          <div class="v" style="display:grid;gap:8px">
+            <textarea id="ien-${r.id}" placeholder="English intro" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:12.5px;padding:9px 11px;min-height:54px;font-family:inherit">${esc(r.intro_en)}</textarea>
+            <textarea id="izh-${r.id}" placeholder="中文简介" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:12.5px;padding:9px 11px;min-height:54px;font-family:inherit">${esc(r.intro_zh)}</textarea>
+            <textarea id="iko-${r.id}" placeholder="한국어 소개" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:12.5px;padding:9px 11px;min-height:54px;font-family:inherit">${esc(r.intro_ko)}</textarea>
+            <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveIntro(${r.id},this)">保存三语简介</button>
+          </div></div>
         ${kvHtml("认证", proofHtml(r), true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
       </div>
@@ -225,6 +236,17 @@ function rowHtml(r){
   </div>`;
 }
 
+async function saveIntro(id, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
+  try{
+    await api("intro",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id,
+        intro_en:document.getElementById("ien-"+id).value,
+        intro_zh:document.getElementById("izh-"+id).value,
+        intro_ko:document.getElementById("iko-"+id).value }) });
+    btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1200);
+  }catch(e){ btn.textContent="失败:"+e; btn.disabled=false; }
+}
 function toggleReject(id){ document.getElementById("rej-"+id).classList.toggle("on"); }
 
 async function review(id, action, btn){
@@ -311,6 +333,7 @@ $("#modes").addEventListener("click",(e)=>{
   curMode=b.dataset.m; curTab="pending";
   document.querySelectorAll("#modes .tab").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("on",x.dataset.s==="pending"));
+  $("#syncbar").style.display = curMode==="games" ? "block" : "none";
   $("#modelead").textContent = curMode==="games"
     ? "审核开发者提交的游戏。通过即上架到项目库;驳回需填写原因,对方能在账号中心看到。"
     : "审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到\"待审核\"。";
@@ -322,6 +345,17 @@ $("#tabs").addEventListener("click",(e)=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
   load();
 });
+
+$("#syncbtn").onclick = async ()=>{
+  const b=$("#syncbtn"), m=$("#syncmsg");
+  b.disabled=true; m.textContent="同步中,拉取飞书数据…";
+  try{
+    const d = await api("import-feishu",{ method:"POST" });
+    m.textContent = `完成:同步 ${d.imported} 条(飞书共 ${d.total} 行)。飞书里改动后再点即可刷新。`;
+    await load();
+  }catch(e){ m.textContent = "同步失败:"+e; }
+  finally{ b.disabled=false; }
+};
 
 (async ()=>{
   try{

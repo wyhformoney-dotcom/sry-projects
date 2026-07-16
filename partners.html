@@ -1,0 +1,262 @@
+<!-- SRY Game Hub — Partners 合作方列表页(公开) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partners · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; gap:22px; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .nav-links{ display:flex; align-items:center; gap:4px; }
+  .nav-links a{ position:relative; font-size:13px; color:var(--ink-dim); padding:8px 12px; }
+  .nav-links a:hover{ color:#fff; }
+  .nav-links a.active{ color:#fff; }
+  .nav-links a.active::after{ content:""; position:absolute; left:12px; right:12px; bottom:2px; height:2px; background:var(--accent); }
+  .nav-links a.soon{ cursor:default; color:var(--ink-faint); }
+  .nav-links .soon-tag{ font-family:var(--mono); font-size:8.5px; color:var(--accent); border:1px solid var(--line); border-radius:4px; padding:1px 5px; margin-left:5px; letter-spacing:.1em; vertical-align:2px; }
+  .nav-spacer{ flex:1; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+  .acct{ font-family:var(--mono); font-size:11px; letter-spacing:.06em; padding:7px 12px; border:1px solid var(--line); border-radius:7px; color:var(--ink-dim); white-space:nowrap; }
+  .acct:hover{ color:var(--accent); border-color:var(--accent); }
+  @media (max-width:640px){ .nav-links{ display:none; } }
+
+  .wrap{ max-width:1060px; margin:0 auto; padding:44px 24px 90px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:10px; }
+  h1{ font-size:32px; font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+  .lead{ color:var(--ink-dim); font-size:14px; line-height:1.6; margin-bottom:26px; max-width:640px; }
+  .lead a{ color:var(--accent); }
+
+  .filters{ display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:26px; }
+  .fchip{ font-family:var(--mono); font-size:11.5px; padding:8px 14px; border:1px solid var(--line); border-radius:20px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .fchip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .fsel{ background:var(--panel2); border:1px solid var(--line); border-radius:20px; color:var(--ink-dim);
+    font-family:var(--mono); font-size:11.5px; padding:8px 14px; outline:none; appearance:none; cursor:pointer; }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:13px; transition:border .15s; }
+  .card:hover{ border-color:#3d4034; }
+  .chead{ display:flex; gap:14px; align-items:center; }
+  .clogo{ width:52px; height:52px; border-radius:10px; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; color:var(--ink-faint); font-size:20px; }
+  .clogo img{ width:100%; height:100%; object-fit:cover; }
+  .cname{ font-weight:800; font-size:16.5px; line-height:1.3; }
+  .ckinds{ display:flex; gap:6px; flex-wrap:wrap; }
+  .kpill{ font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.06em; padding:4px 10px;
+    border-radius:12px; background:var(--accent); color:var(--accent-ink); }
+  .kpill.inv{ background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .cintro{ font-size:13px; line-height:1.65; color:var(--ink-dim);
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer; }
+  .cintro.open{ -webkit-line-clamp:unset; }
+  .clinks{ display:flex; gap:14px; align-items:center; margin-top:auto; padding-top:12px; border-top:1px solid var(--line-soft); }
+  .clinks a{ font-family:var(--mono); font-size:11px; letter-spacing:.05em; color:var(--ink-dim); }
+  .clinks a:hover{ color:var(--accent); }
+  .rbadge{ margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--ink-dim);
+    border:1px solid var(--line); border-radius:6px; padding:4px 9px; white-space:nowrap; }
+
+  .empty{ text-align:center; color:var(--ink-faint); padding:70px 0; font-size:14px; line-height:1.8; }
+  .empty a{ color:var(--accent); }
+  .cta-strip{ margin-top:34px; border:1px dashed var(--line); border-radius:14px; padding:22px; display:flex;
+    align-items:center; gap:16px; flex-wrap:wrap; }
+  .cta-strip .tx{ flex:1; min-width:220px; }
+  .cta-strip .t1{ font-weight:800; font-size:15px; }
+  .cta-strip .t2{ font-size:12.5px; color:var(--ink-dim); margin-top:4px; line-height:1.5; }
+  .cta-strip a{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.06em; padding:11px 20px;
+    border-radius:8px; background:var(--accent); color:var(--accent-ink); white-space:nowrap; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span><b>SRY</b>&nbsp;GAME HUB</a>
+  <div class="nav-links">
+    <a href="/" id="nl-projects">Projects</a>
+    <a href="/partners.html" class="active" id="nl-partners">Partners</a>
+    <a class="soon" id="nl-events">Events<span class="soon-tag">SOON</span></a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+  <a class="acct" id="acct" href="/login.html">Sign In</a>
+</nav>
+
+<div class="wrap">
+  <div class="kicker" id="kicker"></div>
+  <h1 id="title"></h1>
+  <p class="lead cjk-swap" id="lead"></p>
+
+  <div class="filters">
+    <button class="fchip on" data-k="all" id="f-all"></button>
+    <button class="fchip" data-k="publishing" id="f-pub"></button>
+    <button class="fchip" data-k="investment" id="f-inv"></button>
+    <select class="fsel" id="f-region"></select>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none"></div>
+
+  <div class="cta-strip">
+    <div class="tx">
+      <div class="t1 cjk-swap" id="cta1"></div>
+      <div class="t2 cjk-swap" id="cta2"></div>
+    </div>
+    <a href="/login.html" id="ctabtn"></a>
+  </div>
+</div>
+
+<script>
+const KIND_L = { en:{publishing:"PUBLISHING",investment:"INVESTMENT"}, zh:{publishing:"发行",investment:"投资"}, ko:{publishing:"퍼블리싱",investment:"투자"} };
+const MARKET_L = { en:{Global:"Global",China:"China",Overseas:"Overseas"}, zh:{Global:"全球",China:"中国",Overseas:"海外"}, ko:{Global:"글로벌",China:"중국",Overseas:"해외"} };
+const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"};
+const GENRE_KO = {"Action":"액션","Adventure":"어드벤처","RPG":"RPG","Strategy":"전략","Simulation":"시뮬레이션","Puzzle":"퍼즐","Platformer":"플랫포머","Shooter":"슈터","Survival":"생존","Horror":"호러","Roguelite":"로그라이트","Metroidvania":"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드","Narrative":"내러티브","Comedy":"코미디","Co-op":"협동","Multiplayer":"멀티플레이어"};
+const flagOf = (cc)=>/^[A-Z]{2}$/.test(cc||"") ? String.fromCodePoint(...[...cc].map(c=>0x1F1A5+c.charCodeAt(0))) : "";
+
+const I18N = {
+  en:{ kicker:"NETWORK // PARTNERS", title:"Partners", nlProjects:"Projects", nlPartners:"Partners",
+    lead:"Verified publishers and investors in the SRY network. Every partner here has passed our verification.",
+    fAll:"ALL", fPub:"PUBLISHING", fInv:"INVESTMENT", fRegionAll:"ALL REGIONS",
+    empty:"No partners match the filters yet.",
+    cta1:"Are you a publisher or investor?", cta2:"Join the network, get verified, and connect with indie developers.",
+    ctabtn:"BECOME A PARTNER →", signin:"Sign In",
+    genreLabel:(g)=>g, marketOf:(m)=>MARKET_L.en[m]||m },
+  zh:{ kicker:"网络 // 合作方", title:"合作发行商与投资方", nlProjects:"项目", nlPartners:"合作发行商",
+    lead:"SRY 网络中经过认证的发行商与投资方,每一家都通过了我们的资质审核。",
+    fAll:"全部", fPub:"发行", fInv:"投资", fRegionAll:"全部地区",
+    empty:"当前筛选下暂无合作方。",
+    cta1:"你是发行商或投资方?", cta2:"加入网络、完成认证,与独立开发者建立联系。",
+    ctabtn:"成为合作方 →", signin:"登录",
+    genreLabel:(g)=>GENRE_ZH[g]||g, marketOf:(m)=>MARKET_L.zh[m]||m },
+  ko:{ kicker:"네트워크 // 파트너", title:"파트너", nlProjects:"프로젝트", nlPartners:"파트너",
+    lead:"SRY 네트워크의 인증된 퍼블리셔와 투자자입니다. 모든 파트너는 자격 심사를 통과했습니다.",
+    fAll:"전체", fPub:"퍼블리싱", fInv:"투자", fRegionAll:"모든 지역",
+    empty:"필터에 해당하는 파트너가 없습니다.",
+    cta1:"퍼블리셔 또는 투자자이신가요?", cta2:"네트워크에 가입하고 인증을 받아 인디 개발자와 연결하세요.",
+    ctabtn:"파트너 되기 →", signin:"로그인",
+    genreLabel:(g)=>GENRE_KO[g]||g, marketOf:(m)=>MARKET_L.ko[m]||m }
+};
+
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+let rows = [], fKind = "all", fRegion = "all";
+let regionName = (cc)=>cc;
+
+function buildRegionNames(){
+  try{ const dn = new Intl.DisplayNames([lang==="zh"?"zh-Hans":lang],{type:"region"});
+    regionName = (cc)=>{ try{ return (cc && dn.of(cc)) || cc; }catch{ return cc; } };
+  }catch{ regionName = (cc)=>cc; }
+}
+
+const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function T(){ return I18N[lang]; }
+function nameOf(r){
+  if(lang==="zh") return r.name_zh || r.name_en || r.name_ko;
+  if(lang==="ko") return r.name_ko || r.name_en || r.name_zh;
+  return r.name_en || r.name_zh || r.name_ko;
+}
+
+function cardHtml(r){
+  const t = T();
+  const intro = lang==="zh" ? r.intro_zh : lang==="ko" ? r.intro_ko : r.intro_en;
+  const kinds = (r.kinds||[]).map((k,i)=>`<span class="kpill${k==="investment"?" inv":""}">${KIND_L[lang][k]||k}</span>`).join("");
+  const links = [
+    r.website ? `<a href="${esc(r.website)}" target="_blank" rel="noopener">WEBSITE ↗</a>` : "",
+    r.steam_url ? `<a href="${esc(r.steam_url)}" target="_blank" rel="noopener">STEAM ↗</a>` : "",
+  ].filter(Boolean).join("");
+  return `<div class="card">
+    <div class="chead">
+      <div class="clogo">${r.logo?`<img src="${esc(r.logo)}" alt="">`:"▢"}</div>
+      <div>
+        <div class="cname cjk-swap">${esc(nameOf(r))}</div>
+      </div>
+    </div>
+    <div class="ckinds">${kinds}</div>
+    ${intro?`<div class="cintro cjk-swap" onclick="this.classList.toggle('open')">${esc(intro)}</div>`:""}
+    <div class="clinks">${links}<span class="rbadge">${flagOf(r.region)} ${esc(regionName(r.region))}</span></div>
+  </div>`;
+}
+
+function renderGrid(){
+  const list = rows.filter(r=>{
+    if(fKind!=="all" && !(r.kinds||[]).includes(fKind)) return false;
+    if(fRegion!=="all" && r.region!==fRegion) return false;
+    return true;
+  });
+  $("#grid").innerHTML = list.map(cardHtml).join("");
+  $("#empty").style.display = list.length ? "none" : "block";
+  $("#empty").textContent = T().empty;
+}
+
+function renderRegionFilter(){
+  const sel = $("#f-region");
+  const regions = [...new Set(rows.map(r=>r.region).filter(Boolean))]
+    .sort((a,b)=>regionName(a).localeCompare(regionName(b), lang==="zh"?"zh-Hans":lang));
+  sel.innerHTML = `<option value="all">${T().fRegionAll}</option>` +
+    regions.map(c=>`<option value="${c}">${flagOf(c)} ${esc(regionName(c))}</option>`).join("");
+  if(regions.includes(fRegion)) sel.value = fRegion; else { fRegion = "all"; sel.value = "all"; }
+}
+
+function renderText(){
+  document.body.setAttribute("lang",lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  buildRegionNames();
+  const t = T();
+  $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead;
+  $("#nl-projects").textContent=t.nlProjects; $("#nl-partners").textContent=t.nlPartners;
+  $("#f-all").textContent=t.fAll; $("#f-pub").textContent=t.fPub; $("#f-inv").textContent=t.fInv;
+  $("#cta1").textContent=t.cta1; $("#cta2").textContent=t.cta2; $("#ctabtn").textContent=t.ctabtn;
+  const a=$("#acct"); if(!a.dataset.logged) a.textContent=t.signin;
+  renderRegionFilter();
+  renderGrid();
+}
+
+document.querySelectorAll(".fchip").forEach(b=>{
+  b.onclick=()=>{ fKind=b.dataset.k;
+    document.querySelectorAll(".fchip").forEach(x=>x.classList.toggle("on",x===b));
+    renderGrid(); };
+});
+$("#f-region").addEventListener("change",()=>{ fRegion=$("#f-region").value; renderGrid(); });
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
+});
+
+(async ()=>{
+  renderText();
+  // 顶栏账号状态
+  try{
+    const r = await fetch("/api/auth/me"); const d = await r.json();
+    if(d && d.loggedIn && !d.needsRole){
+      const a=$("#acct"); a.dataset.logged="1";
+      a.textContent="▸ "+(d.email||"").split("@")[0].slice(0,14);
+      a.href="/account.html";
+    }
+  }catch(e){}
+  // 合作方数据
+  try{
+    const r = await fetch("/api/partners"); const d = await r.json();
+    if(Array.isArray(d)) rows = d;
+  }catch(e){}
+  renderText();
+})();
+</script>
