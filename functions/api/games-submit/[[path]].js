@@ -178,24 +178,23 @@ async function handleCreate(env, s, request) {
 
   // 开发商展示名取自工作室信息
   const studioInput = S(b.studio_name, 120);
-  let dp = await env.DB.prepare("SELECT studio_name FROM developer_profiles WHERE account_id = ?").bind(s.aid).first();
-  if (studioInput && (!dp || !dp.studio_name)) {
-    await env.DB.prepare(
-      `INSERT INTO developer_profiles (account_id, studio_name, contact_email, updated_at)
-       VALUES (?, ?, ?, datetime('now'))
-       ON CONFLICT(account_id) DO UPDATE SET studio_name=excluded.studio_name, updated_at=datetime('now')`
-    ).bind(s.aid, studioInput, s.email).run();
-    dp = { studio_name: studioInput };
-  }
-  const developer = studioInput || (dp && dp.studio_name) || "";
+  const studioLogo = S(b.studio_logo, 500);
+  if (!studioInput) return bad("studio_required");
+  const dp0 = await env.DB.prepare("SELECT contact_email FROM developer_profiles WHERE account_id = ?").bind(s.aid).first();
+  await env.DB.prepare(
+    `INSERT INTO developer_profiles (account_id, studio_name, logo, contact_email, updated_at)
+     VALUES (?, ?, ?, ?, datetime('now'))
+     ON CONFLICT(account_id) DO UPDATE SET studio_name=excluded.studio_name, logo=excluded.logo, updated_at=datetime('now')`
+  ).bind(s.aid, studioInput, studioLogo || "preset:solo", (dp0 && dp0.contact_email) || s.email).run();
+  const developer = studioInput;
 
   await env.DB.prepare(
-    `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, full_en, developer, stage,
+    `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, full_en, developer, studio_logo, stage,
                         genres, needs, platforms, region, cover, screenshots, video, steam_url,
                         claimed_by, visible, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
   ).bind(
-    slugify(t_en || t_zh || t_ko), t_en, t_zh, t_ko, d_en, full_en, developer, stage,
+    slugify(t_en || t_zh || t_ko), t_en, t_zh, t_ko, d_en, full_en, developer, studioLogo || "preset:solo", stage,
     JSON.stringify(genres), JSON.stringify(needs), JSON.stringify(platforms), region,
     cover, JSON.stringify(screenshots), video, steam_url, s.aid
   ).run();
@@ -240,7 +239,4 @@ export async function onRequest(context) {
     if (method === "POST" && path === "create") return await handleCreate(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
     return bad("not_found", 404);
-  } catch (e) {
-    return bad("server_error: " + String(e.message || e).slice(0, 300), 500);
-  }
-}
+ 
