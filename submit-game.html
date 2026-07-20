@@ -110,8 +110,26 @@
   <div class="kicker" id="kicker">DEVELOPER // SUBMIT GAME</div>
   <h1 id="title"></h1>
   <p class="lead cjk-swap" id="lead"></p>
+  <a href="/login.html?pick=1" id="switchrole" style="display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);border:1px solid var(--line);border-radius:7px;padding:7px 12px;margin-bottom:20px"></a>
 
   <div class="locked" id="locked"><p class="cjk-swap" id="locked-text"></p></div>
+
+  <!-- 邮箱验证:未登录开发者上来先过这一步,验证即自动建号 -->
+  <div class="card" id="gate" style="display:none;padding:24px">
+    <div class="f" style="margin-bottom:0">
+      <label><span id="ge1"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="ge1n"></p>
+      <input type="email" id="gate-email" autocomplete="email" placeholder="you@studio.com">
+      <div id="gate-coderow" style="display:none;margin-top:12px">
+        <label><span id="ge2"></span> <span class="req">*</span></label>
+        <input type="text" id="gate-code" inputmode="numeric" maxlength="6" style="letter-spacing:8px;text-align:center;font-family:var(--mono);font-size:20px">
+      </div>
+      <button class="btn" id="gate-btn"></button>
+      <button class="btn" id="gate-resend" style="display:none;background:transparent;color:var(--ink-dim);border:1px solid var(--line);margin-top:10px"></button>
+      <div class="msg" id="gate-msg"></div>
+      <p class="sub cjk-swap" id="gate-hint" style="margin-top:14px"></p>
+    </div>
+  </div>
 
   <div class="card" id="form">
     <div class="sec"><span class="num">01</span><span class="st" id="s1"></span><span class="rule"></span></div>
@@ -156,7 +174,7 @@
       <p class="sub cjk-swap" id="g11n"></p>
       <div class="coverup" id="coverbox">+</div>
       <input type="file" id="coverfile" accept="image/jpeg,image/png,image/webp" hidden></div>
-    <div class="f"><label id="g12"></label>
+    <div class="f"><label><span id="g12"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g12n"></p>
       <div class="shots" id="shots"></div>
       <input type="file" id="shotfile" accept="image/jpeg,image/png,image/webp" hidden></div>
@@ -190,10 +208,15 @@ const MAX_SHOTS = 5;
 const I18N = {
   en:{
     kicker:"DEVELOPER // SUBMIT GAME", title:"Submit Your Game",
-    lead:"Tell us about your game. We review every submission before it appears in the library — usually within 1–2 business days.",
+    lead:"List your game and get discovered by publishers and investors. Once approved, you can reach out directly to the partners you want to work with. Review usually takes 1–2 business days.",
     locked:'Please <a href="/login.html">sign in</a> with a developer account first.',
     lockedRole:'Game submission is for developer accounts. You are signed in as a partner.',
     s1:"Basic Info", s2:"Game Details", s3:"Links", s4:"Media",
+    switchRole:"Looking to find games instead? → Switch role", ge1:"Your Email", ge1n:"We'll create your account automatically — no password needed. Enter your email to start.",
+    ge2:"Verification Code",
+    gateSend:"Send Code", gateVerify:"Verify & Continue", gateResend:"Resend Code", gateSending:"Sending…", gateVerifying:"Verifying…",
+    gateSent:(e)=>`Code sent to ${e}. Check your inbox (and spam).`,
+    gateHint:"Already have games submitted? This same email keeps them all together.",
     g1:"Game Title", g1n:"English title is required. Chinese / Korean are optional — leave blank and our team will localize them for you.",
     ph_t_en:"Game title (English)", ph_t_zh:"Chinese title (optional)", ph_t_ko:"Korean title (optional)",
     g2:"One-line Pitch", g2n:"Shown on your game card in the library.",
@@ -213,16 +236,21 @@ const I18N = {
       desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
       genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
       market_required:"Please pick a target market.", needs_required:"Please pick what you are looking for.",
-      cover_required:"Please upload a cover image.", url_invalid:"Please check the URL format (http/https).",
+      cover_required:"Please upload a cover image.", shots_required:"Please upload at least one screenshot.", url_invalid:"Please check the URL format (http/https).",
       too_large:"Image is too large (max 5MB).", type_not_allowed:"Only JPG/PNG/WebP images are allowed.",
-      not_logged_in:"Please sign in first.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
+      not_logged_in:"Please sign in first.", invalid_email:"Please enter a valid email.", invalid_input:"Please enter the 6-digit code.", cooldown:"Please wait a moment before requesting another code.", hourly_limit:"Too many codes. Try again in an hour.", wrong_or_expired_code:"Wrong or expired code.", not_a_developer:"This email is registered as a partner account. Please use a different email to submit games.", studio_required:"Please enter your studio / developer name.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
   },
   zh:{
     kicker:"开发者 // 提交游戏", title:"提交你的游戏",
-    lead:"介绍一下你的游戏。所有提交都会经过审核后上架,通常 1–2 个工作日内处理。",
+    lead:"展示你的游戏,被发行商和投资人发现。审核通过后,你就能主动联系想合作的发行商与投资方。审核通常 1–2 个工作日。",
     locked:'请先用开发者账号<a href="/login.html">登录</a>。',
     lockedRole:"游戏提交仅面向开发者账号,你当前是合作方身份。",
     s1:"基本信息", s2:"游戏属性", s3:"相关链接", s4:"素材",
+    switchRole:"想找游戏合作?→ 切换身份", ge1:"你的邮箱", ge1n:"我们会自动为你创建账号,无需密码。填入邮箱即可开始。",
+    ge2:"验证码",
+    gateSend:"发送验证码", gateVerify:"验证并继续", gateResend:"重新发送", gateSending:"发送中…", gateVerifying:"验证中…",
+    gateSent:(e)=>`验证码已发送至 ${e},请查收(注意垃圾邮件)。`,
+    gateHint:"以前提交过游戏?用同一个邮箱,所有游戏都会归到一起。",
     g1:"游戏名称", g1n:"中文名必填;英文名、韩文名选填,留空我们帮你本地化。",
     ph_t_en:"英文名(选填)", ph_t_zh:"游戏名称(中文)", ph_t_ko:"韩文名(选填)",
     g2:"一句话简介", g2n:"显示在项目库的游戏卡片上。",
@@ -242,16 +270,21 @@ const I18N = {
       desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
       genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
       market_required:"请选择目标市场。", needs_required:"请选择你在寻找什么。",
-      cover_required:"请上传封面图。", url_invalid:"链接格式不对(需以 http/https 开头)。",
+      cover_required:"请上传封面图。", shots_required:"请至少上传一张游戏截图。", url_invalid:"链接格式不对(需以 http/https 开头)。",
       too_large:"图片太大(最大 5MB)。", type_not_allowed:"仅支持 JPG/PNG/WebP 图片。",
-      not_logged_in:"请先登录。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
+      not_logged_in:"请先登录。", invalid_email:"请填写有效邮箱。", invalid_input:"请输入 6 位验证码。", cooldown:"操作太频繁,请稍候再试。", hourly_limit:"发送次数过多,请一小时后再试。", wrong_or_expired_code:"验证码错误或已过期。", not_a_developer:"该邮箱已注册为合作方账号,请换一个邮箱提交游戏。", studio_required:"请填写工作室/开发商名称。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
   },
   ko:{
     kicker:"개발자 // 게임 제출", title:"게임 제출",
-    lead:"게임을 소개해 주세요. 모든 제출은 심사 후 등록되며 보통 1–2 영업일 내 처리됩니다.",
+    lead:"게임을 등록하고 퍼블리셔와 투자자에게 발견되세요. 승인되면 원하는 파트너에게 직접 연락할 수 있습니다. 심사는 보통 1–2 영업일 소요됩니다.",
     locked:'먼저 개발자 계정으로 <a href="/login.html">로그인</a>하세요.',
     lockedRole:"게임 제출은 개발자 계정 전용입니다. 현재 파트너 계정으로 로그인되어 있습니다.",
     s1:"기본 정보", s2:"게임 정보", s3:"링크", s4:"미디어",
+    switchRole:"게임을 찾으시나요? → 신분 전환", ge1:"이메일", ge1n:"비밀번호 없이 계정이 자동으로 생성됩니다. 이메일을 입력하여 시작하세요.",
+    ge2:"인증 코드",
+    gateSend:"코드 보내기", gateVerify:"확인 후 계속", gateResend:"코드 재전송", gateSending:"전송 중…", gateVerifying:"확인 중…",
+    gateSent:(e)=>`${e}(으)로 코드를 보냈습니다. 받은편지함(스팸함)을 확인하세요.`,
+    gateHint:"이전에 게임을 제출하셨나요? 같은 이메일을 쓰면 모두 함께 관리됩니다.",
     g1:"게임 이름", g1n:"한글명은 필수입니다. 영문·중문명은 선택이며 비워두면 현지화해 드립니다.",
     ph_t_en:"영문명(선택)", ph_t_zh:"중문명(선택)", ph_t_ko:"게임 이름(한글)",
     g2:"한 줄 소개", g2n:"라이브러리의 게임 카드에 표시됩니다.",
@@ -271,9 +304,9 @@ const I18N = {
       desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
       genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
       market_required:"목표 시장을 선택하세요.", needs_required:"찾고 있는 것을 선택하세요.",
-      cover_required:"커버 이미지를 업로드하세요.", url_invalid:"URL 형식을 확인하세요(http/https).",
+      cover_required:"커버 이미지를 업로드하세요.", shots_required:"스크린샷을 최소 한 장 업로드하세요.", url_invalid:"URL 형식을 확인하세요(http/https).",
       too_large:"이미지가 너무 큽니다(최대 5MB).", type_not_allowed:"JPG/PNG/WebP 이미지만 지원합니다.",
-      not_logged_in:"먼저 로그인해 주세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
+      not_logged_in:"먼저 로그인해 주세요.", invalid_email:"올바른 이메일을 입력하세요.", invalid_input:"6자리 코드를 입력하세요.", cooldown:"잠시 후 다시 시도하세요.", hourly_limit:"요청이 너무 많습니다. 1시간 후 다시 시도하세요.", wrong_or_expired_code:"코드가 틀렸거나 만료되었습니다.", not_a_developer:"이 이메일은 파트너 계정으로 등록되어 있습니다. 다른 이메일로 게임을 제출하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
   }
 };
 
@@ -281,6 +314,7 @@ const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
 let selStage=[], selGenres=[], selPlatforms=[], selMarket=[], selNeeds=[];
 let coverUrl="", shotUrls=[];
+let gateCodeSent=false, gateVerified=false, gateCooldown=0, gateTimer=null;
 
 function T(){ return I18N[lang]; }
 function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||T().errors.server; }
@@ -352,6 +386,10 @@ function renderText(){
   const t=T();
   $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead; $("#back").textContent=t.back;
   $("#s1").textContent=t.s1; $("#s2").textContent=t.s2; $("#s3").textContent=t.s3; $("#s4").textContent=t.s4;
+  $("#switchrole").textContent=t.switchRole; $("#ge1").textContent=t.ge1; $("#ge1n").textContent=t.ge1n; $("#ge2").textContent=t.ge2;
+  $("#gate-hint").textContent=t.gateHint;
+  if(!gateVerified) $("#gate-btn").textContent = gateCodeSent ? t.gateVerify : t.gateSend;
+  $("#gate-resend").textContent=t.gateResend;
   $("#g1").textContent=t.g1; $("#g1n").textContent=t.g1n;
   $("#t-en").placeholder=t.ph_t_en; $("#t-zh").placeholder=t.ph_t_zh; $("#t-ko").placeholder=t.ph_t_ko;
   const ord = lang==="zh" ? ["zh","en","ko"] : lang==="ko" ? ["ko","en","zh"] : ["en","zh","ko"];
@@ -391,6 +429,7 @@ $("#submit").onclick = async ()=>{
   if(!selNeeds.length) return err("needs_required");
   if(!isUrl($("#steam").value.trim())||!isUrl($("#video").value.trim())) return err("url_invalid");
   if(!coverUrl) return err("cover_required");
+  if(!shotUrls.length) return err("shots_required");
   $("#submit").disabled=true; $("#submit").textContent=t.submitting;
   try{
     await api("/api/games-submit/create",{ method:"POST", headers:{"content-type":"application/json"},
@@ -415,15 +454,76 @@ $("#lang").addEventListener("click",(e)=>{
   lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
 });
 
+function showForm(){
+  gateVerified=true;
+  $("#gate").style.display="none";
+  $("#form").style.display="block";
+}
+
+async function gateStartCooldown(){
+  gateCooldown=60; $("#gate-resend").style.display="block"; $("#gate-resend").disabled=true;
+  clearInterval(gateTimer);
+  gateTimer=setInterval(()=>{ gateCooldown--;
+    $("#gate-resend").textContent = gateCooldown>0 ? `${T().gateResend} (${gateCooldown})` : T().gateResend;
+    if(gateCooldown<=0){ clearInterval(gateTimer); $("#gate-resend").disabled=false; }
+  },1000);
+}
+
+async function gateSendCode(){
+  const m=$("#gate-msg"); m.className="msg";
+  const email=$("#gate-email").value.trim().toLowerCase();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ err("invalid_email"); return; }
+  $("#gate-btn").disabled=true; $("#gate-btn").textContent=T().gateSending;
+  try{
+    await api("/api/games-submit/send-code",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({email}) });
+    gateCodeSent=true;
+    $("#gate-coderow").style.display="block"; $("#gate-code").focus();
+    $("#gate-email").readOnly=true;
+    m.className="msg ok"; m.textContent=T().gateSent(email);
+    gateStartCooldown();
+  }catch(e){ err(e); }
+  finally{ $("#gate-btn").disabled=false; $("#gate-btn").textContent=T().gateVerify; }
+}
+
+async function gateVerify(){
+  const m=$("#gate-msg"); m.className="msg";
+  const email=$("#gate-email").value.trim().toLowerCase();
+  const code=$("#gate-code").value.trim();
+  if(!/^\d{6}$/.test(code)){ err("invalid_input"); return; }
+  $("#gate-btn").disabled=true; $("#gate-btn").textContent=T().gateVerifying;
+  try{
+    const d=await api("/api/games-submit/verify",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({email, code}) });
+    clearInterval(gateTimer); $("#gate-resend").style.display="none";
+    // 没填过工作室信息 → 先去补全,带回跳参数
+    if(!d.studio_name){ location.href="/profile.html?next=submit"; return; }
+    showForm(d.studio_name);
+  }catch(e){ err(e); $("#gate-btn").disabled=false; $("#gate-btn").textContent=T().gateVerify; }
+}
+
+$("#gate-btn").onclick=()=>{ gateCodeSent ? gateVerify() : gateSendCode(); };
+$("#gate-resend").onclick=()=>{ if(!$("#gate-resend").disabled) gateSendCode(); };
+$("#gate-email").addEventListener("keydown",(e)=>{ if(e.key==="Enter"&&!gateCodeSent) gateSendCode(); });
+$("#gate-code").addEventListener("keydown",(e)=>{ if(e.key==="Enter") gateVerify(); });
+$("#gate-code").addEventListener("input",()=>{ $("#gate-code").value=$("#gate-code").value.replace(/\D/g,"").slice(0,6); });
+
 (async ()=>{
   renderText();
   try{
     const r=await fetch("/api/auth/me"); const d=await r.json();
-    if(!d.loggedIn || d.needsRole){ $("#locked-text").innerHTML=T().locked; $("#locked").style.display="block"; return; }
-    if(d.role!=="developer"){ $("#locked-text").textContent=T().lockedRole; $("#locked").style.display="block"; return; }
-    $("#form").style.display="block";
+    if(d.loggedIn && !d.needsRole && d.role==="developer"){
+      let studio="";
+      try{ const pr=await fetch("/api/profile/me"); const pd=await pr.json(); if(pd.ok) studio=(pd.profile&&pd.profile.studio_name)||""; }catch(e){}
+      if(!studio){ location.href="/profile.html?next=submit"; return; }
+      showForm();
+    } else if(d.loggedIn && !d.needsRole && d.role==="partner"){
+      // 合作方账号:提示换邮箱
+      $("#locked-text").textContent=T().lockedRole; $("#locked").style.display="block";
+    } else {
+      // 未登录 / 未选身份:走邮箱验证建号
+      $("#gate").style.display="block";
+    }
   }catch(e){
-    $("#locked-text").innerHTML=T().locked; $("#locked").style.display="block";
+    $("#gate").style.display="block";
   }
 })();
 </script>

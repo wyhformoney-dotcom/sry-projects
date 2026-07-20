@@ -85,6 +85,16 @@
   .combo .item:hover{ background:rgba(198,242,78,.09); }
   .combo .item .flag{ font-size:16px; }
 
+  .logopick{ display:flex; gap:12px; flex-wrap:wrap; }
+  .lp{ display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+  .lp .pic{ width:64px; height:64px; border-radius:11px; border:2px solid var(--line); background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; transition:border .15s; }
+  .lp .pic img, .lp .pic svg{ width:100%; height:100%; object-fit:cover; }
+  .lp.sel .pic{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .lp .cap{ font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; color:var(--ink-faint); text-align:center; }
+  .lp.sel .cap{ color:var(--accent); }
+  .lp .pic.up{ color:var(--ink-faint); font-size:20px; flex-direction:column; }
+  .lp .pic.up .u2{ font-family:var(--mono); font-size:8px; margin-top:2px; }
   .up{ display:flex; align-items:center; gap:14px; }
   .up .preview{ width:76px; height:76px; border:1px dashed var(--line); border-radius:10px; background:var(--panel2);
     display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; color:var(--ink-faint); font-size:22px; }
@@ -150,10 +160,7 @@
       <input type="email" id="dev-email"></div>
     <div class="f"><label id="d5"></label>
       <p class="sub cjk-swap" id="d5n"></p>
-      <div class="up">
-        <div class="preview" id="dev-logoprev">+</div>
-        <div><button class="upbtn" id="dev-logobtn" type="button"></button></div>
-      </div>
+      <div class="logopick" id="dev-logopick"></div>
       <input type="file" id="dev-logofile" accept="image/jpeg,image/png,image/webp" hidden></div>
     <div class="f"><label id="d6"></label>
       <p class="sub cjk-swap" id="d6n"></p>
@@ -285,7 +292,7 @@ const I18N = {
     locked:'Please <a href="/login.html">sign in</a> first.',
     multi:"(multi-select)",
     d1:"Studio Name", d2:"Contact Email", d2n:"Shown to verified partners who unlock your contact.",
-    d5:"Studio Logo (optional)", d5n:"Square image works best. JPG/PNG/WebP, up to 5MB.", d6:"Studio Intro (optional)", d6n:"A short line about your studio and games.", ph_dev_intro:"e.g. Two-person studio from Seoul making cozy narrative games.", saveDev:"Save", savedDev:"Saved.",
+    d5:"Studio Logo", d5n:"Pick a default below, or upload your own. Shown on your game cards.", lpSolo:"Solo Developer", lpTeam:"Small Team", lpStudio:"Studio", lpUpload:"Upload", d6:"Studio Intro (optional)", d6n:"A short line about your studio and games.", ph_dev_intro:"e.g. Two-person studio from Seoul making cozy narrative games.", saveDev:"Save", savedDev:"Saved.",
     psec1:"Basic Info", psec2:"Business", psec3:"Links & Contact", psec4:"Verification",
     p1:"Company / Organization Name", p1n:"English name is required; Chinese and Korean names are optional.",
     ph_name_en:"Company name (English)", ph_name_zh:"Chinese name (optional)", ph_name_ko:"Korean name (optional)",
@@ -324,7 +331,7 @@ const I18N = {
     locked:'请先<a href="/login.html">登录</a>。',
     multi:"(可多选)",
     d1:"工作室名称", d2:"对外联系邮箱", d2n:"通过认证的合作方解锁联系方式后看到的邮箱。",
-    d5:"工作室 Logo(选填)", d5n:"建议方形图。JPG/PNG/WebP,最大 5MB。", d6:"工作室简介(选填)", d6n:"一两句话介绍你们的团队和作品方向。", ph_dev_intro:"例:来自成都的三人小团队,专注叙事解谜游戏。", saveDev:"保存", savedDev:"已保存。",
+    d5:"工作室 Logo", d5n:"从下面选一个默认头像,或上传自己的。会显示在你的游戏卡片上。", lpSolo:"独立开发者", lpTeam:"小团队", lpStudio:"工作室", lpUpload:"上传", d6:"工作室简介(选填)", d6n:"一两句话介绍你们的团队和作品方向。", ph_dev_intro:"例:来自成都的三人小团队,专注叙事解谜游戏。", saveDev:"保存", savedDev:"已保存。",
     psec1:"基本信息", psec2:"业务方向", psec3:"链接与联系", psec4:"资质验证",
     p1:"公司 / 机构名称", p1n:"英文名必填,中文名、韩文名选填。",
     ph_name_en:"公司名称(英文)", ph_name_zh:"中文名称(选填)", ph_name_ko:"韩文名称(选填)",
@@ -363,7 +370,7 @@ const I18N = {
     locked:'먼저 <a href="/login.html">로그인</a>해 주세요.',
     multi:"(복수 선택 가능)",
     d1:"스튜디오 이름", d2:"공개 연락 이메일", d2n:"인증된 파트너가 연락처를 열람할 때 보이는 이메일입니다.",
-    d5:"스튜디오 로고(선택)", d5n:"정사각형 이미지 권장. JPG/PNG/WebP, 최대 5MB.", d6:"스튜디오 소개(선택)", d6n:"팀과 작품 방향에 대한 한두 문장.", ph_dev_intro:"예: 서울의 2인 스튜디오, 코지 내러티브 게임을 만듭니다.", saveDev:"저장", savedDev:"저장되었습니다.",
+    d5:"스튜디오 로고", d5n:"아래 기본 아이콘을 선택하거나 직접 업로드하세요. 게임 카드에 표시됩니다.", lpSolo:"1인 개발자", lpTeam:"소규모 팀", lpStudio:"스튜디오", lpUpload:"업로드", d6:"스튜디오 소개(선택)", d6n:"팀과 작품 방향에 대한 한두 문장.", ph_dev_intro:"예: 서울의 2인 스튜디오, 코지 내러티브 게임을 만듭니다.", saveDev:"저장", savedDev:"저장되었습니다.",
     psec1:"기본 정보", psec2:"비즈니스", psec3:"링크 및 연락처", psec4:"자격 인증",
     p1:"회사 / 기관명", p1n:"영문명은 필수, 중문명·한글명은 선택입니다.",
     ph_name_en:"회사명(영문)", ph_name_zh:"중문명(선택)", ph_name_ko:"한글명(선택)",
@@ -396,6 +403,17 @@ const I18N = {
       not_logged_in:"먼저 로그인해 주세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
   }
 };
+
+
+/* ---------- 预设工作室头像(3款) ---------- */
+const PRESET_SVG = {
+  solo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  team: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="17" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="31" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M8 37c0-5.5 4-8.6 9-8.6M40 37c0-5.5-4-8.6-9-8.6" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  studio: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'
+};
+const presetUri = (key)=> "data:image/svg+xml," + encodeURIComponent(PRESET_SVG[key]||PRESET_SVG.team);
+// 任意 logo 值 → 可显示的 src(preset:xxx 转 SVG,否则原样)
+function logoSrc(v){ return (typeof v==="string" && v.startsWith("preset:")) ? presetUri(v.slice(7)) : v; }
 
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
@@ -461,19 +479,19 @@ $("#par-region").addEventListener("blur",()=>{ setTimeout(()=>{ $("#region-list"
 
 /* ---------- 上传 ---------- */
 function bindUpload(fileEl, btnEl, prevEl, kind, onDone, msgEl){
-  btnEl.onclick = ()=>fileEl.click();
+  if(btnEl) btnEl.onclick = ()=>fileEl.click();
   fileEl.onchange = async ()=>{
     const f = fileEl.files[0]; if(!f) return;
     clearMsg(msgEl);
     if(f.size > 5*1024*1024){ err(msgEl,"too_large"); fileEl.value=""; return; }
-    btnEl.disabled=true; btnEl.textContent=T().uploading;
+    if(btnEl){ btnEl.disabled=true; btnEl.textContent=T().uploading; }
     try{
       const fd = new FormData(); fd.append("file", f); fd.append("kind", kind);
       const d = await api("upload",{ method:"POST", body:fd });
       onDone(d.url);
-      prevEl.innerHTML = `<img src="${d.url}" alt="">`;
+      if(prevEl) prevEl.innerHTML = `<img src="${d.url}" alt="">`;
     }catch(e){ err(msgEl,e); }
-    finally{ btnEl.disabled=false; btnEl.textContent=T().upload; fileEl.value=""; }
+    finally{ if(btnEl){ btnEl.disabled=false; btnEl.textContent=T().upload; } fileEl.value=""; }
   };
 }
 
@@ -517,6 +535,25 @@ function renderProofSwitch(){
 $("#par-prooftype").addEventListener("change", renderProofSwitch);
 
 /* ---------- 文案渲染 ---------- */
+function renderDevLogoPick(){
+  const t=T(); const el=$("#dev-logopick"); if(!el) return;
+  const presets=[["solo",t.lpSolo],["team",t.lpTeam],["studio",t.lpStudio]];
+  const isUpload = devLogoUrl && !devLogoUrl.startsWith("preset:");
+  el.innerHTML =
+    presets.map(([k,label])=>`
+      <div class="lp${devLogoUrl==="preset:"+k?" sel":""}" data-preset="${k}">
+        <div class="pic">${PRESET_SVG[k]}</div><div class="cap">${label}</div>
+      </div>`).join("") +
+    `<div class="lp${isUpload?" sel":""}" data-upload="1">
+       <div class="pic up">${isUpload?`<img src="${devLogoUrl}">`:`+<span class="u2">${t.lpUpload}</span>`}</div>
+       <div class="cap">${t.lpUpload}</div>
+     </div>`;
+  el.querySelectorAll(".lp").forEach(node=>{
+    if(node.dataset.preset) node.onclick=()=>{ devLogoUrl="preset:"+node.dataset.preset; renderDevLogoPick(); };
+    if(node.dataset.upload) node.onclick=()=>$("#dev-logofile").click();
+  });
+}
+
 function renderText(){
   document.body.setAttribute("lang",lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
@@ -531,7 +568,8 @@ function renderText(){
   $("#d1").textContent=t.d1; $("#d2").textContent=t.d2; $("#d2n").textContent=t.d2n;
   $("#d5").textContent=t.d5; $("#d5n").textContent=t.d5n;
   $("#d6").textContent=t.d6; $("#d6n").textContent=t.d6n; $("#dev-intro").placeholder=t.ph_dev_intro;
-  $("#dev-logobtn").textContent=t.upload; $("#dev-save").textContent=t.saveDev;
+  renderDevLogoPick();
+  $("#dev-save").textContent=t.saveDev;
   // 合作方
   $("#psec1").textContent=t.psec1; $("#psec2").textContent=t.psec2; $("#psec3").textContent=t.psec3; $("#psec4").textContent=t.psec4;
   $("#p1").textContent=t.p1; $("#p1n").textContent=t.p1n;
@@ -569,6 +607,9 @@ $("#dev-save").onclick = async ()=>{
         intro:$("#dev-intro").value, logo:devLogoUrl
       })});
     ok(m, t.savedDev);
+    if(new URLSearchParams(location.search).get("next")==="submit"){
+      setTimeout(()=>{ location.href="/submit-game.html"; }, 600);
+    }
   }catch(e){ err(m,e); }
   finally{ $("#dev-save").disabled=false; $("#dev-save").textContent=t.saveDev; }
 };
@@ -597,7 +638,7 @@ $("#lang").addEventListener("click",(e)=>{
   lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
 });
 
-bindUpload($("#dev-logofile"), $("#dev-logobtn"), $("#dev-logoprev"), "logo", (u)=>{devLogoUrl=u;}, $("#dev-msg"));
+bindUpload($("#dev-logofile"), null, null, "logo", (u)=>{devLogoUrl=u; renderDevLogoPick();}, $("#dev-msg"));
 bindUpload($("#par-file"), $("#par-upbtn"), $("#par-preview"), "proof", (u)=>{parProofUrl=u;}, $("#par-msg"));
 bindUpload($("#par-logofile"), $("#par-logobtn"), $("#par-logoprev"), "logo", (u)=>{parLogoUrl=u;}, $("#par-msg"));
 
@@ -611,7 +652,7 @@ bindUpload($("#par-logofile"), $("#par-logobtn"), $("#par-logoprev"), "logo", (u
       $("#f-dev").style.display="block";
       $("#dev-studio").value=p.studio_name||""; $("#dev-email").value=p.contact_email||"";
       $("#dev-intro").value=(p.intro||"").slice(0,200); $("#dev-introcnt").textContent=$("#dev-intro").value.length;
-      if(p.logo){ devLogoUrl=p.logo; $("#dev-logoprev").innerHTML=`<img src="${p.logo}">`; }
+      devLogoUrl = p.logo || "preset:team";
     }else{
       $("#f-par").style.display="block";
       $("#par-name-en").value=p.name_en||""; $("#par-name-zh").value=p.name_zh||""; $("#par-name-ko").value=p.name_ko||"";

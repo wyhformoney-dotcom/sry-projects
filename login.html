@@ -274,7 +274,7 @@ $("#b-verify").onclick = async ()=>{
   try{
     const d = await api("verify",{ method:"POST", body:JSON.stringify({email, code}) });
     if(d.needsRole){ isNew = true; show("s-role"); }
-    else{ location.replace("/account.html"); return; }
+    else{ location.replace(NEXT||"/account.html"); return; }
   }catch(e){ err($("#m2"), e); }
   finally{ $("#b-verify").disabled=false; $("#b-verify").textContent=t.verify; }
 };
@@ -326,7 +326,7 @@ $("#code").addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("#b-verify").
   renderText();
   try{
     const d = await api("me",{method:"GET"});
-    if(d.loggedIn && !d.needsRole){ location.replace("/account.html"); return; }
+    if(d.loggedIn && !d.needsRole){ location.replace(NEXT||"/account.html"); return; }
     else if(d.loggedIn && d.needsRole){ email = d.email; show("s-role"); }
   }catch{}
 })();

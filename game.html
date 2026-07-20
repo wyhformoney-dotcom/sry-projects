@@ -129,6 +129,9 @@
 <div class="wrap"><div id="app"></div></div>
 
 <script>
+const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',team:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="17" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="31" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M8 37c0-5.5 4-8.6 9-8.6M40 37c0-5.5-4-8.6-9-8.6" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/></svg>',studio:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'};
+function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.team) : v; }
+
 const SUBMIT="https://z5gxmjtpe7.feishu.cn/share/base/form/shrcnMt1EytDgy79CO7mgbrkIed"; // 提交游戏表单（飞书）
 const CONTACT_DOMAIN="srygamehub.com"; // 项目专属邮箱域名（Cloudflare Email Routing 兜底转发）
 const ZH={
@@ -159,6 +162,24 @@ const L=(c,v)=> lang==="zh"?((ZH[c]&&ZH[c][v])||v):lang==="ko"?((KO[c]&&KO[c][v]
 const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
 const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
 function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
+
+let CURRENT_GAME=null;
+async function contactClick(e){
+  e.preventDefault();
+  try{
+    const r=await fetch("/api/auth/me"); const d=await r.json();
+    if(d.loggedIn && !d.needsRole && d.role==="partner" && d.status==="verified"){
+      // 已认证合作方:放行到真实联系方式
+      const href=contactHref(CURRENT_GAME);
+      if(/^https?:/i.test(href)) window.open(href,"_blank","noopener"); else location.href=href;
+      return false;
+    }
+  }catch(err){}
+  // 其他所有情况(未登录/开发者/待审核合作方):去选身份页,带回跳
+  location.href="/login.html?pick=1&next="+encodeURIComponent(location.pathname+location.search);
+  return false;
+}
+
 function contactHref(g){
   const slug=slugify((g&&(g.t_en||g.t_zh))||"");
   if(!slug) return SUBMIT;
@@ -204,7 +225,7 @@ function render(){ if(!GAME){ renderNotFound(); return; }
   const tag=field(g,'d');
   const full=mdToHtml(field(g,'full'));
   const sd=field(g,'studio');
-  const ch=contactHref(g); const ext=/^https?:/i.test(ch)?' target="_blank" rel="noopener"':'';
+  CURRENT_GAME=g; const ch=contactHref(g); const ext=/^https?:/i.test(ch)?' target="_blank" rel="noopener"':'';
   const hasStudio=(g.developer&&g.developer.trim())||(sd&&sd.trim());
   const genres=g.genres||[], needs=g.needs||[], platforms=g.platforms||[];
   $("#app").innerHTML=`
@@ -221,7 +242,7 @@ function render(){ if(!GAME){ renderNotFound(); return; }
       <div class="deal-cell"><div class="deal-k">${t.platform}</div><div class="deal-v">${platforms.length?platforms.map(p=>L('platform',p)).join(" · "):t.na}</div></div>
       <div class="deal-cell"><div class="deal-k">${t.market}</div><div class="deal-v">${g.region?L('region',g.region):t.na}</div></div>
       <div class="deal-cell"><div class="deal-k">${t.seeking}</div>${needs.length?`<div class="deal-seek">${needs.map(n=>`<span class="seekpill">${L('need',n)}</span>`).join("")}</div>`:`<div class="deal-v">${t.na}</div>`}</div>
-      <div class="deal-cell deal-cta"><a href="${ch}"${ext}>${t.contact}</a></div>
+      <div class="deal-cell deal-cta"><a href="#" onclick="return contactClick(event)">${t.contact}</a></div>
     </div>
 
     ${g.stage?`<div class="section-h">${t.stage}</div>${renderTracker(g)}`:''}
@@ -230,13 +251,13 @@ function render(){ if(!GAME){ renderNotFound(); return; }
 
     ${hasStudio?`<div class="section-h">${t.studio}</div>
     <div class="studio">
-      ${g.studioLogo?`<div class="studio-logo"><img src="${esc(g.studioLogo)}"></div>`:''}
+      ${g.studioLogo?`<div class="studio-logo"><img src="${esc(logoSrc(g.studioLogo))}"></div>`:''}
       <div><div class="studio-name cjk-swap">${esc(g.developer||'')}</div><div class="studio-desc cjk-swap">${esc(sd)}</div></div>
     </div>`:''}
 
     <div class="cta-band">
       <div><h3 class="cjk-swap">${t.ctaH}</h3><p class="cjk-swap">${t.ctaP}</p></div>
-      <a href="${ch}"${ext}>${t.ctaBtn}</a>
+      <a href="#" onclick="return contactClick(event)">${t.ctaBtn}</a>
     </div>`;
   bindPb();
   document.querySelectorAll(".thumb").forEach(el=>el.addEventListener("click",()=>{activeIdx=+el.dataset.i;playing=false;$("#mainview").innerHTML=renderMain();document.querySelectorAll(".thumb").forEach(x=>x.classList.toggle("on",+x.dataset.i===activeIdx));bindPb();}));

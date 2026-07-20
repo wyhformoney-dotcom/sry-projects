@@ -156,7 +156,7 @@
     <button data-l="ko">한국어</button>
   </div>
   <a class="acct" id="acct" href="/login.html" data-en="Sign In" data-zh="登录" data-ko="로그인">Sign In</a>
-  <a class="cta" href="https://z5gxmjtpe7.feishu.cn/share/base/form/shrcnMt1EytDgy79CO7mgbrkIed" target="_blank" id="cta" data-en="Submit Your Game ↗" data-zh="提交你的游戏 ↗" data-ko="게임 제출하기 ↗">Submit Your Game ↗</a>
+  <a class="cta" href="/submit-game.html" target="_blank" id="cta" data-en="Submit Your Game ↗" data-zh="提交你的游戏 ↗" data-ko="게임 제출하기 ↗">Submit Your Game ↗</a>
 </nav>
 
 <div class="wrap">
@@ -201,6 +201,9 @@
 </div>
 
 <script>
+const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',team:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="17" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="31" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M8 37c0-5.5 4-8.6 9-8.6M40 37c0-5.5-4-8.6-9-8.6" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/></svg>',studio:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'};
+function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.team) : v; }
+
 // ====== 数据(需求仅 发行/投资;region 真实;platform 为占位,待你给真实值) ======
 let GAMES = [];
 
