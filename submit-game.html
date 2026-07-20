@@ -84,6 +84,19 @@
     color:var(--danger); border:none; cursor:pointer; font-size:12px; line-height:1; display:none; }
   .shot.has .rm{ display:block; }
 
+  .logopick{ display:flex; gap:12px; flex-wrap:wrap; }
+  .lp{ display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+  .lp .pic{ width:64px; height:64px; border-radius:11px; border:2px solid var(--line); background:var(--panel2);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; transition:border .15s; }
+  .lp .pic img, .lp .pic svg{ width:100%; height:100%; object-fit:cover; }
+  .lp.sel .pic{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .lp .cap{ font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; color:var(--ink-faint); text-align:center; }
+  .lp.sel .cap{ color:var(--accent); }
+  .lp .pic.up{ color:var(--ink-faint); font-size:20px; flex-direction:column; }
+  .lp .pic.up .u2{ font-family:var(--mono); font-size:8px; margin-top:2px; }
+  #gate-email, #gate-code{ width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:14px; padding:12px 13px; outline:none; font-family:var(--mono); }
+  #gate-email:focus, #gate-code:focus{ border-color:var(--accent); }
   .btn{ width:100%; margin-top:8px; padding:14px 0; border:none; border-radius:8px; cursor:pointer;
     background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px;
     letter-spacing:.08em; text-transform:uppercase; }
@@ -132,7 +145,16 @@
   </div>
 
   <div class="card" id="form">
-    <div class="sec"><span class="num">01</span><span class="st" id="s1"></span><span class="rule"></span></div>
+    <div class="sec"><span class="num">01</span><span class="st" id="s0"></span><span class="rule"></span></div>
+    <div class="f"><label><span id="w1"></span> <span class="req">*</span></label>
+      <p class="sub cjk-swap" id="w1n"></p>
+      <input type="text" id="studio" maxlength="120"></div>
+    <div class="f"><label id="w2"></label>
+      <p class="sub cjk-swap" id="w2n"></p>
+      <div class="logopick" id="studio-logopick"></div>
+      <input type="file" id="studio-logofile" accept="image/jpeg,image/png,image/webp" hidden></div>
+
+    <div class="sec"><span class="num">02</span><span class="st" id="s1"></span><span class="rule"></span></div>
     <div class="f"><label><span id="g1"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g1n"></p>
       <div id="tp"><input type="text" id="t-en" maxlength="120"></div>
@@ -149,7 +171,7 @@
       <textarea id="full-en" maxlength="2000"></textarea>
       <div class="cnt"><span id="full-cnt">0</span>/2000</div></div>
 
-    <div class="sec"><span class="num">02</span><span class="st" id="s2"></span><span class="rule"></span></div>
+    <div class="sec"><span class="num">03</span><span class="st" id="s2"></span><span class="rule"></span></div>
     <div class="f"><label><span id="g4"></span> <span class="req">*</span></label>
       <div class="chips" id="stage"></div></div>
     <div class="f"><label><span id="g5"></span> <span class="req">*</span><span class="multi" id="g5m"></span></label>
@@ -162,14 +184,14 @@
     <div class="f"><label><span id="g8"></span> <span class="req">*</span><span class="multi" id="g8m"></span></label>
       <div class="chips" id="needs"></div></div>
 
-    <div class="sec"><span class="num">03</span><span class="st" id="s3"></span><span class="rule"></span></div>
+    <div class="sec"><span class="num">04</span><span class="st" id="s3"></span><span class="rule"></span></div>
     <div class="f"><label id="g9"></label>
       <input type="url" id="steam" placeholder="https://store.steampowered.com/app/..."></div>
     <div class="f"><label id="g10"></label>
       <p class="sub cjk-swap" id="g10n"></p>
       <input type="url" id="video" placeholder="https://youtube.com/watch?v=..."></div>
 
-    <div class="sec"><span class="num">04</span><span class="st" id="s4"></span><span class="rule"></span></div>
+    <div class="sec"><span class="num">05</span><span class="st" id="s4"></span><span class="rule"></span></div>
     <div class="f"><label><span id="g11"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g11n"></p>
       <div class="coverup" id="coverbox">+</div>
@@ -183,7 +205,7 @@
     <div class="msg" id="msg"></div>
   </div>
 
-  <a class="back" href="/account.html" id="back"></a>
+  <a class="back" href="/" id="back"></a>
 </div>
 
 <script>
@@ -211,7 +233,9 @@ const I18N = {
     lead:"List your game and get discovered by publishers and investors. Once approved, you can reach out directly to the partners you want to work with. Review usually takes 1–2 business days.",
     locked:'Please <a href="/login.html">sign in</a> with a developer account first.',
     lockedRole:'Game submission is for developer accounts. You are signed in as a partner.',
-    s1:"Basic Info", s2:"Game Details", s3:"Links", s4:"Media",
+    s0:"Studio Info", s1:"Basic Info", s2:"Game Details", s3:"Links", s4:"Media",
+    w1:"Studio / Developer Name", w1n:"Shown on your game card. This is saved to your account for future submissions.",
+    w2:"Studio Logo", w2n:"Pick a default or upload your own.", lpSolo:"Solo Developer", lpTeam:"Small Team", lpStudio:"Studio", lpUpload:"Upload",
     switchRole:"Looking to find games instead? → Switch role", ge1:"Your Email", ge1n:"We'll create your account automatically — no password needed. Enter your email to start.",
     ge2:"Verification Code",
     gateSend:"Send Code", gateVerify:"Verify & Continue", gateResend:"Resend Code", gateSending:"Sending…", gateVerifying:"Verifying…",
@@ -236,7 +260,7 @@ const I18N = {
       desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
       genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
       market_required:"Please pick a target market.", needs_required:"Please pick what you are looking for.",
-      cover_required:"Please upload a cover image.", shots_required:"Please upload at least one screenshot.", url_invalid:"Please check the URL format (http/https).",
+      cover_required:"Please upload a cover image.", shots_required:"Please upload at least one screenshot.", studio_required:"Please enter your studio / developer name.", url_invalid:"Please check the URL format (http/https).",
       too_large:"Image is too large (max 5MB).", type_not_allowed:"Only JPG/PNG/WebP images are allowed.",
       not_logged_in:"Please sign in first.", invalid_email:"Please enter a valid email.", invalid_input:"Please enter the 6-digit code.", cooldown:"Please wait a moment before requesting another code.", hourly_limit:"Too many codes. Try again in an hour.", wrong_or_expired_code:"Wrong or expired code.", not_a_developer:"This email is registered as a partner account. Please use a different email to submit games.", studio_required:"Please enter your studio / developer name.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
   },
@@ -245,7 +269,9 @@ const I18N = {
     lead:"展示你的游戏,被发行商和投资人发现。审核通过后,你就能主动联系想合作的发行商与投资方。审核通常 1–2 个工作日。",
     locked:'请先用开发者账号<a href="/login.html">登录</a>。',
     lockedRole:"游戏提交仅面向开发者账号,你当前是合作方身份。",
-    s1:"基本信息", s2:"游戏属性", s3:"相关链接", s4:"素材",
+    s0:"工作室信息", s1:"基本信息", s2:"游戏属性", s3:"相关链接", s4:"素材",
+    w1:"工作室 / 开发商名称", w1n:"显示在游戏卡片上,并会保存到你的账号,下次提交自动带出。",
+    w2:"工作室 Logo", w2n:"选一个默认头像,或上传自己的。", lpSolo:"独立开发者", lpTeam:"小团队", lpStudio:"工作室", lpUpload:"上传",
     switchRole:"想找游戏合作?→ 切换身份", ge1:"你的邮箱", ge1n:"我们会自动为你创建账号,无需密码。填入邮箱即可开始。",
     ge2:"验证码",
     gateSend:"发送验证码", gateVerify:"验证并继续", gateResend:"重新发送", gateSending:"发送中…", gateVerifying:"验证中…",
@@ -270,7 +296,7 @@ const I18N = {
       desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
       genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
       market_required:"请选择目标市场。", needs_required:"请选择你在寻找什么。",
-      cover_required:"请上传封面图。", shots_required:"请至少上传一张游戏截图。", url_invalid:"链接格式不对(需以 http/https 开头)。",
+      cover_required:"请上传封面图。", shots_required:"请至少上传一张游戏截图。", studio_required:"请填写工作室/开发商名称。", url_invalid:"链接格式不对(需以 http/https 开头)。",
       too_large:"图片太大(最大 5MB)。", type_not_allowed:"仅支持 JPG/PNG/WebP 图片。",
       not_logged_in:"请先登录。", invalid_email:"请填写有效邮箱。", invalid_input:"请输入 6 位验证码。", cooldown:"操作太频繁,请稍候再试。", hourly_limit:"发送次数过多,请一小时后再试。", wrong_or_expired_code:"验证码错误或已过期。", not_a_developer:"该邮箱已注册为合作方账号,请换一个邮箱提交游戏。", studio_required:"请填写工作室/开发商名称。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
   },
@@ -279,7 +305,9 @@ const I18N = {
     lead:"게임을 등록하고 퍼블리셔와 투자자에게 발견되세요. 승인되면 원하는 파트너에게 직접 연락할 수 있습니다. 심사는 보통 1–2 영업일 소요됩니다.",
     locked:'먼저 개발자 계정으로 <a href="/login.html">로그인</a>하세요.',
     lockedRole:"게임 제출은 개발자 계정 전용입니다. 현재 파트너 계정으로 로그인되어 있습니다.",
-    s1:"기본 정보", s2:"게임 정보", s3:"링크", s4:"미디어",
+    s0:"스튜디오 정보", s1:"기본 정보", s2:"게임 정보", s3:"링크", s4:"미디어",
+    w1:"스튜디오 / 개발사 이름", w1n:"게임 카드에 표시되며 계정에 저장되어 다음 제출 시 자동으로 입력됩니다.",
+    w2:"스튜디오 로고", w2n:"기본 아이콘을 선택하거나 직접 업로드하세요.", lpSolo:"1인 개발자", lpTeam:"소규모 팀", lpStudio:"스튜디오", lpUpload:"업로드",
     switchRole:"게임을 찾으시나요? → 신분 전환", ge1:"이메일", ge1n:"비밀번호 없이 계정이 자동으로 생성됩니다. 이메일을 입력하여 시작하세요.",
     ge2:"인증 코드",
     gateSend:"코드 보내기", gateVerify:"확인 후 계속", gateResend:"코드 재전송", gateSending:"전송 중…", gateVerifying:"확인 중…",
@@ -304,17 +332,26 @@ const I18N = {
       desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
       genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
       market_required:"목표 시장을 선택하세요.", needs_required:"찾고 있는 것을 선택하세요.",
-      cover_required:"커버 이미지를 업로드하세요.", shots_required:"스크린샷을 최소 한 장 업로드하세요.", url_invalid:"URL 형식을 확인하세요(http/https).",
+      cover_required:"커버 이미지를 업로드하세요.", shots_required:"스크린샷을 최소 한 장 업로드하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", url_invalid:"URL 형식을 확인하세요(http/https).",
       too_large:"이미지가 너무 큽니다(최대 5MB).", type_not_allowed:"JPG/PNG/WebP 이미지만 지원합니다.",
       not_logged_in:"먼저 로그인해 주세요.", invalid_email:"올바른 이메일을 입력하세요.", invalid_input:"6자리 코드를 입력하세요.", cooldown:"잠시 후 다시 시도하세요.", hourly_limit:"요청이 너무 많습니다. 1시간 후 다시 시도하세요.", wrong_or_expired_code:"코드가 틀렸거나 만료되었습니다.", not_a_developer:"이 이메일은 파트너 계정으로 등록되어 있습니다. 다른 이메일로 게임을 제출하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
   }
 };
+
+
+const PRESET_SVG = {
+  solo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',
+  team: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="18" cy="18" r="5" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="32" cy="20" r="4" fill="none" stroke="#c6f24e" stroke-width="2"/><path d="M9 37c0-6 4-9.5 9-9.5s9 3.5 9 9.5" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/><path d="M29 31.5c1-.9 2.4-1.5 4-1.5 4 0 6.5 2.8 6.5 7" fill="none" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>',
+  studio: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'
+};
+const presetUri = (k)=> "data:image/svg+xml," + encodeURIComponent(PRESET_SVG[k]||PRESET_SVG.solo);
 
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
 let selStage=[], selGenres=[], selPlatforms=[], selMarket=[], selNeeds=[];
 let coverUrl="", shotUrls=[];
 let gateCodeSent=false, gateVerified=false, gateCooldown=0, gateTimer=null;
+let studioLogo="preset:solo";
 
 function T(){ return I18N[lang]; }
 function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||T().errors.server; }
@@ -380,12 +417,37 @@ $("#shotfile").onchange = async ()=>{
   finally{ $("#shotfile").value=""; }
 };
 
+function renderStudioLogoPick(){
+  const t=T(); const el=$("#studio-logopick"); if(!el) return;
+  const presets=[["solo",t.lpSolo],["team",t.lpTeam],["studio",t.lpStudio]];
+  const isUpload = studioLogo && !studioLogo.startsWith("preset:");
+  el.innerHTML =
+    presets.map(([k,label])=>`<div class="lp${studioLogo==="preset:"+k?" sel":""}" data-preset="${k}"><div class="pic">${PRESET_SVG[k]}</div><div class="cap">${label}</div></div>`).join("") +
+    `<div class="lp${isUpload?" sel":""}" data-upload="1"><div class="pic up">${isUpload?`<img src="${studioLogo}">`:`+<span class="u2">${t.lpUpload}</span>`}</div><div class="cap">${t.lpUpload}</div></div>`;
+  el.querySelectorAll(".lp").forEach(node=>{
+    if(node.dataset.preset) node.onclick=()=>{ studioLogo="preset:"+node.dataset.preset; renderStudioLogoPick(); };
+    if(node.dataset.upload) node.onclick=()=>$("#studio-logofile").click();
+  });
+}
+$("#studio-logofile") && ($("#studio-logofile").onchange = async ()=>{
+  const f=$("#studio-logofile").files[0]; if(!f) return;
+  if(f.size>5*1024*1024){ err("too_large"); $("#studio-logofile").value=""; return; }
+  try{
+    const fd=new FormData(); fd.append("file",f); fd.append("kind","logo");
+    const d=await api("/api/games-submit/upload",{method:"POST",body:fd});
+    studioLogo=d.url; renderStudioLogoPick();
+  }catch(e){ err(e); }
+  finally{ $("#studio-logofile").value=""; }
+});
+
 function renderText(){
   document.body.setAttribute("lang",lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   const t=T();
   $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead; $("#back").textContent=t.back;
-  $("#s1").textContent=t.s1; $("#s2").textContent=t.s2; $("#s3").textContent=t.s3; $("#s4").textContent=t.s4;
+  $("#s0").textContent=t.s0; $("#s1").textContent=t.s1; $("#s2").textContent=t.s2; $("#s3").textContent=t.s3; $("#s4").textContent=t.s4;
+  $("#w1").textContent=t.w1; $("#w1n").textContent=t.w1n; $("#w2").textContent=t.w2; $("#w2n").textContent=t.w2n;
+  renderStudioLogoPick();
   $("#switchrole").textContent=t.switchRole; $("#ge1").textContent=t.ge1; $("#ge1n").textContent=t.ge1n; $("#ge2").textContent=t.ge2;
   $("#gate-hint").textContent=t.gateHint;
   if(!gateVerified) $("#gate-btn").textContent = gateCodeSent ? t.gateVerify : t.gateSend;
@@ -418,6 +480,7 @@ const isUrl=(v)=>v===""||/^https?:\/\/\S+$/i.test(v);
 
 $("#submit").onclick = async ()=>{
   const t=T(); clearMsg();
+  if(!$("#studio").value.trim()) return err("studio_required");
   const primary = lang==="zh" ? "#t-zh" : lang==="ko" ? "#t-ko" : "#t-en";
   if(!$(primary).value.trim()) return err("title_required");
   if(!$("#d-en").value.trim()) return err("pitch_required");
@@ -434,6 +497,7 @@ $("#submit").onclick = async ()=>{
   try{
     await api("/api/games-submit/create",{ method:"POST", headers:{"content-type":"application/json"},
       body:JSON.stringify({
+        studio_name:$("#studio").value, studio_logo:studioLogo,
         t_en:$("#t-en").value, t_zh:$("#t-zh").value, t_ko:$("#t-ko").value,
         d_en:$("#d-en").value, full_en:$("#full-en").value,
         stage:selStage[0], genres:selGenres, platforms:selPlatforms,
@@ -454,6 +518,16 @@ $("#lang").addEventListener("click",(e)=>{
   lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
 });
 
+async function prefillStudio(){
+  try{
+    const pr=await fetch("/api/profile/me"); const pd=await pr.json();
+    if(pd.ok && pd.profile){
+      if(pd.profile.studio_name) $("#studio").value=pd.profile.studio_name;
+      if(pd.profile.logo) studioLogo=pd.profile.logo;
+      renderStudioLogoPick();
+    }
+  }catch(e){}
+}
 function showForm(){
   gateVerified=true;
   $("#gate").style.display="none";
@@ -494,9 +568,8 @@ async function gateVerify(){
   try{
     const d=await api("/api/games-submit/verify",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({email, code}) });
     clearInterval(gateTimer); $("#gate-resend").style.display="none";
-    // 没填过工作室信息 → 先去补全,带回跳参数
-    if(!d.studio_name){ location.href="/profile.html?next=submit"; return; }
-    showForm(d.studio_name);
+    await prefillStudio();
+    showForm();
   }catch(e){ err(e); $("#gate-btn").disabled=false; $("#gate-btn").textContent=T().gateVerify; }
 }
 
@@ -511,12 +584,11 @@ $("#gate-code").addEventListener("input",()=>{ $("#gate-code").value=$("#gate-co
   try{
     const r=await fetch("/api/auth/me"); const d=await r.json();
     if(d.loggedIn && !d.needsRole && d.role==="developer"){
-      let studio="";
-      try{ const pr=await fetch("/api/profile/me"); const pd=await pr.json(); if(pd.ok) studio=(pd.profile&&pd.profile.studio_name)||""; }catch(e){}
-      if(!studio){ location.href="/profile.html?next=submit"; return; }
+      $("#back").href="/account.html";
+      await prefillStudio();
       showForm();
     } else if(d.loggedIn && !d.needsRole && d.role==="partner"){
-      // 合作方账号:提示换邮箱
+      $("#back").href="/account.html";
       $("#locked-text").textContent=T().lockedRole; $("#locked").style.display="block";
     } else {
       // 未登录 / 未选身份:走邮箱验证建号

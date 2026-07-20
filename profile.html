@@ -408,7 +408,7 @@ const I18N = {
 /* ---------- 预设工作室头像(3款) ---------- */
 const PRESET_SVG = {
   solo: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',
-  team: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="17" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="31" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M8 37c0-5.5 4-8.6 9-8.6M40 37c0-5.5-4-8.6-9-8.6" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/></svg>',
+  team: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="18" cy="18" r="5" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="32" cy="20" r="4" fill="none" stroke="#c6f24e" stroke-width="2"/><path d="M9 37c0-6 4-9.5 9-9.5s9 3.5 9 9.5" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/><path d="M29 31.5c1-.9 2.4-1.5 4-1.5 4 0 6.5 2.8 6.5 7" fill="none" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>',
   studio: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'
 };
 const presetUri = (key)=> "data:image/svg+xml," + encodeURIComponent(PRESET_SVG[key]||PRESET_SVG.team);
@@ -418,7 +418,7 @@ function logoSrc(v){ return (typeof v==="string" && v.startsWith("preset:")) ? p
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
 let role = "", status = "";
-let devLogoUrl = "", parProofUrl = "", parLogoUrl = "", regionCode = "", verifiedEmail = "";
+let devLogoUrl = "preset:solo", parProofUrl = "", parLogoUrl = "", regionCode = "", verifiedEmail = "";
 let selKinds = [], selGenres = [], selMarkets = [];
 
 function T(){ return I18N[lang]; }
@@ -652,7 +652,7 @@ bindUpload($("#par-logofile"), $("#par-logobtn"), $("#par-logoprev"), "logo", (u
       $("#f-dev").style.display="block";
       $("#dev-studio").value=p.studio_name||""; $("#dev-email").value=p.contact_email||"";
       $("#dev-intro").value=(p.intro||"").slice(0,200); $("#dev-introcnt").textContent=$("#dev-intro").value.length;
-      devLogoUrl = p.logo || "preset:team";
+      devLogoUrl = p.logo || "preset:solo";
     }else{
       $("#f-par").style.display="block";
       $("#par-name-en").value=p.name_en||""; $("#par-name-zh").value=p.name_zh||""; $("#par-name-ko").value=p.name_ko||"";

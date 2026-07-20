@@ -73,6 +73,21 @@
 
   .gi{ display:flex; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid var(--line-soft); }
   .gi:last-child{ border-bottom:none; }
+  .gamegrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
+  .gcard{ background:var(--panel); border:1px solid var(--line); border-radius:11px; overflow:hidden; display:flex; flex-direction:column; }
+  .gcard .gcover{ aspect-ratio:16/9; background:var(--panel2); object-fit:cover; width:100%; }
+  .gcard .gbody{ padding:10px 11px; }
+  .gcard .gname{ font-weight:700; font-size:12.5px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .gcard .gpill{ display:inline-block; margin-top:6px; font-family:var(--mono); font-size:9px; padding:2px 7px; border-radius:10px; border:1px solid var(--line); color:var(--ink-dim); }
+  .gcard .gpill.pending{ color:var(--warn); border-color:var(--warn); }
+  .gcard .gpill.verified{ color:var(--accent); border-color:var(--accent); }
+  .gcard .gpill.rejected{ color:var(--danger); border-color:var(--danger); }
+  .gcard .grej{ font-size:10.5px; color:var(--danger); margin-top:5px; line-height:1.4; }
+  .gadd{ border:1px dashed var(--line); border-radius:11px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:6px; cursor:pointer; color:var(--ink-dim); min-height:120px; transition:all .15s; }
+  .gadd:hover{ border-color:var(--accent); color:var(--accent); }
+  .gadd .plus{ font-size:26px; }
+  .gadd .lbl{ font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; text-align:center; padding:0 8px; }
   .gi .thumb{ width:58px; height:33px; border-radius:5px; background:var(--panel2); border:1px solid var(--line);
     object-fit:cover; flex:none; }
   .gi .gt{ flex:1; min-width:0; }
@@ -113,20 +128,15 @@
 
     <div class="notice cjk-swap" id="notice" style="display:none"></div>
 
-    <div class="menu" id="mygames" style="display:none">
+    <div id="games-section" style="display:none">
       <div class="mhead" id="mygames-t"></div>
-      <div id="mygames-list"></div>
+      <div class="gamegrid" id="gamegrid"></div>
     </div>
 
     <div class="menu">
       <button class="mi" id="m-profile">
         <span class="ic">✎</span>
         <span class="tx" id="m-profile-t"></span>
-        <span class="arr">→</span>
-      </button>
-      <button class="mi" id="m-games" style="display:none">
-        <span class="ic">▣</span>
-        <span class="tx" id="m-games-t"></span>
         <span class="arr">→</span>
       </button>
       <button class="mi" id="m-browse">
@@ -158,7 +168,7 @@ const I18N = {
     mProfileDev:"Studio Info", mProfileDevSub:"Name, contact email, logo & intro — edit anytime",
     mProfilePar:"Company Profile", mProfileParSub:"Edit and resubmit your profile",
     mGames:"Submit a Game", mGamesSub:"Goes into review, then appears in the library", myGames:"MY GAMES", gst:{pending:"IN REVIEW",approved:"LIVE",rejected:"REJECTED"},
-    mBrowse:"Browse Projects", mBrowseSub:"Back to the game library",
+    mBrowse:"Browse Projects", mBrowseSub:"Back to the game library", mBrowseDev:"Find Publishers & Investors", mBrowseDevSub:"Browse verified partners in the network", submitCard:"Submit a Game",
     mLogout:"Sign Out"
   },
   zh:{
@@ -175,7 +185,7 @@ const I18N = {
     mProfileDev:"工作室信息", mProfileDevSub:"名称、联系邮箱、Logo 与简介,随时可改",
     mProfilePar:"公司资料", mProfileParSub:"修改资料、重新提交审核",
     mGames:"提交新游戏", mGamesSub:"提交后审核,通过即上架项目库", myGames:"我的游戏", gst:{pending:"待审核",approved:"已上架",rejected:"未通过"},
-    mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表",
+    mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表", mBrowseDev:"寻找发行商 / 投资方", mBrowseDevSub:"浏览网络中已认证的合作方", submitCard:"提交新游戏",
     mLogout:"退出登录"
   },
   ko:{
@@ -192,11 +202,13 @@ const I18N = {
     mProfileDev:"스튜디오 정보", mProfileDevSub:"이름, 이메일, 로고, 소개 — 언제든 수정 가능",
     mProfilePar:"회사 프로필", mProfileParSub:"프로필 수정 및 재제출",
     mGames:"게임 제출", mGamesSub:"심사 후 라이브러리에 등록됩니다", myGames:"내 게임", gst:{pending:"심사 중",approved:"등록됨",rejected:"반려됨"},
-    mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로",
+    mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로", mBrowseDev:"퍼블리셔 / 투자자 찾기", mBrowseDevSub:"네트워크의 인증된 파트너 둘러보기", submitCard:"게임 제출",
     mLogout:"로그아웃"
   }
 };
 
+const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',team:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="18" cy="18" r="5" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="32" cy="20" r="4" fill="none" stroke="#c6f24e" stroke-width="2"/><path d="M9 37c0-6 4-9.5 9-9.5s9 3.5 9 9.5" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/><path d="M29 31.5c1-.9 2.4-1.5 4-1.5 4 0 6.5 2.8 6.5 7" fill="none" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>',studio:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'};
+function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.solo) : v; }
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
 let role="", status="", email="", profile=null, myGames=[];
@@ -219,7 +231,7 @@ function render(){
   $("#em").textContent=email;
   $("#rolepill").textContent = isDev ? t.roleDev : t.rolePar;
   const logo = profile?.logo;
-  $("#avatar").innerHTML = logo ? `<img src="${esc(logo)}">` : "▢";
+  $("#avatar").innerHTML = logo ? `<img src="${esc(logoSrc(logo))}">` : "▢";
 
   // 状态徽标:开发者恒为"已激活",合作方按审核状态
   const sp = $("#statuspill");
@@ -239,29 +251,29 @@ function render(){
 
   // 菜单
   $("#m-profile-t").innerHTML = (isDev?t.mProfileDev:t.mProfilePar) + `<span class="sub">${isDev?t.mProfileDevSub:t.mProfileParSub}</span>`;
-  $("#m-games").style.display = isDev ? "flex" : "none";
-  $("#m-games-t").innerHTML = t.mGames + `<span class="sub">${t.mGamesSub}</span>`;
-  // 我的游戏列表
-  if(isDev && myGames.length){
-    $("#mygames").style.display="block";
+  // 开发者:我的游戏卡片网格 + Submit 新增卡
+  if(isDev){
+    $("#games-section").style.display="block";
     $("#mygames-t").textContent=t.myGames;
-    $("#mygames-list").innerHTML = myGames.map(g=>{
+    const cards = myGames.map(g=>{
       const name = g.t_en || g.t_zh || g.t_ko || "—";
       const stClass = g.status==="approved" ? "verified" : g.status;
-      return `<div class="gi">
-        ${g.cover?`<img class="thumb" src="${esc(g.cover)}">`:`<div class="thumb"></div>`}
-        <div class="gt"><div class="gn">${esc(name)}</div>${g.status==="rejected"&&g.review_note?`<div class="gs">${esc(g.review_note)}</div>`:""}</div>
-        <span class="pill ${stClass}">${t.gst[g.status]||g.status}</span>
-      </div>`;
+      return `<div class="gcard">
+        ${g.cover?`<img class="gcover" src="${esc(g.cover)}">`:`<div class="gcover"></div>`}
+        <div class="gbody"><div class="gname">${esc(name)}</div>
+          <span class="gpill ${stClass}">${t.gst[g.status]||g.status}</span>
+          ${g.status==="rejected"&&g.review_note?`<div class="grej">${esc(g.review_note)}</div>`:""}
+        </div></div>`;
     }).join("");
-  } else { $("#mygames").style.display="none"; }
-  $("#m-browse-t").innerHTML = t.mBrowse + `<span class="sub">${t.mBrowseSub}</span>`;
+    const addCard = `<div class="gadd" onclick="location.href='/submit-game.html'"><div class="plus">+</div><div class="lbl">${t.submitCard}</div></div>`;
+    $("#gamegrid").innerHTML = cards + addCard;
+  } else { $("#games-section").style.display="none"; }
+  $("#m-browse-t").innerHTML = (isDev?t.mBrowseDev:t.mBrowse) + `<span class="sub">${isDev?t.mBrowseDevSub:t.mBrowseSub}</span>`;
   $("#m-logout-t").textContent = t.mLogout;
 }
 
 $("#m-profile").onclick = ()=>{ location.href="/profile.html"; };
-$("#m-games").onclick = ()=>{ location.href="/submit-game.html"; };
-$("#m-browse").onclick = ()=>{ location.href="/"; };
+$("#m-browse").onclick = ()=>{ location.href = role==="developer" ? "/partners.html" : "/"; };
 $("#m-logout").onclick = async ()=>{
   try{ await fetch("/api/auth/logout",{method:"POST"}); }catch{}
   location.href="/";
