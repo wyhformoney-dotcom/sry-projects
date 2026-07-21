@@ -105,8 +105,17 @@
   <div class="tabs" id="modes" style="margin-bottom:10px">
     <button class="tab on" data-m="partners">合作方审核</button>
     <button class="tab" data-m="games">游戏审核</button>
+    <button class="tab" data-m="accounts">账号管理</button>
   </div>
   <p class="lead" id="modelead">审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到"待审核"。</p>
+  <div id="acctbar" style="display:none;margin:-4px 0 16px;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="tabs" style="margin:0">
+      <button class="tab on" data-r="all" id="ar-all">全部</button>
+      <button class="tab" data-r="developer" id="ar-dev">开发者</button>
+      <button class="tab" data-r="partner" id="ar-par">合作方</button>
+    </div>
+    <input id="acct-q" placeholder="按邮箱搜索…" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:13px;padding:9px 12px;outline:none;min-width:220px">
+  </div>
   <div id="syncbar" style="display:none;margin:-8px 0 16px">
     <button class="abtn ok" id="syncbtn" style="padding:9px 18px">⟳ 从飞书同步游戏库</button>
     <span id="syncmsg" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-left:10px"></span>
@@ -144,6 +153,9 @@ const GSTATUS_ZH = { pending:"待审核", approved:"已上架", rejected:"已驳
 const $ = (s)=>document.querySelector(s);
 let curTab = "pending";
 let curMode = "partners";
+let acctRole = "all", acctQ = "";
+const ROLE_ZH = { developer:"开发者", partner:"合作方" };
+const ASTATUS_ZH = { pending:"待审核", verified:"已激活", rejected:"已驳回", suspended:"已停用" };
 
 async function api(path, opts){
   const res = await fetch("/api/admin/"+path, opts);
@@ -264,6 +276,43 @@ async function review(id, action, btn){
   }
 }
 
+function acctRowHtml(r){
+  const name = r.role==="developer" ? (r.studio_name||"(未填工作室)") : (r.name_zh||r.name_en||"(未填公司名)");
+  const stCls = r.status==="verified" ? "verified" : r.status;
+  return `
+  <div class="row" data-id="${r.id}">
+    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <div class="rmain">
+        <div class="rname">${esc(r.email)}</div>
+        <div class="rsub">${ROLE_ZH[r.role]||r.role} · ${esc(name)}${r.role==="developer"?` · 提交游戏 ${r.games_cnt} 款`:""} · 注册 ${fmtTime(r.created_at)}</div>
+      </div>
+      <span class="pill ${stCls}">${ASTATUS_ZH[r.status]||r.status}</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="detail">
+      <div class="acts">
+        ${r.status!=="suspended"
+          ? `<button class="abtn no" onclick="acctAction(${r.id},'suspend',this)">停用账号(禁止登录)</button>`
+          : `<button class="abtn ok" onclick="acctAction(${r.id},'restore',this)">恢复账号</button>`}
+      </div>
+      <div class="amsg" id="amsg-a${r.id}"></div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:8px">停用后该账号无法登录;资料与已提交内容保留。恢复后状态为"已激活/已认证"。</div>
+    </div>
+  </div>`;
+}
+
+async function acctAction(id, action, btn){
+  btn.disabled=true;
+  try{
+    await api("account-status",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id, action }) });
+    await load();
+  }catch(e){
+    const m=document.getElementById("amsg-a"+id); if(m){ m.textContent="失败:"+e; m.style.color="var(--danger)"; }
+    btn.disabled=false;
+  }
+}
+
 function gameRowHtml(r){
   const name = r.t_en || r.t_zh || r.t_ko || "(未填名称)";
   const isFeishu = !!r.feishu_id;
@@ -318,6 +367,14 @@ function gameRowHtml(r){
 }
 
 async function load(){
+  if(curMode==="accounts"){
+    const d = await api("accounts?role="+acctRole+"&q="+encodeURIComponent(acctQ), { method:"GET" });
+    $("#ar-all").textContent = "全部" + ((d.counts.developer||0)+(d.counts.partner||0) ? `(${(d.counts.developer||0)+(d.counts.partner||0)})` : "");
+    $("#ar-dev").textContent = "开发者" + (d.counts.developer?`(${d.counts.developer})`:"");
+    $("#ar-par").textContent = "合作方" + (d.counts.partner?`(${d.counts.partner})`:"");
+    $("#list").innerHTML = d.rows.length ? d.rows.map(acctRowHtml).join("") : `<div class="empty">没有匹配的账号</div>`;
+    return;
+  }
   const ep = curMode==="games" ? "games" : "partners";
   const st = (curMode==="games" && curTab==="verified") ? "approved" : curTab;
   const d = await api(ep+"?status="+st, { method:"GET" });
@@ -335,11 +392,26 @@ $("#modes").addEventListener("click",(e)=>{
   curMode=b.dataset.m; curTab="pending";
   document.querySelectorAll("#modes .tab").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("on",x.dataset.s==="pending"));
+  $("#tabs").style.display = curMode==="accounts" ? "none" : "flex";
+  $("#acctbar").style.display = curMode==="accounts" ? "flex" : "none";
   $("#syncbar").style.display = curMode==="games" ? "block" : "none";
-  $("#modelead").textContent = curMode==="games"
+  $("#modelead").textContent = curMode==="accounts"
+    ? "管理所有注册账号。可按身份筛选、按邮箱搜索;停用后账号无法登录,恢复后即可正常使用。"
+    : curMode==="games"
     ? "审核开发者提交的游戏。通过即上架到项目库;驳回需填写原因,对方能在账号中心看到。"
     : "审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到\"待审核\"。";
   load();
+});
+$("#acctbar").addEventListener("click",(e)=>{
+  const b=e.target.closest(".tab"); if(!b||!b.dataset.r) return;
+  acctRole=b.dataset.r;
+  document.querySelectorAll("#acctbar .tab").forEach(x=>x.classList.toggle("on",x===b));
+  load();
+});
+let acctQTimer=null;
+$("#acct-q").addEventListener("input",()=>{
+  clearTimeout(acctQTimer);
+  acctQTimer=setTimeout(()=>{ acctQ=$("#acct-q").value.trim(); load(); }, 350);
 });
 $("#tabs").addEventListener("click",(e)=>{
   const b=e.target.closest(".tab"); if(!b) return;
