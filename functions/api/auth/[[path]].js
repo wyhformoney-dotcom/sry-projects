@@ -157,6 +157,7 @@ async function handleVerify(env, request) {
   const account = await env.DB.prepare(
     "SELECT id, role, status FROM accounts WHERE email = ?"
   ).bind(email).first();
+  if (account && account.status === "suspended") return bad("account_suspended", 403);
 
   const exp = Date.now() + SESSION_DAYS * 864e5;
   const token = await makeSession(env, { aid: account ? account.id : 0, email, exp });
