@@ -42,10 +42,10 @@
   .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px 24px 26px; display:none; }
 
   /* 分区标题 */
-  .sec{ display:flex; align-items:center; gap:12px; margin:30px 0 20px; }
-  .sec .num{ font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-ink); background:var(--accent);
+  .sec{ display:flex; align-items:center; gap:12px; margin:44px 0 24px; }
+  .sec .num{ font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent-ink); background:var(--accent);
     padding:3px 8px; border-radius:4px; letter-spacing:.06em; }
-  .sec .st{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink); }
+  .sec .st{ font-family:var(--mono); font-size:15px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#fff; }
   .sec .rule{ flex:1; height:1px; background:var(--line-soft); }
 
   /* 题号:每个字段自动编号,漏填一眼可见 */
@@ -53,8 +53,7 @@
   .f{ margin-bottom:28px; }
   .f > label{ color:var(--ink); display:flex; align-items:baseline; gap:9px; font-size:14px; font-weight:800; margin:0 0 5px; }
   .f > label::before{ counter-increment:q; content:counter(q,decimal-leading-zero);
-    font-family:var(--mono); font-size:10px; font-weight:700; color:var(--accent);
-    border:1px solid var(--accent); border-radius:4px; padding:2px 6px; flex:none; }
+    font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--accent); flex:none; opacity:.85; }
   label{ display:block; font-size:13px; font-weight:700; color:var(--ink); margin:0 0 4px; }
   label .req{ color:var(--accent); }
   label .multi{ font-family:var(--mono); font-size:10px; font-weight:400; color:var(--ink-faint); letter-spacing:.05em; margin-left:6px; }

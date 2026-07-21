@@ -37,9 +37,9 @@
   .lead{ color:var(--ink-dim); font-size:13.5px; line-height:1.6; margin-bottom:24px; }
 
   .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px 24px 26px; }
-  .sec{ display:flex; align-items:center; gap:12px; margin:30px 0 20px; }
-  .sec .num{ font-family:var(--mono); font-size:11px; font-weight:700; color:var(--accent-ink); background:var(--accent); padding:3px 8px; border-radius:4px; }
-  .sec .st{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+  .sec{ display:flex; align-items:center; gap:12px; margin:44px 0 24px; }
+  .sec .num{ font-family:var(--mono); font-size:13px; font-weight:700; color:var(--accent-ink); background:var(--accent); padding:5px 11px; border-radius:5px; }
+  .sec .st{ font-family:var(--mono); font-size:15px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:#fff; }
   .sec .rule{ flex:1; height:1px; background:var(--line-soft); }
 
   /* 题号:每个字段自动编号,漏填一眼可见 */
@@ -47,8 +47,7 @@
   .f{ margin-bottom:28px; }
   .f > label{ display:flex; align-items:baseline; gap:9px; font-size:14px; font-weight:800; margin:0 0 5px; }
   .f > label::before{ counter-increment:q; content:counter(q,decimal-leading-zero);
-    font-family:var(--mono); font-size:10px; font-weight:700; color:var(--accent);
-    border:1px solid var(--accent); border-radius:4px; padding:2px 6px; flex:none; }
+    font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--accent); flex:none; opacity:.85; }
   label{ display:block; font-size:13px; font-weight:700; margin:0 0 4px; }
   label .req{ color:var(--accent); }
   label .multi{ font-family:var(--mono); font-size:10px; font-weight:400; color:var(--ink-faint); margin-left:6px; }
@@ -123,7 +122,7 @@
   <div class="kicker" id="kicker">DEVELOPER // SUBMIT GAME</div>
   <h1 id="title"></h1>
   <p class="lead cjk-swap" id="lead"></p>
-  <a href="/login.html?pick=1" id="switchrole" style="display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);border:1px solid var(--line);border-radius:7px;padding:7px 12px;margin-bottom:20px"></a>
+  <a href="/login.html?pick=1" id="switchrole" style="display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--accent);border:1px solid var(--accent);background:rgba(198,242,78,.07);border-radius:7px;padding:7px 12px;margin-bottom:20px"></a>
 
   <div class="locked" id="locked"><p class="cjk-swap" id="locked-text"></p></div>
 
@@ -255,7 +254,7 @@ const I18N = {
     g12:"Screenshots", g12n:"Up to 5 images. JPG/PNG/WebP, up to 5MB each.",
     submit:"Submit for Review", submitting:"Submitting…",
     ok:"Submitted! We'll review it and get back to you soon.",
-    back:"← Back to My Account", multi:"(multi-select)",
+    back:"← Back to My Account", backHome:"← Back to Home", multi:"(multi-select)",
     errors:{ title_required:"Please enter the English title.", pitch_required:"Please write the one-line pitch.",
       desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
       genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
@@ -291,7 +290,7 @@ const I18N = {
     g12:"游戏截图", g12n:"最多 5 张,每张最大 5MB。",
     submit:"提交审核", submitting:"提交中…",
     ok:"已提交!我们会尽快审核并回复你。",
-    back:"← 返回账号中心", multi:"(可多选)",
+    back:"← 返回账号中心", backHome:"← 返回首页", multi:"(可多选)",
     errors:{ title_required:"请填写中文名称。", pitch_required:"请填写一句话简介。",
       desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
       genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
@@ -327,7 +326,7 @@ const I18N = {
     g12:"스크린샷", g12n:"최대 5장, 각 5MB 이하.",
     submit:"심사 제출", submitting:"제출 중…",
     ok:"제출되었습니다! 곧 심사 후 연락드리겠습니다.",
-    back:"← 내 계정으로", multi:"(복수 선택 가능)",
+    back:"← 내 계정으로", backHome:"← 홈으로", multi:"(복수 선택 가능)",
     errors:{ title_required:"한글 이름을 입력하세요.", pitch_required:"한 줄 소개를 입력하세요.",
       desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
       genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
@@ -351,6 +350,7 @@ let lang = localStorage.getItem("sry_lang") || "en";
 let selStage=[], selGenres=[], selPlatforms=[], selMarket=[], selNeeds=[];
 let coverUrl="", shotUrls=[];
 let gateCodeSent=false, gateVerified=false, gateCooldown=0, gateTimer=null;
+let backMode="home";
 let studioLogo="preset:solo";
 
 function T(){ return I18N[lang]; }
@@ -444,7 +444,7 @@ function renderText(){
   document.body.setAttribute("lang",lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   const t=T();
-  $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead; $("#back").textContent=t.back;
+  $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead; applyBack();
   $("#s0").textContent=t.s0; $("#s1").textContent=t.s1; $("#s2").textContent=t.s2; $("#s3").textContent=t.s3; $("#s4").textContent=t.s4;
   $("#w1").textContent=t.w1; $("#w1n").textContent=t.w1n; $("#w2").textContent=t.w2; $("#w2n").textContent=t.w2n;
   renderStudioLogoPick();
@@ -528,6 +528,11 @@ async function prefillStudio(){
     }
   }catch(e){}
 }
+function applyBack(){
+  const t=T();
+  if(backMode==="account"){ $("#back").textContent=t.back; $("#back").href="/account.html"; }
+  else{ $("#back").textContent=t.backHome; $("#back").href="/"; }
+}
 function showForm(){
   gateVerified=true;
   $("#gate").style.display="none";
@@ -568,6 +573,7 @@ async function gateVerify(){
   try{
     const d=await api("/api/games-submit/verify",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({email, code}) });
     clearInterval(gateTimer); $("#gate-resend").style.display="none";
+    backMode="account"; applyBack();
     await prefillStudio();
     showForm();
   }catch(e){ err(e); $("#gate-btn").disabled=false; $("#gate-btn").textContent=T().gateVerify; }
@@ -584,11 +590,11 @@ $("#gate-code").addEventListener("input",()=>{ $("#gate-code").value=$("#gate-co
   try{
     const r=await fetch("/api/auth/me"); const d=await r.json();
     if(d.loggedIn && !d.needsRole && d.role==="developer"){
-      $("#back").href="/account.html";
+      backMode="account"; applyBack();
       await prefillStudio();
       showForm();
     } else if(d.loggedIn && !d.needsRole && d.role==="partner"){
-      $("#back").href="/account.html";
+      backMode="account"; applyBack();
       $("#locked-text").textContent=T().lockedRole; $("#locked").style.display="block";
     } else {
       // 未登录 / 未选身份:走邮箱验证建号
