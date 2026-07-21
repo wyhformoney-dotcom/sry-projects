@@ -81,6 +81,10 @@ async function handleReveal(env, s, request) {
   } else {
     // 开发者解锁合作方(已认证)
     if (viewer.role !== "developer") return bad("developer_only", 403);
+    const approved = await env.DB.prepare(
+      "SELECT 1 FROM games WHERE claimed_by = ? AND status = 'approved' LIMIT 1"
+    ).bind(viewer.id).first();
+    if (!approved) return bad("no_approved_game", 403);
     targetId = parseInt(b.target_id, 10);
     if (!targetId) return bad("invalid_id");
     const tp = await env.DB.prepare(
