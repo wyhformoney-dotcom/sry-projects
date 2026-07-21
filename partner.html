@@ -128,21 +128,21 @@ const I18N = {
     cmOver:(u,q)=>`Monthly limit reached (${u}/${q}). Resets on the 1st of next month.`,
     cmClose:"CLOSE", cmCopied:"COPIED ✓",
     needGame:'Contact unlocking is for developers with at least one approved game. <a href="/submit-game.html">Submit your game →</a>',
-    partnerSide:"Partner accounts can't view other partners' contacts." },
+    partnerSide:'Partner accounts can\'t view other partners\' contacts. To use this as a developer, register a developer account with a different email. <a href="/login.html?pick=1">Register →</a>', guestMsg:'Unlocking contacts requires a developer account with at least one approved game. <a href="/login.html?pick=1&next=NEXT">Sign in / register as developer →</a>' },
   zh:{ back:"← 全部合作方", notfound:"未找到该合作方,或尚未通过认证。", signin:"登录",
     get:"获取联系方式", cmTitle:"合作方联系方式", cmAlready:"(此前已解锁,不占额度)",
     cmQuota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
     cmOver:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`,
     cmClose:"关闭", cmCopied:"已复制 ✓",
     needGame:'解锁联系方式需要你至少有一款已通过审核的游戏。<a href="/submit-game.html">去提交游戏 →</a>',
-    partnerSide:"合作方之间不能互相查看联系方式。" },
+    partnerSide:'合作方之间不能互相查看联系方式。如需以开发者身份使用,请用另一个邮箱注册开发者账号。<a href="/login.html?pick=1">去注册 →</a>', guestMsg:'解锁联系方式需要开发者账号(且至少有一款已过审的游戏)。<a href="/login.html?pick=1&next=NEXT">以开发者身份登录 / 注册 →</a>' },
   ko:{ back:"← 모든 파트너", notfound:"파트너를 찾을 수 없거나 아직 인증되지 않았습니다.", signin:"로그인",
     get:"연락처 보기", cmTitle:"파트너 연락처", cmAlready:"(이미 해제됨 — 무료)",
     cmQuota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
     cmOver:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일 초기화.`,
     cmClose:"닫기", cmCopied:"복사됨 ✓",
     needGame:'연락처 해제는 승인된 게임이 1개 이상 있는 개발자만 가능합니다. <a href="/submit-game.html">게임 제출 →</a>',
-    partnerSide:"파트너 계정끼리는 연락처를 볼 수 없습니다." }
+    partnerSide:'파트너 계정끼리는 연락처를 볼 수 없습니다. 개발자로 이용하려면 다른 이메일로 개발자 계정을 등록하세요. <a href="/login.html?pick=1">등록 →</a>', guestMsg:'연락처 해제는 승인된 게임이 1개 이상 있는 개발자 계정만 가능합니다. <a href="/login.html?pick=1&next=NEXT">개발자로 로그인 / 등록 →</a>' }
 };
 
 const $ = (s)=>document.querySelector(s);
@@ -216,7 +216,8 @@ $("#cm-copy").onclick=async ()=>{
 $("#getbtn").onclick = async ()=>{
   const t=T(); const gm=$("#gatemsg"); gm.style.display="none";
   if(!(ME && ME.loggedIn && !ME.needsRole && ME.role==="developer")){
-    location.href="/login.html?pick=1&next="+encodeURIComponent("/partner.html?id="+PID);
+    gm.innerHTML = t.guestMsg.replace("NEXT", encodeURIComponent("/partner.html?id="+PID));
+    gm.style.display="block";
     return;
   }
   $("#getbtn").disabled=true;

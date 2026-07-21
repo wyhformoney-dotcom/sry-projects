@@ -139,6 +139,12 @@
 
 <div class="wrap"><div id="app"></div></div>
 
+<div class="cmodal-mask" id="gmask"><div class="cmodal">
+  <div class="ct" id="gm-title"></div>
+  <div class="cn" id="gm-msg" style="line-height:1.7;margin-bottom:18px"></div>
+  <a class="cclose" id="gm-cta" style="display:block;text-align:center;text-decoration:none"></a>
+  <button class="cclose" id="gm-close" style="background:transparent;color:#9a9b92;border:1px solid #2c2e26;margin-top:10px"></button>
+</div></div>
 <div class="cmodal-mask" id="cmask"><div class="cmodal">
   <div class="ct" id="cm-title"></div>
   <div class="cn" id="cm-name"></div>
@@ -217,6 +223,43 @@ document.getElementById("cm-copy") && (document.getElementById("cm-copy").onclic
     setTimeout(()=>{ document.getElementById("cm-copy").textContent="COPY"; },1500); }catch(e){}
 });
 
+const GM_I18N = {
+  en:{
+    close:"CLOSE",
+    guest:{ t:"Publishers & Investors Only", m:"Developer contacts are visible to verified publishers and investors. Sign in — or register — with a partner account to unlock them.", cta:"SIGN IN AS PARTNER →" },
+    developer:{ t:"This is a Partner Feature", m:"Contacting developers is for publishers and investors. Developer accounts can't view other developers' contacts. To use this, register a partner account with a different email.", cta:"REGISTER AS PARTNER →" },
+    pending:{ t:"Verification in Progress", m:"Your partner profile is still under review. Once verified, you can unlock developer contacts here.", cta:"CHECK MY ACCOUNT →" },
+    rejected:{ t:"Profile Not Approved", m:"Your partner profile wasn't approved. Update and resubmit it — once verified, you can unlock developer contacts.", cta:"UPDATE MY PROFILE →" }
+  },
+  zh:{
+    close:"关闭",
+    guest:{ t:"发行商 / 投资方专属", m:"开发者的联系方式仅对已认证的发行商和投资方开放。请以合作方身份登录或注册后解锁。", cta:"以合作方身份登录 →" },
+    developer:{ t:"这是合作方功能", m:"联系开发者是发行商/投资方的功能,开发者账号之间不能互相查看联系方式。如需使用,请用另一个邮箱注册合作方账号。", cta:"注册合作方账号 →" },
+    pending:{ t:"认证审核中", m:"你的合作方资料还在审核中,通过认证后即可在这里解锁开发者联系方式。", cta:"查看我的账号 →" },
+    rejected:{ t:"资料未通过", m:"你的合作方资料未通过审核。修改并重新提交,认证通过后即可解锁开发者联系方式。", cta:"去修改资料 →" }
+  },
+  ko:{
+    close:"닫기",
+    guest:{ t:"퍼블리셔·투자자 전용", m:"개발자 연락처는 인증된 퍼블리셔와 투자자에게만 공개됩니다. 파트너 계정으로 로그인 또는 가입 후 해제하세요.", cta:"파트너로 로그인 →" },
+    developer:{ t:"파트너 전용 기능입니다", m:"개발자 연락은 퍼블리셔·투자자 기능입니다. 개발자 계정끼리는 연락처를 볼 수 없습니다. 다른 이메일로 파트너 계정을 등록하세요.", cta:"파트너 계정 등록 →" },
+    pending:{ t:"인증 심사 중", m:"파트너 프로필이 아직 심사 중입니다. 인증되면 여기서 개발자 연락처를 해제할 수 있습니다.", cta:"내 계정 확인 →" },
+    rejected:{ t:"프로필 반려됨", m:"파트너 프로필이 승인되지 않았습니다. 수정 후 다시 제출하세요. 인증되면 연락처를 해제할 수 있습니다.", cta:"프로필 수정 →" }
+  }
+};
+function gateShow(kind){
+  const M=(GM_I18N[lang]||GM_I18N.en)[kind], C=(GM_I18N[lang]||GM_I18N.en);
+  const next=encodeURIComponent(location.pathname+location.search);
+  const hrefs={ guest:"/login.html?pick=1&next="+next, developer:"/login.html?pick=1&next="+next,
+                pending:"/account.html", rejected:"/profile.html" };
+  document.getElementById("gm-title").textContent=M.t;
+  document.getElementById("gm-msg").textContent=M.m;
+  const cta=document.getElementById("gm-cta"); cta.textContent=M.cta; cta.href=hrefs[kind];
+  document.getElementById("gm-close").textContent=C.close;
+  document.getElementById("gmask").style.display="flex";
+}
+document.getElementById("gm-close") && (document.getElementById("gm-close").onclick=()=>{ document.getElementById("gmask").style.display="none"; });
+document.getElementById("gmask") && document.getElementById("gmask").addEventListener("click",(e)=>{ if(e.target.id==="gmask") e.target.style.display="none"; });
+
 async function contactClick(e){
   e.preventDefault();
   try{
@@ -238,9 +281,16 @@ async function contactClick(e){
       }catch(err){}
       return false;
     }
-  }catch(err){}
-  location.href="/login.html?pick=1&next="+encodeURIComponent(location.pathname+location.search);
-  return false;
+    // 身份不符:弹解释窗
+    if(!d.loggedIn || d.needsRole){ gateShow("guest"); }
+    else if(d.role==="developer"){ gateShow("developer"); }
+    else if(d.role==="partner" && d.status==="rejected"){ gateShow("rejected"); }
+    else { gateShow("pending"); }
+    return false;
+  }catch(err){
+    gateShow("guest");
+    return false;
+  }
 }
 
 function contactHref(g){
