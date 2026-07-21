@@ -115,7 +115,8 @@ async function handleVerify(env, request) {
   await env.DB.prepare("UPDATE login_codes SET used = 1 WHERE email = ?").bind(email).run();
 
   // 找账号;不存在→建 developer(直接激活);存在且为 partner→拒绝走这个入口
-  let account = await env.DB.prepare("SELECT id, role FROM accounts WHERE email = ?").bind(email).first();
+  let account = await env.DB.prepare("SELECT id, role, status FROM accounts WHERE email = ?").bind(email).first();
+  if (account && account.status === "suspended") return bad("account_suspended", 403);
   if (!account) {
     const r = await env.DB.prepare("INSERT INTO accounts (email, role, status) VALUES (?, 'developer', 'verified')").bind(email).run();
     account = { id: r.meta.last_row_id, role: "developer" };
@@ -239,4 +240,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "create") return await handleCreate(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
     return bad("not_found", 404);
- 
+  } catch (e) {
+    return bad("server_error: " + String(e.message || e).slice(0, 300), 500);
+  }
+}
