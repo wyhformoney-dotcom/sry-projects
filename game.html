@@ -113,6 +113,17 @@
   .acct{ font-family:var(--mono); font-size:11px; letter-spacing:.06em; padding:7px 12px;
     border:1px solid var(--line); border-radius:7px; color:var(--ink-dim); white-space:nowrap; }
   .acct:hover{ color:var(--accent); border-color:var(--accent); }
+
+  .cmodal-mask{ position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+  .cmodal{ background:#121310; border:1px solid #2c2e26; border-radius:14px; padding:26px; max-width:420px; width:100%; }
+  .cmodal .ct{ font-weight:900; font-size:17px; margin-bottom:6px; }
+  .cmodal .cn{ font-size:13px; color:#9a9b92; margin-bottom:16px; }
+  .cmodal .cbox{ background:#16170f; border:1px solid #2c2e26; border-radius:9px; padding:14px; font-family:'Space Mono',monospace; font-size:14px; word-break:break-all; display:flex; align-items:center; gap:10px; }
+  .cmodal .cbox a{ color:#c6f24e; flex:1; }
+  .cmodal .copybtn{ background:transparent; border:1px solid #2c2e26; border-radius:6px; color:#9a9b92; font-family:'Space Mono',monospace; font-size:10.5px; padding:6px 10px; cursor:pointer; }
+  .cmodal .copybtn:hover{ border-color:#c6f24e; color:#c6f24e; }
+  .cmodal .cq{ font-family:'Space Mono',monospace; font-size:11px; color:#6b6d62; margin-top:14px; }
+  .cmodal .cclose{ margin-top:16px; width:100%; padding:11px 0; background:#c6f24e; color:#0c0d0a; border:none; border-radius:8px; font-family:'Space Mono',monospace; font-weight:700; font-size:12px; letter-spacing:.08em; cursor:pointer; }
 </style>
 
 <nav class="nav">
@@ -128,6 +139,13 @@
 
 <div class="wrap"><div id="app"></div></div>
 
+<div class="cmodal-mask" id="cmask"><div class="cmodal">
+  <div class="ct" id="cm-title"></div>
+  <div class="cn" id="cm-name"></div>
+  <div class="cbox"><a id="cm-contact" href="#"></a><button class="copybtn" id="cm-copy">COPY</button></div>
+  <div class="cq" id="cm-quota"></div>
+  <button class="cclose" id="cm-close"></button>
+</div></div>
 <script>
 const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',team:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="17" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="31" cy="19" r="5.4" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M8 37c0-5.5 4-8.6 9-8.6M40 37c0-5.5-4-8.6-9-8.6" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/></svg>',studio:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'};
 function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.team) : v; }
@@ -164,18 +182,63 @@ const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(va
 function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
 
 let CURRENT_GAME=null;
+const CM_I18N = {
+  en:{ title:"Developer Contact", already:"(previously unlocked — free)", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
+       over:(u,q)=>`Monthly limit reached (${u}/${q}). Your quota resets on the 1st of next month.`, close:"CLOSE", copied:"COPIED ✓" },
+  zh:{ title:"开发者联系方式", already:"(此前已解锁,不占额度)", quota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
+       over:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`, close:"关闭", copied:"已复制 ✓" },
+  ko:{ title:"개발자 연락처", already:"(이미 해제됨 — 무료)", quota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
+       over:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일에 초기화됩니다.`, close:"닫기", copied:"복사됨 ✓" }
+};
+function cmShow({name, contact, already, used, quota, overLimit}){
+  const M = CM_I18N[lang]||CM_I18N.en;
+  document.getElementById("cm-title").textContent = M.title;
+  document.getElementById("cm-name").textContent = name || "";
+  const box = document.querySelector("#cmask .cbox");
+  if(overLimit){
+    box.style.display="none";
+    document.getElementById("cm-quota").textContent = M.over(used, quota);
+  } else {
+    box.style.display="flex";
+    const a = document.getElementById("cm-contact");
+    a.textContent = contact;
+    a.href = /^https?:/i.test(contact) ? contact : "mailto:"+contact;
+    if(/^https?:/i.test(contact)) { a.target="_blank"; a.rel="noopener"; } else { a.removeAttribute("target"); }
+    document.getElementById("cm-quota").textContent = M.quota(used, quota) + (already ? " " + M.already : "");
+  }
+  document.getElementById("cm-close").textContent = M.close;
+  document.getElementById("cmask").style.display="flex";
+}
+document.getElementById("cm-close") && (document.getElementById("cm-close").onclick = ()=>{ document.getElementById("cmask").style.display="none"; });
+document.getElementById("cmask") && document.getElementById("cmask").addEventListener("click",(e)=>{ if(e.target.id==="cmask") e.target.style.display="none"; });
+document.getElementById("cm-copy") && (document.getElementById("cm-copy").onclick = async ()=>{
+  const M = CM_I18N[lang]||CM_I18N.en;
+  try{ await navigator.clipboard.writeText(document.getElementById("cm-contact").textContent); document.getElementById("cm-copy").textContent=M.copied;
+    setTimeout(()=>{ document.getElementById("cm-copy").textContent="COPY"; },1500); }catch(e){}
+});
+
 async function contactClick(e){
   e.preventDefault();
   try{
     const r=await fetch("/api/auth/me"); const d=await r.json();
     if(d.loggedIn && !d.needsRole && d.role==="partner" && d.status==="verified"){
-      // 已认证合作方:放行到真实联系方式
-      const href=contactHref(CURRENT_GAME);
-      if(/^https?:/i.test(href)) window.open(href,"_blank","noopener"); else location.href=href;
+      if(!CURRENT_GAME || !CURRENT_GAME.has_owner){
+        // 飞书来源的老游戏:走 SRY 邮件别名,不占额度
+        const href=contactHref(CURRENT_GAME);
+        if(/^https?:/i.test(href)) window.open(href,"_blank","noopener"); else location.href=href;
+        return false;
+      }
+      // 开发者提交的游戏:配额制解锁真实联系方式
+      try{
+        const res = await fetch("/api/contacts/reveal",{ method:"POST", headers:{"content-type":"application/json"},
+          body:JSON.stringify({ type:"developer", game_id: CURRENT_GAME.id }) });
+        const rd = await res.json();
+        if(rd.ok){ cmShow(rd); }
+        else if(rd.error==="quota_exceeded"){ cmShow({ overLimit:true, used:rd.used, quota:rd.quota }); }
+      }catch(err){}
       return false;
     }
   }catch(err){}
-  // 其他所有情况(未登录/开发者/待审核合作方):去选身份页,带回跳
   location.href="/login.html?pick=1&next="+encodeURIComponent(location.pathname+location.search);
   return false;
 }
