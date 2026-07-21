@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
 
   try {
     const { results } = await env.DB.prepare(
-      `SELECT slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko,
+      `SELECT id, claimed_by, slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko,
               studio_en, studio_zh, studio_ko, developer, stage,
               genres, needs, platforms, region, cover, screenshots,
               studio_logo, video, contact, steam_url, sort
@@ -46,6 +46,8 @@ export async function onRequestGet(context) {
       contact: r.contact || "",
       steam_url: r.steam_url || "",
       slug: r.slug || "",
+      id: r.id,
+      has_owner: !!r.claimed_by,
     }));
 
     return new Response(JSON.stringify(games), {
