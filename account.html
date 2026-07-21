@@ -174,10 +174,12 @@ const I18N = {
     roleDev:"DEVELOPER", rolePar:"PARTNER",
     st:{ pending:"PENDING REVIEW", verified:"VERIFIED", rejected:"REJECTED", suspended:"SUSPENDED", active:"ACTIVE" },
     nmDev:"(studio name not set)", nmPar:"(company name not set)",
-    noticePending:"Your profile is <b>under review</b>. We usually respond within 1–2 business days. You can still edit your profile — resubmitting keeps you in the queue.",
+    noticePending:"Your profile is <b>under review</b>. We usually respond within 1–2 business days. Once verified, you can unlock developer contacts and reach out directly.",
     noticeVerified:"Your account is <b>verified</b>. Your company card will appear in the Partners directory, and you can unlock developer contacts.",
     noticeRejected:(why)=>`Your submission was <b>not approved</b>.${why?` Reason: <span class="why">${why}</span>`:""} Please update your profile and resubmit.`,
     noticeNoProfileDev:"Tip: complete your studio info so publishers can recognize you.",
+    noticeNoGame:'Submit your first game — once it\'s approved, you can unlock publisher & investor contacts and reach out directly.',
+    noticeNoApproved:"Your game is in review. Once approved, you'll be able to unlock publisher & investor contacts.",
     noticeNoProfilePar:"Next step: complete your company profile and submit it for review.",
     mProfileDev:"Studio Info", mProfileDevSub:"Name, contact email, logo & intro — edit anytime",
     mProfilePar:"Company Profile", mProfileParSub:"Edit and resubmit your profile",
@@ -193,10 +195,12 @@ const I18N = {
     roleDev:"开发者", rolePar:"合作方",
     st:{ pending:"待审核", verified:"已认证", rejected:"未通过", suspended:"已停用", active:"已激活" },
     nmDev:"(未填写工作室名称)", nmPar:"(未填写公司名称)",
-    noticePending:"资料<b>审核中</b>,通常 1–2 个工作日内处理。期间仍可修改资料,重新提交不影响排队。",
+    noticePending:"资料<b>审核中</b>,通常 1–2 个工作日内处理。通过认证后,你就能解锁开发者联系方式,直接对接项目。",
     noticeVerified:"账号<b>已认证</b>。你的公司卡片将出现在 Partners 列表,并可解锁开发者联系方式。",
     noticeRejected:(why)=>`提交<b>未通过</b>。${why?`原因:<span class="why">${why}</span>`:""} 请修改资料后重新提交。`,
     noticeNoProfileDev:"提示:完善工作室信息,让发行商更容易认识你。",
+    noticeNoGame:"提交你的第一款游戏——审核通过后,你就能解锁发行商/投资方的联系方式,主动出击。",
+    noticeNoApproved:"游戏审核中。通过后,你就能解锁发行商/投资方的联系方式。",
     noticeNoProfilePar:"下一步:填写公司资料并提交审核。",
     mProfileDev:"工作室信息", mProfileDevSub:"名称、联系邮箱、Logo 与简介,随时可改",
     mProfilePar:"公司资料", mProfileParSub:"修改资料、重新提交审核",
@@ -212,10 +216,12 @@ const I18N = {
     roleDev:"개발자", rolePar:"파트너",
     st:{ pending:"심사 대기", verified:"인증 완료", rejected:"반려됨", suspended:"정지됨", active:"활성화됨" },
     nmDev:"(스튜디오 이름 미설정)", nmPar:"(회사명 미설정)",
-    noticePending:"프로필이 <b>심사 중</b>입니다. 보통 1–2 영업일 내 처리됩니다. 심사 중에도 프로필을 수정할 수 있습니다.",
+    noticePending:"프로필이 <b>심사 중</b>입니다. 보통 1–2 영업일 내 처리됩니다. 인증되면 개발자 연락처를 해제하고 직접 연락할 수 있습니다.",
     noticeVerified:"계정이 <b>인증되었습니다</b>. 회사 카드가 Partners 목록에 표시되며 개발자 연락처를 열람할 수 있습니다.",
     noticeRejected:(why)=>`제출이 <b>반려되었습니다</b>.${why?` 사유: <span class="why">${why}</span>`:""} 프로필을 수정 후 다시 제출해 주세요.`,
     noticeNoProfileDev:"팁: 스튜디오 정보를 작성하면 퍼블리셔가 알아보기 쉽습니다.",
+    noticeNoGame:"첫 게임을 제출하세요. 승인되면 퍼블리셔·투자자 연락처를 해제하고 직접 연락할 수 있습니다.",
+    noticeNoApproved:"게임 심사 중입니다. 승인되면 퍼블리셔·투자자 연락처를 해제할 수 있습니다.",
     noticeNoProfilePar:"다음 단계: 회사 프로필을 작성하고 심사에 제출하세요.",
     mProfileDev:"스튜디오 정보", mProfileDevSub:"이름, 이메일, 로고, 소개 — 언제든 수정 가능",
     mProfilePar:"회사 프로필", mProfileParSub:"프로필 수정 및 재제출",
@@ -261,7 +267,10 @@ function render(){
   // 提示条
   const n = $("#notice"); n.style.display="none"; n.className="notice cjk-swap";
   if(isDev){
+    const hasApproved = myGames.some(g=>g.status==="approved");
     if(!profile || !profile.studio_name){ n.innerHTML=t.noticeNoProfileDev; n.style.display="block"; }
+    else if(!myGames.length){ n.innerHTML=t.noticeNoGame; n.classList.add("warn"); n.style.display="block"; }
+    else if(!hasApproved){ n.innerHTML=t.noticeNoApproved; n.classList.add("warn"); n.style.display="block"; }
   }else{
     if(!profile || !profile.contact_email){ n.innerHTML=t.noticeNoProfilePar; n.classList.add("warn"); n.style.display="block"; }
     else if(status==="pending"){ n.innerHTML=t.noticePending; n.classList.add("warn"); n.style.display="block"; }

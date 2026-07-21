@@ -1,0 +1,259 @@
+<!-- SRY Game Hub — 合作方详情页(公开) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partner · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; gap:22px; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .nav-spacer{ flex:1; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+  .acct{ font-family:var(--mono); font-size:11px; letter-spacing:.06em; padding:7px 12px; border:1px solid var(--line); border-radius:7px; color:var(--ink-dim); white-space:nowrap; }
+  .acct:hover{ color:var(--accent); border-color:var(--accent); }
+
+  .wrap{ max-width:680px; margin:0 auto; padding:40px 20px 90px; }
+  .backlink{ display:inline-block; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); margin-bottom:22px; }
+  .backlink:hover{ color:var(--accent); }
+
+  .pcard{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:28px; }
+  .phead{ display:flex; gap:18px; align-items:center; margin-bottom:18px; }
+  .plogo{ width:76px; height:76px; border-radius:14px; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; color:var(--ink-faint); font-size:26px; }
+  .plogo img{ width:100%; height:100%; object-fit:cover; }
+  .pname{ font-weight:900; font-size:23px; letter-spacing:-.01em; }
+  .pregion{ font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); margin-top:6px; }
+  .pkinds{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:18px; }
+  .kpill{ font-family:var(--mono); font-size:10.5px; font-weight:700; letter-spacing:.06em; padding:5px 12px;
+    border-radius:13px; background:var(--accent); color:var(--accent-ink); }
+  .kpill.inv{ background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  .pintro{ font-size:14px; line-height:1.75; color:var(--ink-dim); margin-bottom:20px; white-space:pre-wrap; }
+  .plinks{ display:flex; gap:16px; margin-bottom:24px; }
+  .plinks a{ font-family:var(--mono); font-size:11.5px; letter-spacing:.05em; color:var(--ink-dim); }
+  .plinks a:hover{ color:var(--accent); }
+
+  .contactbar{ border-top:1px solid var(--line-soft); padding-top:22px; }
+  .getbtn{ width:100%; padding:14px 0; border:none; border-radius:9px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.08em; }
+  .getbtn:disabled{ opacity:.5; cursor:default; }
+  .gatemsg{ font-size:12.5px; color:var(--ink-dim); line-height:1.7; margin-top:12px; display:none; }
+  .gatemsg a{ color:var(--accent); }
+
+  .cmodal-mask{ position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+  .cmodal{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:26px; max-width:420px; width:100%; }
+  .cmodal .ct{ font-weight:900; font-size:17px; margin-bottom:6px; }
+  .cmodal .cn{ font-size:13px; color:var(--ink-dim); margin-bottom:16px; }
+  .cmodal .cbox{ background:var(--panel2); border:1px solid var(--line); border-radius:9px; padding:14px; font-family:var(--mono); font-size:14px; word-break:break-all; display:flex; align-items:center; gap:10px; }
+  .cmodal .cbox a{ color:var(--accent); flex:1; }
+  .cmodal .copybtn{ background:transparent; border:1px solid var(--line); border-radius:6px; color:var(--ink-dim); font-family:var(--mono); font-size:10.5px; padding:6px 10px; cursor:pointer; }
+  .cmodal .copybtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .cmodal .cq{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:14px; }
+  .cmodal .cclose{ margin-top:16px; width:100%; padding:11px 0; background:var(--accent); color:var(--accent-ink); border:none; border-radius:8px; font-family:var(--mono); font-weight:700; font-size:12px; letter-spacing:.08em; cursor:pointer; }
+
+  .state{ text-align:center; padding:80px 10px; color:var(--ink-faint); font-size:14px; display:none; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span><b>SRY</b>&nbsp;GAME HUB</a>
+  <div class="nav-spacer"></div>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+  <a class="acct" id="acct" href="/login.html">Sign In</a>
+</nav>
+
+<div class="wrap">
+  <a class="backlink" href="/partners.html" id="backlink"></a>
+  <div class="state" id="loading">…</div>
+  <div class="state" id="notfound"></div>
+
+  <div class="pcard" id="pcard" style="display:none">
+    <div class="phead">
+      <div class="plogo" id="plogo">▢</div>
+      <div>
+        <div class="pname cjk-swap" id="pname"></div>
+        <div class="pregion" id="pregion"></div>
+      </div>
+    </div>
+    <div class="pkinds" id="pkinds"></div>
+    <div class="pintro cjk-swap" id="pintro"></div>
+    <div class="plinks" id="plinks"></div>
+    <div class="contactbar">
+      <button class="getbtn" id="getbtn"></button>
+      <div class="gatemsg cjk-swap" id="gatemsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="cmodal-mask" id="cmask"><div class="cmodal">
+  <div class="ct" id="cm-title"></div>
+  <div class="cn" id="cm-name"></div>
+  <div class="cbox"><a id="cm-contact" href="#"></a><button class="copybtn" id="cm-copy">COPY</button></div>
+  <div class="cq" id="cm-quota"></div>
+  <button class="cclose" id="cm-close"></button>
+</div></div>
+
+<script>
+const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="24" cy="19" r="7" fill="none" stroke="#c6f24e" stroke-width="2.4"/><path d="M12 38c0-7 5.4-11 12-11s12 4 12 11" fill="none" stroke="#c6f24e" stroke-width="2.4" stroke-linecap="round"/></svg>',team:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><circle cx="18" cy="18" r="5" fill="none" stroke="#c6f24e" stroke-width="2.2"/><circle cx="32" cy="20" r="4" fill="none" stroke="#c6f24e" stroke-width="2"/><path d="M9 37c0-6 4-9.5 9-9.5s9 3.5 9 9.5" fill="none" stroke="#c6f24e" stroke-width="2.2" stroke-linecap="round"/><path d="M29 31.5c1-.9 2.4-1.5 4-1.5 4 0 6.5 2.8 6.5 7" fill="none" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>',studio:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><rect width="48" height="48" rx="10" fill="#16170f"/><rect x="13" y="14" width="22" height="21" rx="2" fill="none" stroke="#c6f24e" stroke-width="2.2"/><path d="M19 35v-6h4v6M25 35v-6h4v6M18 20h3M27 20h3M18 24.5h3M27 24.5h3" stroke="#c6f24e" stroke-width="2" stroke-linecap="round"/></svg>'};
+function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.solo) : v; }
+const KIND_L = { en:{publishing:"PUBLISHING",investment:"INVESTMENT"}, zh:{publishing:"发行",investment:"投资"}, ko:{publishing:"퍼블리싱",investment:"투자"} };
+const flagOf = (cc)=>/^[A-Z]{2}$/.test(cc||"") ? String.fromCodePoint(...[...cc].map(c=>0x1F1A5+c.charCodeAt(0))) : "";
+
+const I18N = {
+  en:{ back:"← All Partners", notfound:"Partner not found or not yet verified.", signin:"Sign In",
+    get:"GET CONTACT", cmTitle:"Partner Contact", cmAlready:"(previously unlocked — free)",
+    cmQuota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
+    cmOver:(u,q)=>`Monthly limit reached (${u}/${q}). Resets on the 1st of next month.`,
+    cmClose:"CLOSE", cmCopied:"COPIED ✓",
+    needGame:'Contact unlocking is for developers with at least one approved game. <a href="/submit-game.html">Submit your game →</a>',
+    partnerSide:"Partner accounts can't view other partners' contacts." },
+  zh:{ back:"← 全部合作方", notfound:"未找到该合作方,或尚未通过认证。", signin:"登录",
+    get:"获取联系方式", cmTitle:"合作方联系方式", cmAlready:"(此前已解锁,不占额度)",
+    cmQuota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
+    cmOver:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`,
+    cmClose:"关闭", cmCopied:"已复制 ✓",
+    needGame:'解锁联系方式需要你至少有一款已通过审核的游戏。<a href="/submit-game.html">去提交游戏 →</a>',
+    partnerSide:"合作方之间不能互相查看联系方式。" },
+  ko:{ back:"← 모든 파트너", notfound:"파트너를 찾을 수 없거나 아직 인증되지 않았습니다.", signin:"로그인",
+    get:"연락처 보기", cmTitle:"파트너 연락처", cmAlready:"(이미 해제됨 — 무료)",
+    cmQuota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
+    cmOver:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일 초기화.`,
+    cmClose:"닫기", cmCopied:"복사됨 ✓",
+    needGame:'연락처 해제는 승인된 게임이 1개 이상 있는 개발자만 가능합니다. <a href="/submit-game.html">게임 제출 →</a>',
+    partnerSide:"파트너 계정끼리는 연락처를 볼 수 없습니다." }
+};
+
+const $ = (s)=>document.querySelector(s);
+const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let lang = localStorage.getItem("sry_lang") || "en";
+let P=null, ME=null;
+const PID = parseInt(new URLSearchParams(location.search).get("id"),10) || 0;
+function T(){ return I18N[lang]; }
+let regionName=(c)=>c;
+function buildRegionNames(){
+  try{ const dn=new Intl.DisplayNames([lang==="zh"?"zh-Hans":lang],{type:"region"});
+    regionName=(cc)=>{ try{ return (cc&&dn.of(cc))||cc; }catch{ return cc; } };
+  }catch{ regionName=(c)=>c; }
+}
+function nameOf(r){
+  if(lang==="zh") return r.name_zh||r.name_en||r.name_ko;
+  if(lang==="ko") return r.name_ko||r.name_en||r.name_zh;
+  return r.name_en||r.name_zh||r.name_ko;
+}
+
+function render(){
+  document.body.setAttribute("lang",lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  buildRegionNames();
+  const t=T();
+  $("#backlink").textContent=t.back;
+  $("#notfound").textContent=t.notfound;
+  const a=$("#acct"); if(!a.dataset.logged) a.textContent=t.signin;
+  if(!P) return;
+  $("#plogo").innerHTML = P.logo?`<img src="${esc(logoSrc(P.logo))}">`:"▢";
+  $("#pname").textContent = nameOf(P);
+  $("#pregion").textContent = `${flagOf(P.region)} ${regionName(P.region)}`;
+  $("#pkinds").innerHTML = (P.kinds||[]).map(k=>`<span class="kpill${k==="investment"?" inv":""}">${KIND_L[lang][k]||k}</span>`).join("");
+  const intro = lang==="zh"?P.intro_zh:lang==="ko"?P.intro_ko:P.intro_en;
+  $("#pintro").textContent = intro||"";
+  $("#pintro").style.display = intro?"block":"none";
+  $("#plinks").innerHTML = [
+    P.website?`<a href="${esc(P.website)}" target="_blank" rel="noopener">WEBSITE ↗</a>`:"",
+    P.steam_url?`<a href="${esc(P.steam_url)}" target="_blank" rel="noopener">STEAM ↗</a>`:"",
+  ].filter(Boolean).join("");
+  $("#getbtn").textContent=t.get;
+  // 合作方身份隐藏按钮(同侧不互看)
+  const isPartnerViewer = ME && ME.loggedIn && !ME.needsRole && ME.role==="partner";
+  $("#getbtn").style.display = isPartnerViewer ? "none" : "block";
+  const gm=$("#gatemsg");
+  if(isPartnerViewer){ gm.innerHTML=t.partnerSide; gm.style.display="block"; } else { gm.style.display="none"; }
+}
+
+function cmShow({name, contact, already, used, quota, overLimit}){
+  const t=T();
+  $("#cm-title").textContent=t.cmTitle;
+  $("#cm-name").textContent=name||"";
+  const box=document.querySelector("#cmask .cbox");
+  if(overLimit){ box.style.display="none"; $("#cm-quota").textContent=t.cmOver(used,quota); }
+  else{
+    box.style.display="flex";
+    const a=$("#cm-contact"); a.textContent=contact;
+    a.href=/^https?:/i.test(contact)?contact:"mailto:"+contact;
+    $("#cm-quota").textContent=t.cmQuota(used,quota)+(already?" "+t.cmAlready:"");
+  }
+  $("#cm-close").textContent=t.cmClose;
+  $("#cmask").style.display="flex";
+}
+$("#cm-close").onclick=()=>{ $("#cmask").style.display="none"; };
+$("#cmask").addEventListener("click",(e)=>{ if(e.target.id==="cmask") e.target.style.display="none"; });
+$("#cm-copy").onclick=async ()=>{
+  try{ await navigator.clipboard.writeText($("#cm-contact").textContent);
+    $("#cm-copy").textContent=T().cmCopied; setTimeout(()=>{ $("#cm-copy").textContent="COPY"; },1500); }catch(e){}
+};
+
+$("#getbtn").onclick = async ()=>{
+  const t=T(); const gm=$("#gatemsg"); gm.style.display="none";
+  if(!(ME && ME.loggedIn && !ME.needsRole && ME.role==="developer")){
+    location.href="/login.html?pick=1&next="+encodeURIComponent("/partner.html?id="+PID);
+    return;
+  }
+  $("#getbtn").disabled=true;
+  try{
+    const res=await fetch("/api/contacts/reveal",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ type:"partner", target_id:PID }) });
+    const rd=await res.json();
+    if(rd.ok) cmShow(rd);
+    else if(rd.error==="quota_exceeded") cmShow({ overLimit:true, used:rd.used, quota:rd.quota });
+    else if(rd.error==="no_approved_game"){ gm.innerHTML=t.needGame; gm.style.display="block"; }
+  }catch(e){}
+  finally{ $("#getbtn").disabled=false; }
+};
+
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); render();
+});
+
+(async ()=>{
+  render();
+  $("#loading").style.display="block";
+  try{
+    const r=await fetch("/api/auth/me"); ME=await r.json();
+    if(ME && ME.loggedIn && !ME.needsRole){
+      const a=$("#acct"); a.dataset.logged="1";
+      a.textContent="▸ "+(ME.email||"").split("@")[0].slice(0,14);
+      a.href="/account.html";
+    }
+  }catch(e){}
+  try{
+    const r=await fetch("/api/partners"); const d=await r.json();
+    if(Array.isArray(d)) P = d.find(x=>x.id===PID) || null;
+  }catch(e){}
+  $("#loading").style.display="none";
+  if(!P){ $("#notfound").style.display="block"; render(); return; }
+  $("#pcard").style.display="block";
+  render();
+})();
+</script>

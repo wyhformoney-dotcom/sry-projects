@@ -60,7 +60,10 @@
 
   .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
   .card{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:13px; transition:border .15s; }
-  .card:hover{ border-color:#3d4034; }
+  .card{ cursor:pointer; }
+  .card:hover{ border-color:var(--accent); }
+  .viewbtn{ font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); }
+  .card:hover .viewbtn{ color:var(--accent); }
   .chead{ display:flex; gap:14px; align-items:center; }
   .clogo{ width:52px; height:52px; border-radius:10px; background:var(--panel2); border:1px solid var(--line);
     display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; color:var(--ink-faint); font-size:20px; }
@@ -145,13 +148,6 @@
   </div>
 </div>
 
-<div class="cmodal-mask" id="cmask"><div class="cmodal">
-  <div class="ct" id="cm-title"></div>
-  <div class="cn" id="cm-name"></div>
-  <div class="cbox"><a id="cm-contact" href="#"></a><button class="copybtn" id="cm-copy">COPY</button></div>
-  <div class="cq" id="cm-quota"></div>
-  <button class="cclose" id="cm-close"></button>
-</div></div>
 <script>
 const KIND_L = { en:{publishing:"PUBLISHING",investment:"INVESTMENT"}, zh:{publishing:"发行",investment:"投资"}, ko:{publishing:"퍼블리싱",investment:"투자"} };
 const MARKET_L = { en:{Global:"Global",China:"China",Overseas:"Overseas"}, zh:{Global:"全球",China:"中国",Overseas:"海外"}, ko:{Global:"글로벌",China:"중국",Overseas:"해외"} };
@@ -167,7 +163,7 @@ const I18N = {
     fAll:"ALL", fPub:"PUBLISHING", fInv:"INVESTMENT", fRegionAll:"ALL REGIONS",
     empty:"No partners match the filters yet.", soon:"We are verifying our first batch of publishers and investors. The partner directory will open soon — developers who list games now will be first in line.",
     cta1:"Are you a publisher or investor?", cta2:"Join the network, get verified, and connect with indie developers.",
-    ctabtn:"BECOME A PARTNER →", signin:"Sign In", getContact:"GET CONTACT",
+    ctabtn:"BECOME A PARTNER →", signin:"Sign In", getContact:"GET CONTACT", viewDetail:"VIEW →",
     cmTitle:"Partner Contact", cmAlready:"(previously unlocked — free)",
     cmQuota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
     cmOver:(u,q)=>`Monthly limit reached (${u}/${q}). Your quota resets on the 1st of next month.`,
@@ -178,7 +174,7 @@ const I18N = {
     fAll:"全部", fPub:"发行", fInv:"投资", fRegionAll:"全部地区",
     empty:"当前筛选下暂无合作方。", soon:"我们正在认证首批发行商与投资方,合作方名录即将开放。现在提交游戏的开发者,将最先被他们看到。",
     cta1:"你是发行商或投资方?", cta2:"加入网络、完成认证,与独立开发者建立联系。",
-    ctabtn:"成为合作方 →", signin:"登录", getContact:"获取联系方式",
+    ctabtn:"成为合作方 →", signin:"登录", getContact:"获取联系方式", viewDetail:"查看详情 →",
     cmTitle:"合作方联系方式", cmAlready:"(此前已解锁,不占额度)",
     cmQuota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
     cmOver:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`,
@@ -189,7 +185,7 @@ const I18N = {
     fAll:"전체", fPub:"퍼블리싱", fInv:"투자", fRegionAll:"모든 지역",
     empty:"필터에 해당하는 파트너가 없습니다.", soon:"첫 번째 퍼블리셔·투자자를 인증하는 중입니다. 파트너 디렉터리가 곧 열립니다. 지금 게임을 등록하는 개발자가 가장 먼저 노출됩니다.",
     cta1:"퍼블리셔 또는 투자자이신가요?", cta2:"네트워크에 가입하고 인증을 받아 인디 개발자와 연결하세요.",
-    ctabtn:"파트너 되기 →", signin:"로그인", getContact:"연락처 보기",
+    ctabtn:"파트너 되기 →", signin:"로그인", getContact:"연락처 보기", viewDetail:"상세 보기 →",
     cmTitle:"파트너 연락처", cmAlready:"(이미 해제됨 — 무료)",
     cmQuota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
     cmOver:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일에 초기화됩니다.`,
@@ -221,10 +217,10 @@ function cardHtml(r){
   const intro = lang==="zh" ? r.intro_zh : lang==="ko" ? r.intro_ko : r.intro_en;
   const kinds = (r.kinds||[]).map((k,i)=>`<span class="kpill${k==="investment"?" inv":""}">${KIND_L[lang][k]||k}</span>`).join("");
   const links = [
-    r.website ? `<a href="${esc(r.website)}" target="_blank" rel="noopener">WEBSITE ↗</a>` : "",
-    r.steam_url ? `<a href="${esc(r.steam_url)}" target="_blank" rel="noopener">STEAM ↗</a>` : "",
+    r.website ? `<a href="${esc(r.website)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">WEBSITE ↗</a>` : "",
+    r.steam_url ? `<a href="${esc(r.steam_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">STEAM ↗</a>` : "",
   ].filter(Boolean).join("");
-  return `<div class="card">
+  return `<div class="card" onclick="location.href='/partner.html?id=${r.id}'">
     <div class="chead">
       <div class="clogo">${r.logo?`<img src="${esc(logoSrc(r.logo))}" alt="">`:"▢"}</div>
       <div>
@@ -232,8 +228,8 @@ function cardHtml(r){
       </div>
     </div>
     <div class="ckinds">${kinds}</div>
-    ${intro?`<div class="cintro cjk-swap" onclick="this.classList.toggle('open')">${esc(intro)}</div>`:""}
-    <div class="clinks">${links}<button class="getbtn" onclick="revealPartner(${r.id},event)">${t.getContact}</button><span class="rbadge">${flagOf(r.region)} ${esc(regionName(r.region))}</span></div>
+    ${intro?`<div class="cintro cjk-swap">${esc(intro)}</div>`:""}
+    <div class="clinks">${links}<span class="viewbtn">${t.viewDetail}</span><span class="rbadge">${flagOf(r.region)} ${esc(regionName(r.region))}</span></div>
   </div>`;
 }
 
@@ -287,43 +283,6 @@ $("#lang").addEventListener("click",(e)=>{
   const b=e.target.closest("button"); if(!b) return;
   lang=b.dataset.l; localStorage.setItem("sry_lang",lang); renderText();
 });
-
-function cmShow({name, contact, already, used, quota, overLimit}){
-  const t=T();
-  $("#cm-title").textContent=t.cmTitle;
-  $("#cm-name").textContent=name||"";
-  const box=document.querySelector("#cmask .cbox");
-  if(overLimit){ box.style.display="none"; $("#cm-quota").textContent=t.cmOver(used,quota); }
-  else{
-    box.style.display="flex";
-    const a=$("#cm-contact"); a.textContent=contact;
-    a.href=/^https?:/i.test(contact)?contact:"mailto:"+contact;
-    $("#cm-quota").textContent=t.cmQuota(used,quota)+(already?" "+t.cmAlready:"");
-  }
-  $("#cm-close").textContent=t.cmClose;
-  $("#cmask").style.display="flex";
-}
-$("#cm-close").onclick=()=>{ $("#cmask").style.display="none"; };
-$("#cmask").addEventListener("click",(e)=>{ if(e.target.id==="cmask") e.target.style.display="none"; });
-$("#cm-copy").onclick=async ()=>{
-  try{ await navigator.clipboard.writeText($("#cm-contact").textContent);
-    $("#cm-copy").textContent=T().cmCopied; setTimeout(()=>{ $("#cm-copy").textContent="COPY"; },1500); }catch(e){}
-};
-async function revealPartner(id, e){
-  e && e.stopPropagation();
-  try{
-    const r=await fetch("/api/auth/me"); const d=await r.json();
-    if(!(d.loggedIn && !d.needsRole && d.role==="developer")){
-      location.href="/login.html?pick=1&next="+encodeURIComponent("/partners.html");
-      return;
-    }
-    const res=await fetch("/api/contacts/reveal",{ method:"POST", headers:{"content-type":"application/json"},
-      body:JSON.stringify({ type:"partner", target_id:id }) });
-    const rd=await res.json();
-    if(rd.ok) cmShow(rd);
-    else if(rd.error==="quota_exceeded") cmShow({ overLimit:true, used:rd.used, quota:rd.quota });
-  }catch(err){}
-}
 
 (async ()=>{
   renderText();
