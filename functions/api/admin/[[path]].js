@@ -268,6 +268,42 @@ async function handleIntroSave(env, request) {
   return json({ ok: true });
 }
 
+async function handleAccountsList(env, request) {
+  const url = new URL(request.url);
+  const role = url.searchParams.get("role") || "all";
+  const q = (url.searchParams.get("q") || "").trim().toLowerCase().slice(0, 100);
+  const where = ["1=1"]; const binds = [];
+  if (role === "developer" || role === "partner") { where.push("a.role = ?"); binds.push(role); }
+  if (q) { where.push("a.email LIKE ?"); binds.push(`%${q}%`); }
+  const { results } = await env.DB.prepare(
+    `SELECT a.id, a.email, a.role, a.status, a.created_at,
+            dp.studio_name, pp.name_en, pp.name_zh,
+            (SELECT COUNT(*) FROM games g WHERE g.claimed_by = a.id) AS games_cnt
+     FROM accounts a
+     LEFT JOIN developer_profiles dp ON dp.account_id = a.id
+     LEFT JOIN partner_profiles pp ON pp.account_id = a.id
+     WHERE ${where.join(" AND ")}
+     ORDER BY a.id DESC LIMIT 300`
+  ).bind(...binds).all();
+  const { results: cnt } = await env.DB.prepare(
+    "SELECT role, COUNT(*) AS c FROM accounts GROUP BY role"
+  ).all();
+  const counts = {}; (cnt || []).forEach((x) => { counts[x.role] = x.c; });
+  return json({ ok: true, rows: results || [], counts });
+}
+
+async function handleAccountStatus(env, request) {
+  const { id, action } = await request.json().catch(() => ({}));
+  const aid = parseInt(id, 10);
+  if (!aid) return bad("invalid_id");
+  if (action !== "suspend" && action !== "restore") return bad("invalid_action");
+  const account = await env.DB.prepare("SELECT id, role FROM accounts WHERE id = ?").bind(aid).first();
+  if (!account) return bad("not_found", 404);
+  const newStatus = action === "suspend" ? "suspended" : "verified";
+  await env.DB.prepare("UPDATE accounts SET status = ? WHERE id = ?").bind(newStatus, aid).run();
+  return json({ ok: true, status: newStatus });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -284,6 +320,8 @@ export async function onRequest(context) {
     if (method === "POST" && path === "intro") return await handleIntroSave(env, request);
     if (method === "GET" && path === "games") return await handleGamesList(env, request);
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
+    if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
+    if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
     return bad("not_found", 404);
   } catch (e) {
