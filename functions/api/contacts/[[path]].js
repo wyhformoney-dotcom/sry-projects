@@ -9,6 +9,7 @@
 
 const COOKIE = "sry_session";
 const MONTHLY_QUOTA = 5; // ← 想调整每月额度改这里
+const FALLBACK_EMAIL = "wangyanhui@sryinteractive.com";
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
@@ -70,14 +71,21 @@ async function handleReveal(env, s, request) {
     const game = await env.DB.prepare(
       "SELECT id, claimed_by, developer FROM games WHERE id = ? AND status = 'approved'"
     ).bind(gid).first();
-    if (!game || !game.claimed_by) return bad("not_found", 404);
-    targetId = game.claimed_by;
-    const dp = await env.DB.prepare(
-      "SELECT studio_name, contact_email FROM developer_profiles WHERE account_id = ?"
-    ).bind(targetId).first();
-    const acc = await env.DB.prepare("SELECT email FROM accounts WHERE id = ?").bind(targetId).first();
+    if (!game) return bad("not_found", 404);
+    targetId = game.claimed_by || 0;
+    let dp = null, acc = null;
+    if (targetId) {
+      dp = await env.DB.prepare(
+        "SELECT studio_name, contact_email FROM developer_profiles WHERE account_id = ?"
+      ).bind(targetId).first();
+      acc = await env.DB.prepare("SELECT email FROM accounts WHERE id = ?").bind(targetId).first();
+    }
     contact = (dp && dp.contact_email) || (acc && acc.email) || "";
     name = (dp && dp.studio_name) || game.developer || "";
+    if (!contact) {
+      const usedNow = await usedThisMonth(env, viewer.id);
+      return json({ ok: true, contact: FALLBACK_EMAIL, name, fallback: true, used: usedNow, quota: MONTHLY_QUOTA });
+    }
   } else {
     // 合作方看自己的联系方式:直接放行(不扣额度)
     const selfId = parseInt(b.target_id, 10);
@@ -106,8 +114,11 @@ async function handleReveal(env, s, request) {
     if (!tp || tp.status !== "verified") return bad("not_found", 404);
     contact = tp.contact_email || "";
     name = tp.name_en || tp.name_zh || "";
+    if (!contact) {
+      const usedNow = await usedThisMonth(env, viewer.id);
+      return json({ ok: true, contact: FALLBACK_EMAIL, name, fallback: true, used: usedNow, quota: MONTHLY_QUOTA });
+    }
   }
-  if (!contact) return bad("no_contact", 404);
 
   // 已解锁过 → 免费返回
   const existed = await env.DB.prepare(
