@@ -79,6 +79,17 @@ async function handleReveal(env, s, request) {
     contact = (dp && dp.contact_email) || (acc && acc.email) || "";
     name = (dp && dp.studio_name) || game.developer || "";
   } else {
+    // 合作方看自己的联系方式:直接放行(不扣额度)
+    const selfId = parseInt(b.target_id, 10);
+    if (viewer.role === "partner" && selfId === viewer.id) {
+      const me = await env.DB.prepare(
+        "SELECT contact_email, name_en, name_zh FROM partner_profiles WHERE account_id = ?"
+      ).bind(viewer.id).first();
+      if (!me || !me.contact_email) return bad("no_contact", 404);
+      const usedNow = await usedThisMonth(env, viewer.id);
+      return json({ ok: true, contact: me.contact_email, name: me.name_en || me.name_zh || "",
+                    self: true, used: usedNow, quota: MONTHLY_QUOTA });
+    }
     // 开发者解锁合作方(已认证)
     if (viewer.role !== "developer") return bad("developer_only", 403);
     const approved = await env.DB.prepare(
