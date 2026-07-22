@@ -131,6 +131,83 @@ async function handleVerify(env, request) {
     { "set-cookie": `sry_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}` });
 }
 
+const stripHtml = (h) => String(h || "")
+  .replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<li[^>]*>/gi, "\n· ")
+  .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/\n{3,}/g, "\n\n").trim();
+
+const STEAM_GENRE_MAP = { "Action":"Action", "Adventure":"Adventure", "RPG":"RPG", "Strategy":"Strategy",
+  "Simulation":"Simulation", "Massively Multiplayer":"Multiplayer" };
+
+async function steamApp(appid, l) {
+  const r = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appid}&l=${l}`, {
+    headers: { "User-Agent": "Mozilla/5.0" },
+  });
+  const d = await r.json().catch(() => null);
+  const node = d && d[appid];
+  return node && node.success ? node.data : null;
+}
+
+async function saveImgToR2(env, url, aid, tag) {
+  const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+  if (!r.ok) return "";
+  const ct = r.headers.get("content-type") || "image/jpeg";
+  const ext = ct.includes("png") ? "png" : "jpg";
+  const key = `steam/${aid}-${tag}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+  await env.R2.put(key, r.body, {
+    httpMetadata: { contentType: ct, cacheControl: "public, max-age=31536000" },
+  });
+  return `${ASSET_HOST}/${key}`;
+}
+
+async function handleSteamFetch(env, s, request) {
+  const { url } = await request.json().catch(() => ({}));
+  const m = String(url || "").match(/store\.steampowered\.com\/app\/(\d+)/i);
+  if (!m) return bad("steam_invalid");
+  const appid = m[1];
+
+  const [en, zh, ko] = await Promise.all([
+    steamApp(appid, "english"), steamApp(appid, "schinese"), steamApp(appid, "koreana"),
+  ]);
+  if (!en) return bad("steam_fetch_failed", 502);
+
+  const t_en = String(en.name || "").slice(0, 120);
+  const zhName = zh && zh.name && zh.name !== en.name ? String(zh.name).slice(0, 120) : "";
+  const koName = ko && ko.name && ko.name !== en.name ? String(ko.name).slice(0, 120) : "";
+
+  // 图片:封面 + 前5张截图,下载存 R2
+  const shotUrls = (en.screenshots || []).slice(0, 5).map((x) => x.path_full).filter(Boolean);
+  const [cover, ...shots] = await Promise.all([
+    en.header_image ? saveImgToR2(env, en.header_image, s.aid, "cover") : Promise.resolve(""),
+    ...shotUrls.map((u, i) => saveImgToR2(env, u, s.aid, "shot" + i)),
+  ]);
+
+  const genres = [...new Set((en.genres || [])
+    .map((g) => STEAM_GENRE_MAP[g.description]).filter(Boolean))];
+
+  let video = "";
+  if (Array.isArray(en.movies) && en.movies[0]) {
+    const mv = en.movies[0];
+    video = (mv.mp4 && (mv.mp4.max || mv.mp4["480"])) || "";
+    if (video.startsWith("http://")) video = "https://" + video.slice(7);
+  }
+
+  return json({
+    ok: true,
+    t_en, t_zh: zhName, t_ko: koName,
+    d_en: stripHtml(en.short_description).slice(0, 160),
+    full_en: stripHtml(en.about_the_game || en.detailed_description).slice(0, 2000),
+    cover, screenshots: shots.filter(Boolean),
+    video,
+    genres,
+    platforms: ["PC"],
+    stage: en.release_date && en.release_date.coming_soon ? "In Development" : "Released",
+    studio_name: String((en.developers && en.developers[0]) || "").slice(0, 120),
+    steam_url: `https://store.steampowered.com/app/${appid}/`,
+  });
+}
+
 async function requireDeveloper(env, s) {
   const account = await env.DB.prepare(
     "SELECT id, role FROM accounts WHERE id = ?"
@@ -239,6 +316,7 @@ export async function onRequest(context) {
     if (method === "GET" && path === "mine") return await handleMine(env, s);
     if (method === "POST" && path === "create") return await handleCreate(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
+    if (method === "POST" && path === "steam-fetch") return await handleSteamFetch(env, s, request);
     return bad("not_found", 404);
   } catch (e) {
     return bad("server_error: " + String(e.message || e).slice(0, 300), 500);
