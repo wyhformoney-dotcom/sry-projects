@@ -107,6 +107,12 @@
   </div>
 </div>
 
+<div class="cmodal-mask" id="gmask"><div class="cmodal">
+  <div class="ct" id="gm-title"></div>
+  <div class="cn" id="gm-msg" style="line-height:1.7;margin-bottom:18px"></div>
+  <a class="cclose" id="gm-cta" style="display:block;text-align:center;text-decoration:none"></a>
+  <button class="cclose" id="gm-close" style="background:transparent;color:var(--ink-dim);border:1px solid var(--line);margin-top:10px"></button>
+</div></div>
 <div class="cmodal-mask" id="cmask"><div class="cmodal">
   <div class="ct" id="cm-title"></div>
   <div class="cn" id="cm-name"></div>
@@ -126,21 +132,33 @@ const I18N = {
     get:"GET CONTACT", cmTitle:"Partner Contact", cmAlready:"(previously unlocked — free)",
     cmQuota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
     cmOver:(u,q)=>`Monthly limit reached (${u}/${q}). Resets on the 1st of next month.`,
-    cmClose:"CLOSE", cmCopied:"COPIED ✓",
+    cmClose:"CLOSE", cmCopied:"COPIED ✓", cmSelf:"This is your own public contact — other partners can't see it.",
+    gClose:"CLOSE",
+    gGuest:{ t:"Developers Only", m:"Partner contacts are visible to developers with at least one approved game. Sign in — or register — as a developer to unlock them.", cta:"SIGN IN AS DEVELOPER →" },
+    gPartner:{ t:"This is a Developer Feature", m:"Contacting partners is for developers. Partner accounts can't view other partners' contacts. To use this, register a developer account with a different email.", cta:"REGISTER AS DEVELOPER →" },
+    gNeedGame:{ t:"Approved Game Required", m:"Unlocking partner contacts requires at least one approved game on your account. Submit your game — once it passes review, come back and reach out.", cta:"SUBMIT YOUR GAME →" },
     needGame:'Contact unlocking is for developers with at least one approved game. <a href="/submit-game.html">Submit your game →</a>',
     partnerSide:'Partner accounts can\'t view other partners\' contacts. To use this as a developer, register a developer account with a different email. <a href="/login.html?pick=1">Register →</a>', guestMsg:'Unlocking contacts requires a developer account with at least one approved game. <a href="/login.html?pick=1&next=NEXT">Sign in / register as developer →</a>' },
   zh:{ back:"← 全部合作方", notfound:"未找到该合作方,或尚未通过认证。", signin:"登录",
     get:"获取联系方式", cmTitle:"合作方联系方式", cmAlready:"(此前已解锁,不占额度)",
     cmQuota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
     cmOver:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`,
-    cmClose:"关闭", cmCopied:"已复制 ✓",
+    cmClose:"关闭", cmCopied:"已复制 ✓", cmSelf:"这是你自己的对外联系方式,其他合作方看不到。",
+    gClose:"关闭",
+    gGuest:{ t:"开发者专属", m:"合作方的联系方式仅对拥有已过审游戏的开发者开放。请以开发者身份登录或注册后解锁。", cta:"以开发者身份登录 →" },
+    gPartner:{ t:"这是开发者功能", m:"联系合作方是开发者的功能,合作方账号之间不能互相查看联系方式。如需使用,请用另一个邮箱注册开发者账号。", cta:"注册开发者账号 →" },
+    gNeedGame:{ t:"需要一款已过审的游戏", m:"解锁合作方联系方式,需要你名下至少有一款通过审核的游戏。先去提交游戏,过审后再来主动出击。", cta:"去提交游戏 →" },
     needGame:'解锁联系方式需要你至少有一款已通过审核的游戏。<a href="/submit-game.html">去提交游戏 →</a>',
     partnerSide:'合作方之间不能互相查看联系方式。如需以开发者身份使用,请用另一个邮箱注册开发者账号。<a href="/login.html?pick=1">去注册 →</a>', guestMsg:'解锁联系方式需要开发者账号(且至少有一款已过审的游戏)。<a href="/login.html?pick=1&next=NEXT">以开发者身份登录 / 注册 →</a>' },
   ko:{ back:"← 모든 파트너", notfound:"파트너를 찾을 수 없거나 아직 인증되지 않았습니다.", signin:"로그인",
     get:"연락처 보기", cmTitle:"파트너 연락처", cmAlready:"(이미 해제됨 — 무료)",
     cmQuota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
     cmOver:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일 초기화.`,
-    cmClose:"닫기", cmCopied:"복사됨 ✓",
+    cmClose:"닫기", cmCopied:"복사됨 ✓", cmSelf:"이것은 회원님의 공개 연락처입니다. 다른 파트너에게는 보이지 않습니다.",
+    gClose:"닫기",
+    gGuest:{ t:"개발자 전용", m:"파트너 연락처는 승인된 게임이 있는 개발자에게만 공개됩니다. 개발자로 로그인 또는 가입 후 해제하세요.", cta:"개발자로 로그인 →" },
+    gPartner:{ t:"개발자 전용 기능입니다", m:"파트너 연락은 개발자 기능입니다. 파트너 계정끼리는 연락처를 볼 수 없습니다. 다른 이메일로 개발자 계정을 등록하세요.", cta:"개발자 계정 등록 →" },
+    gNeedGame:{ t:"승인된 게임 필요", m:"파트너 연락처 해제는 승인된 게임이 1개 이상 필요합니다. 게임을 제출하고 승인 후 다시 오세요.", cta:"게임 제출 →" },
     needGame:'연락처 해제는 승인된 게임이 1개 이상 있는 개발자만 가능합니다. <a href="/submit-game.html">게임 제출 →</a>',
     partnerSide:'파트너 계정끼리는 연락처를 볼 수 없습니다. 개발자로 이용하려면 다른 이메일로 개발자 계정을 등록하세요. <a href="/login.html?pick=1">등록 →</a>', guestMsg:'연락처 해제는 승인된 게임이 1개 이상 있는 개발자 계정만 가능합니다. <a href="/login.html?pick=1&next=NEXT">개발자로 로그인 / 등록 →</a>' }
 };
@@ -184,14 +202,25 @@ function render(){
     P.steam_url?`<a href="${esc(P.steam_url)}" target="_blank" rel="noopener">STEAM ↗</a>`:"",
   ].filter(Boolean).join("");
   $("#getbtn").textContent=t.get;
-  // 合作方身份隐藏按钮(同侧不互看)
-  const isPartnerViewer = ME && ME.loggedIn && !ME.needsRole && ME.role==="partner";
-  $("#getbtn").style.display = isPartnerViewer ? "none" : "block";
-  const gm=$("#gatemsg");
-  if(isPartnerViewer){ gm.innerHTML=t.partnerSide; gm.style.display="block"; } else { gm.style.display="none"; }
+  $("#getbtn").style.display = "block";
+  $("#gatemsg").style.display = "none";
 }
 
-function cmShow({name, contact, already, used, quota, overLimit}){
+function gateShow(kind){
+  const t=T();
+  const M = kind==="guest" ? t.gGuest : kind==="partner" ? t.gPartner : t.gNeedGame;
+  const next = encodeURIComponent("/partner.html?id="+PID);
+  const hrefs = { guest:"/login.html?pick=1&next="+next, partner:"/login.html?pick=1", needGame:"/submit-game.html" };
+  $("#gm-title").textContent=M.t;
+  $("#gm-msg").textContent=M.m;
+  const cta=$("#gm-cta"); cta.textContent=M.cta; cta.href=hrefs[kind];
+  $("#gm-close").textContent=t.gClose;
+  $("#gmask").style.display="flex";
+}
+$("#gm-close").onclick=()=>{ $("#gmask").style.display="none"; };
+$("#gmask").addEventListener("click",(e)=>{ if(e.target.id==="gmask") e.target.style.display="none"; });
+
+function cmShow({name, contact, already, used, quota, overLimit, self}){
   const t=T();
   $("#cm-title").textContent=t.cmTitle;
   $("#cm-name").textContent=name||"";
@@ -201,7 +230,7 @@ function cmShow({name, contact, already, used, quota, overLimit}){
     box.style.display="flex";
     const a=$("#cm-contact"); a.textContent=contact;
     a.href=/^https?:/i.test(contact)?contact:"mailto:"+contact;
-    $("#cm-quota").textContent=t.cmQuota(used,quota)+(already?" "+t.cmAlready:"");
+    $("#cm-quota").textContent = self ? t.cmSelf : (t.cmQuota(used,quota)+(already?" "+t.cmAlready:""));
   }
   $("#cm-close").textContent=t.cmClose;
   $("#cmask").style.display="flex";
@@ -214,12 +243,7 @@ $("#cm-copy").onclick=async ()=>{
 };
 
 $("#getbtn").onclick = async ()=>{
-  const t=T(); const gm=$("#gatemsg"); gm.style.display="none";
-  if(!(ME && ME.loggedIn && !ME.needsRole && ME.role==="developer")){
-    gm.innerHTML = t.guestMsg.replace("NEXT", encodeURIComponent("/partner.html?id="+PID));
-    gm.style.display="block";
-    return;
-  }
+  if(!(ME && ME.loggedIn && !ME.needsRole)){ gateShow("guest"); return; }
   $("#getbtn").disabled=true;
   try{
     const res=await fetch("/api/contacts/reveal",{ method:"POST", headers:{"content-type":"application/json"},
@@ -227,7 +251,9 @@ $("#getbtn").onclick = async ()=>{
     const rd=await res.json();
     if(rd.ok) cmShow(rd);
     else if(rd.error==="quota_exceeded") cmShow({ overLimit:true, used:rd.used, quota:rd.quota });
-    else if(rd.error==="no_approved_game"){ gm.innerHTML=t.needGame; gm.style.display="block"; }
+    else if(rd.error==="no_approved_game") gateShow("needGame");
+    else if(rd.error==="developer_only") gateShow("partner");
+    else if(rd.error==="not_logged_in") gateShow("guest");
   }catch(e){}
   finally{ $("#getbtn").disabled=false; }
 };
