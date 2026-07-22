@@ -202,7 +202,7 @@ let email = "", pickedRole = "", cooldown = 0, cdTimer = null, isNew = false, ha
 
 function T(){ return I18N[lang]; }
 function show(step){ document.querySelectorAll(".step").forEach(x=>x.classList.remove("on")); $("#"+step).classList.add("on"); }
-function err(el, key){ const t=T(); el.className="msg err"; el.textContent = t.errors[key] || t.errors.server; }
+function err(el, key){ const t=T(); el.className="msg err"; el.textContent = t.errors[key] || String(key); }
 function clearMsg(el){ el.className="msg"; el.textContent=""; }
 
 function renderText(){
@@ -223,7 +223,11 @@ async function api(path, opts){
   const res = await fetch("/api/auth/"+path, { headers:{ "content-type":"application/json" }, ...opts });
   let data = null; try{ data = await res.json(); }catch{}
   if(!data) throw "network";
-  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  if(!data.ok){
+    const e = String(data.error||"server");
+    const key = e.split(":")[0].trim();
+    throw (key==="server_error") ? e : key;  // 服务器错误保留原文便于排查
+  }
   return data;
 }
 

@@ -354,7 +354,7 @@ let backMode="home";
 let studioLogo="preset:solo";
 
 function T(){ return I18N[lang]; }
-function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||T().errors.server; }
+function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||String(key); }
 function okmsg(){ const m=$("#msg"); m.className="msg ok"; m.textContent=T().ok; }
 function clearMsg(){ const m=$("#msg"); m.className="msg"; m.textContent=""; }
 
@@ -362,7 +362,11 @@ async function api(path, opts){
   const res = await fetch(path, opts);
   let data=null; try{ data=await res.json(); }catch{}
   if(!data) throw "network";
-  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  if(!data.ok){
+    const e = String(data.error||"server");
+    const key = e.split(":")[0].trim();
+    throw (key==="server_error") ? e : key;
+  }
   return data;
 }
 
