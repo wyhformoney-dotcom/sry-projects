@@ -93,6 +93,17 @@
   .lp.sel .cap{ color:var(--accent); }
   .lp .pic.up{ color:var(--ink-faint); font-size:20px; flex-direction:column; }
   .lp .pic.up .u2{ font-family:var(--mono); font-size:8px; margin-top:2px; }
+  .steambox{ margin:22px 0 6px; padding:18px; border:1px solid var(--accent); border-radius:12px;
+    background:linear-gradient(180deg, rgba(198,242,78,.08), rgba(198,242,78,.02));
+    box-shadow:0 0 24px rgba(198,242,78,.07); }
+  .sb-title{ font-weight:900; font-size:16px; margin-bottom:5px; }
+  .steamrow{ display:flex; gap:10px; }
+  .steamrow input{ flex:1; }
+  .parsebtn{ flex:none; padding:0 24px; border:none; border-radius:8px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:12.5px; letter-spacing:.08em; white-space:nowrap;
+    box-shadow:0 0 14px rgba(198,242,78,.35); }
+  .parsebtn:hover{ filter:brightness(1.06); }
+  .parsebtn:disabled{ opacity:.5; cursor:default; box-shadow:none; }
   #gate-email, #gate-code{ width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
     color:var(--ink); font-size:14px; padding:12px 13px; outline:none; font-family:var(--mono); }
   #gate-email:focus, #gate-code:focus{ border-color:var(--accent); }
@@ -144,6 +155,16 @@
   </div>
 
   <div class="card" id="form">
+    <div class="steambox">
+      <div class="sb-title cjk-swap" id="g9"></div>
+      <p class="sub cjk-swap" id="g9n" style="margin-bottom:12px"></p>
+      <div class="steamrow">
+        <input type="url" id="steam" placeholder="https://store.steampowered.com/app/...">
+        <button type="button" class="parsebtn" id="steambtn"></button>
+      </div>
+      <div class="msg" id="steammsg"></div>
+    </div>
+
     <div class="sec"><span class="num">01</span><span class="st" id="s0"></span><span class="rule"></span></div>
     <div class="f"><label><span id="w1"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="w1n"></p>
@@ -184,8 +205,7 @@
       <div class="chips" id="needs"></div></div>
 
     <div class="sec"><span class="num">04</span><span class="st" id="s3"></span><span class="rule"></span></div>
-    <div class="f"><label id="g9"></label>
-      <input type="url" id="steam" placeholder="https://store.steampowered.com/app/..."></div>
+
     <div class="f"><label id="g10"></label>
       <p class="sub cjk-swap" id="g10n"></p>
       <input type="url" id="video" placeholder="https://youtube.com/watch?v=..."></div>
@@ -249,7 +269,10 @@ const I18N = {
     g4:"Development Stage", g5:"Genres", g6:"Platforms", g7:"Target Market",
     g7n:"Where do you want this game to go?",
     g8:"What are you looking for?",
-    g9:"Steam Page", g10:"Trailer / Gameplay Video", g10n:"YouTube, Bilibili or a direct link.",
+    g9:"⚡ One-click Auto-fill from Steam", g9n:"Paste your Steam store link — we'll pull the title (incl. CN/KR if available), descriptions, cover, screenshots, studio name and more. Everything stays editable.",
+    parse:"AUTO-FILL", parsing:"FETCHING…",
+    parseOk:"Auto-filled from Steam. Please review each field — especially genres and stage — then complete the rest.",
+    g10:"Trailer / Gameplay Video", g10n:"YouTube, Bilibili or a direct link.",
     g11:"Cover Image", g11n:"Landscape 16:9 recommended (e.g. your Steam capsule). JPG/PNG/WebP, up to 5MB.",
     g12:"Screenshots", g12n:"Up to 5 images. JPG/PNG/WebP, up to 5MB each.",
     submit:"Submit for Review", submitting:"Submitting…",
@@ -259,7 +282,7 @@ const I18N = {
       desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
       genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
       market_required:"Please pick a target market.", needs_required:"Please pick what you are looking for.",
-      cover_required:"Please upload a cover image.", shots_required:"Please upload at least one screenshot.", studio_required:"Please enter your studio / developer name.", url_invalid:"Please check the URL format (http/https).",
+      cover_required:"Please upload a cover image.", shots_required:"Please upload at least one screenshot.", studio_required:"Please enter your studio / developer name.", url_invalid:"Please check the URL format (http/https).", steam_invalid:"Please paste a valid Steam store link (store.steampowered.com/app/…).", steam_fetch_failed:"Couldn't fetch from Steam. Check the link or try again later.",
       too_large:"Image is too large (max 5MB).", type_not_allowed:"Only JPG/PNG/WebP images are allowed.",
       not_logged_in:"Please sign in first.", invalid_email:"Please enter a valid email.", invalid_input:"Please enter the 6-digit code.", cooldown:"Please wait a moment before requesting another code.", hourly_limit:"Too many codes. Try again in an hour.", wrong_or_expired_code:"Wrong or expired code.", account_suspended:"This account has been suspended. Contact us if you believe this is a mistake.", not_a_developer:"This email is registered as a partner account. Please use a different email to submit games.", studio_required:"Please enter your studio / developer name.", network:"Network error. Please try again.", server:"Server error. Please try again later." }
   },
@@ -285,7 +308,10 @@ const I18N = {
     g4:"开发阶段", g5:"品类", g6:"平台", g7:"目标市场",
     g7n:"你希望这款游戏去哪个市场?",
     g8:"你在寻找什么?",
-    g9:"Steam 页面", g10:"预告片 / 实机视频", g10n:"YouTube、B 站或直链均可。",
+    g9:"⚡ 一键抓取:用 Steam 链接自动填表", g9n:"粘贴你的 Steam 商店链接,自动带出游戏名(含中/韩文,如有)、简介、封面、截图、工作室名等,填完全部可修改。",
+    parse:"自动填充", parsing:"解析中…",
+    parseOk:"已从 Steam 自动填充。请逐项检查(尤其品类和阶段),再补齐剩余内容。",
+    g10:"预告片 / 实机视频", g10n:"YouTube、B 站或直链均可。",
     g11:"封面图", g11n:"建议 16:9 横图(比如 Steam 胶囊图)。JPG/PNG/WebP,最大 5MB。",
     g12:"游戏截图", g12n:"最多 5 张,每张最大 5MB。",
     submit:"提交审核", submitting:"提交中…",
@@ -295,7 +321,7 @@ const I18N = {
       desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
       genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
       market_required:"请选择目标市场。", needs_required:"请选择你在寻找什么。",
-      cover_required:"请上传封面图。", shots_required:"请至少上传一张游戏截图。", studio_required:"请填写工作室/开发商名称。", url_invalid:"链接格式不对(需以 http/https 开头)。",
+      cover_required:"请上传封面图。", shots_required:"请至少上传一张游戏截图。", studio_required:"请填写工作室/开发商名称。", url_invalid:"链接格式不对(需以 http/https 开头)。", steam_invalid:"请粘贴有效的 Steam 商店链接(store.steampowered.com/app/…)。", steam_fetch_failed:"从 Steam 获取失败,请检查链接或稍后再试。",
       too_large:"图片太大(最大 5MB)。", type_not_allowed:"仅支持 JPG/PNG/WebP 图片。",
       not_logged_in:"请先登录。", invalid_email:"请填写有效邮箱。", invalid_input:"请输入 6 位验证码。", cooldown:"操作太频繁,请稍候再试。", hourly_limit:"发送次数过多,请一小时后再试。", wrong_or_expired_code:"验证码错误或已过期。", account_suspended:"该账号已被停用,如有疑问请联系我们。", not_a_developer:"该邮箱已注册为合作方账号,请换一个邮箱提交游戏。", studio_required:"请填写工作室/开发商名称。", network:"网络错误,请重试。", server:"服务器错误,请稍后再试。" }
   },
@@ -321,7 +347,10 @@ const I18N = {
     g4:"개발 단계", g5:"장르", g6:"플랫폼", g7:"목표 시장",
     g7n:"이 게임을 어느 시장에 내고 싶나요?",
     g8:"무엇을 찾고 있나요?",
-    g9:"Steam 페이지", g10:"트레일러 / 게임플레이 영상", g10n:"YouTube, Bilibili 또는 직접 링크.",
+    g9:"⚡ Steam 링크로 원클릭 자동 입력", g9n:"Steam 스토어 링크를 붙여넣으면 제목(중/한국어 포함, 있는 경우)·소개·커버·스크린샷·스튜디오명 등을 가져옵니다. 모두 수정 가능합니다.",
+    parse:"자동 입력", parsing:"가져오는 중…",
+    parseOk:"Steam에서 자동 입력했습니다. 각 항목(특히 장르·단계)을 확인하고 나머지를 완성하세요.",
+    g10:"트레일러 / 게임플레이 영상", g10n:"YouTube, Bilibili 또는 직접 링크.",
     g11:"커버 이미지", g11n:"16:9 가로 이미지 권장(Steam 캡슐 등). JPG/PNG/WebP, 최대 5MB.",
     g12:"스크린샷", g12n:"최대 5장, 각 5MB 이하.",
     submit:"심사 제출", submitting:"제출 중…",
@@ -331,7 +360,7 @@ const I18N = {
       desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
       genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
       market_required:"목표 시장을 선택하세요.", needs_required:"찾고 있는 것을 선택하세요.",
-      cover_required:"커버 이미지를 업로드하세요.", shots_required:"스크린샷을 최소 한 장 업로드하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", url_invalid:"URL 형식을 확인하세요(http/https).",
+      cover_required:"커버 이미지를 업로드하세요.", shots_required:"스크린샷을 최소 한 장 업로드하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", url_invalid:"URL 형식을 확인하세요(http/https).", steam_invalid:"올바른 Steam 스토어 링크를 붙여넣으세요.", steam_fetch_failed:"Steam에서 가져오지 못했습니다. 링크를 확인하거나 나중에 다시 시도하세요.",
       too_large:"이미지가 너무 큽니다(최대 5MB).", type_not_allowed:"JPG/PNG/WebP 이미지만 지원합니다.",
       not_logged_in:"먼저 로그인해 주세요.", invalid_email:"올바른 이메일을 입력하세요.", invalid_input:"6자리 코드를 입력하세요.", cooldown:"잠시 후 다시 시도하세요.", hourly_limit:"요청이 너무 많습니다. 1시간 후 다시 시도하세요.", wrong_or_expired_code:"코드가 틀렸거나 만료되었습니다.", account_suspended:"이 계정은 정지되었습니다. 문의해 주세요.", not_a_developer:"이 이메일은 파트너 계정으로 등록되어 있습니다. 다른 이메일로 게임을 제출하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", network:"네트워크 오류입니다. 다시 시도하세요.", server:"서버 오류입니다. 나중에 다시 시도하세요." }
   }
@@ -352,6 +381,7 @@ let coverUrl="", shotUrls=[];
 let gateCodeSent=false, gateVerified=false, gateCooldown=0, gateTimer=null;
 let backMode="home";
 let studioLogo="preset:solo";
+let steamParsing=false;
 
 function T(){ return I18N[lang]; }
 function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||String(key); }
@@ -468,7 +498,7 @@ function renderText(){
   $("#g6").textContent=t.g6; $("#g6m").textContent=t.multi;
   $("#g7").textContent=t.g7; $("#g7n").textContent=t.g7n;
   $("#g8").textContent=t.g8; $("#g8m").textContent=t.multi;
-  $("#g9").textContent=t.g9; $("#g10").textContent=t.g10; $("#g10n").textContent=t.g10n;
+  $("#g9").textContent=t.g9; $("#g9n").textContent=t.g9n; $("#steambtn").textContent = steamParsing ? t.parsing : t.parse; $("#g10").textContent=t.g10; $("#g10n").textContent=t.g10n;
   $("#g11").textContent=t.g11; $("#g11n").textContent=t.g11n;
   $("#g12").textContent=t.g12; $("#g12n").textContent=t.g12n;
   $("#submit").textContent=t.submit;
@@ -513,6 +543,38 @@ $("#submit").onclick = async ()=>{
     window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
   }catch(e){ err(e); }
   finally{ $("#submit").disabled=false; $("#submit").textContent=t.submit; }
+};
+
+$("#steambtn").onclick = async ()=>{
+  const t=T(); const sm=$("#steammsg"); sm.className="msg";
+  const u=$("#steam").value.trim();
+  if(!/store\.steampowered\.com\/app\/\d+/i.test(u)){ sm.className="msg err"; sm.textContent=t.errors.steam_invalid; return; }
+  steamParsing=true; $("#steambtn").disabled=true; $("#steambtn").textContent=t.parsing;
+  try{
+    const d=await api("/api/games-submit/steam-fetch",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({url:u}) });
+    // 文本:仅填空字段,不覆盖已填内容
+    if(d.t_en && !$("#t-en").value) $("#t-en").value=d.t_en;
+    if(d.t_zh && !$("#t-zh").value) $("#t-zh").value=d.t_zh;
+    if(d.t_ko && !$("#t-ko").value) $("#t-ko").value=d.t_ko;
+    if(d.d_en && !$("#d-en").value){ $("#d-en").value=d.d_en; $("#d-cnt").textContent=d.d_en.length; }
+    if(d.full_en && !$("#full-en").value){ $("#full-en").value=d.full_en; $("#full-cnt").textContent=d.full_en.length; }
+    if(d.studio_name && !$("#studio").value) $("#studio").value=d.studio_name;
+    if(d.steam_url) $("#steam").value=d.steam_url;
+    if(d.video && !$("#video").value) $("#video").value=d.video;
+    // 选择项:并集/未选才设
+    if(d.stage && !selStage.length){ selStage.push(d.stage); }
+    (d.genres||[]).forEach(g=>{ if(!selGenres.includes(g)) selGenres.push(g); });
+    (d.platforms||[]).forEach(pf=>{ if(!selPlatforms.includes(pf)) selPlatforms.push(pf); });
+    // 素材
+    if(d.cover){ coverUrl=d.cover; $("#coverbox").innerHTML=`<img src="${d.cover}">`; }
+    if((d.screenshots||[]).length && !shotUrls.length){ shotUrls=d.screenshots.slice(0,MAX_SHOTS); }
+    renderText();
+    sm.className="msg ok"; sm.textContent=t.parseOk;
+  }catch(e){
+    sm.className="msg err"; sm.textContent=t.errors[e]||String(e);
+  }finally{
+    steamParsing=false; $("#steambtn").disabled=false; $("#steambtn").textContent=T().parse;
+  }
 };
 
 $("#d-en").addEventListener("input",()=>{ $("#d-cnt").textContent=$("#d-en").value.length; });
