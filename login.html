@@ -59,6 +59,9 @@
   .msg.ok{ display:block; color:var(--accent); }
   .sentmail{ font-family:var(--mono); color:var(--accent); font-size:12px; word-break:break-all; }
 
+  .rolehint{ font-size:12px; color:var(--ink-faint); line-height:1.6; margin:-4px 0 14px; padding:10px 12px;
+    border:1px solid var(--line); border-radius:8px; }
+  .rolehint b{ color:var(--accent); }
   .roles{ display:grid; gap:12px; margin-top:4px; }
   .role{
     text-align:left; background:var(--panel2); border:1px solid var(--line); border-radius:10px;
@@ -112,6 +115,7 @@
     <!-- 第 3 步:新用户选身份 -->
     <div class="step" id="s-role">
       <label id="l-role">I am a…</label>
+      <p class="rolehint cjk-swap" id="role-hint"></p>
       <div class="roles">
         <button class="role" data-role="developer">
           <div class="rt">DEVELOPER</div>
@@ -150,8 +154,10 @@ const I18N = {
     resend:"Resend Code", resendIn:(s)=>`Resend in ${s}s`,
     h1:"New here? Signing in with a new email creates your account.",
     h2:(e)=>`Code sent to <span class="sentmail">${e}</span> — check your inbox (and spam folder). Valid for 10 minutes.`,
-    lRole:"I am a…", rdDev:"Indie developer / studio. Showcase your games and get discovered by publishers & investors.",
-    rdPar:"Publisher / investor. Browse projects and connect with developers.",
+    lRole:"I am a…",
+    roleHint:'Publishers can see developers, and developers can see publishers — but the same side can\'t see each other. <b>Pick the side that matches what you\'re here to do.</b>',
+    rdDev:"Indie developer / studio. List your games, get discovered, and reach out to publishers & investors.",
+    rdPar:"Publisher / investor. Browse projects and contact the developers you want to work with.",
     register:"Create Account", registering:"Creating…",
     dTitleNew:"Account created", dDescNew:(r)=> r==="developer" ? "You are all set. Next: fill in your studio info, then you can submit your games." : "Your account is pending verification. Next step: complete your profile so we can review and activate it.",
     dTitleBack:"You're signed in", dDescBack:(e,r)=>`Signed in as ${e} (${r}).`,
@@ -167,8 +173,10 @@ const I18N = {
     resend:"重新发送", resendIn:(s)=>`${s} 秒后可重发`,
     h1:"新用户?用新邮箱登录即自动创建账号。",
     h2:(e)=>`验证码已发送至 <span class="sentmail">${e}</span>,请查收邮箱(注意垃圾邮件),10 分钟内有效。`,
-    lRole:"我的身份是…", rdDev:"独立开发者 / 工作室。展示你的游戏,被发行商和投资人发现。",
-    rdPar:"发行商 / 投资人。浏览项目库,与开发者建立联系。",
+    lRole:"我的身份是…",
+    roleHint:'发行商能看到开发者,开发者能看到发行商,但<b>同一方之间不能互看</b>。你来这想做什么,就选对应的身份。',
+    rdDev:"独立开发者 / 工作室。展示你的游戏,被发行商和投资人发现,并主动联系他们。",
+    rdPar:"发行商 / 投资人。浏览项目库,联系你想合作的开发者。",
     register:"创建账号", registering:"创建中…",
     dTitleNew:"账号已创建", dDescNew:(r)=> r==="developer" ? "注册完成,账号已激活。下一步:填写工作室信息,之后就可以提交游戏了。" : "账号待审核。下一步:完善资料,我们审核后即可激活。",
     dTitleBack:"已登录", dDescBack:(e,r)=>`当前账号 ${e}(${r==="developer"?"开发者":"合作方"})。`,
@@ -184,8 +192,10 @@ const I18N = {
     resend:"코드 재전송", resendIn:(s)=>`${s}초 후 재전송 가능`,
     h1:"처음이신가요? 새 이메일로 로그인하면 계정이 자동으로 생성됩니다.",
     h2:(e)=>`<span class="sentmail">${e}</span>(으)로 코드를 보냈습니다. 받은편지함(스팸함 포함)을 확인하세요. 10분간 유효합니다.`,
-    lRole:"나는…", rdDev:"인디 개발자 / 스튜디오. 게임을 소개하고 퍼블리셔와 투자자에게 발견되세요.",
-    rdPar:"퍼블리셔 / 투자자. 프로젝트를 둘러보고 개발자와 연결하세요.",
+    lRole:"나는…",
+    roleHint:'퍼블리셔는 개발자를, 개발자는 퍼블리셔를 볼 수 있지만 <b>같은 편끼리는 볼 수 없습니다</b>. 목적에 맞는 신분을 선택하세요.',
+    rdDev:"인디 개발자 / 스튜디오. 게임을 등록하고 발견되며 퍼블리셔·투자자에게 연락하세요.",
+    rdPar:"퍼블리셔 / 투자자. 프로젝트를 둘러보고 원하는 개발자에게 연락하세요.",
     register:"계정 만들기", registering:"생성 중…",
     dTitleNew:"계정이 생성되었습니다", dDescNew:(r)=> r==="developer" ? "가입이 완료되어 계정이 활성화되었습니다. 다음: 스튜디오 정보를 작성하면 게임을 제출할 수 있습니다." : "계정이 심사 대기 중입니다. 다음 단계: 프로필을 작성하면 심사 후 활성화됩니다.",
     dTitleBack:"로그인되었습니다", dDescBack:(e,r)=>`현재 계정 ${e} (${r==="developer"?"개발자":"파트너"}).`,
@@ -196,6 +206,9 @@ const I18N = {
   }
 };
 
+const QP = new URLSearchParams(location.search);
+const PICK = QP.get("pick")==="1";
+const NEXT = QP.get("next")||"";
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
 let email = "", pickedRole = "", cooldown = 0, cdTimer = null, isNew = false, hasProfile = false;
@@ -214,7 +227,7 @@ function renderText(){
   $("#l-code").textContent = t.lCode; $("#b-verify").textContent = t.verify;
   $("#b-resend").textContent = cooldown>0 ? t.resendIn(cooldown) : t.resend;
   if(email) $("#h2").innerHTML = t.h2(email);
-  $("#l-role").textContent = t.lRole; $("#rd-dev").textContent = t.rdDev; $("#rd-par").textContent = t.rdPar;
+  $("#l-role").textContent = t.lRole; $("#role-hint").innerHTML = t.roleHint; $("#rd-dev").textContent = t.rdDev; $("#rd-par").textContent = t.rdPar;
   $("#b-register").textContent = t.register;
   $("#b-home").textContent = t.home; $("#b-logout").textContent = t.logout; $("#back").textContent = t.back;
 }
@@ -296,6 +309,8 @@ $("#b-register").onclick = async ()=>{
   try{
     const d = await api("register",{ method:"POST", body:JSON.stringify({role:pickedRole}) });
     hasProfile = false;
+    if(d.role==="developer"){ location.href = "/profile.html" + (NEXT ? "?next=submit" : ""); return; }
+    if(d.role==="partner" && NEXT){ location.href = NEXT; return; }
     finishScreen(d.role);
   }catch(e){ err($("#m3"), e); $("#b-register").disabled=false; $("#b-register").textContent=t.register; }
 };
@@ -330,7 +345,7 @@ $("#code").addEventListener("keydown",(e)=>{ if(e.key==="Enter") $("#b-verify").
   renderText();
   try{
     const d = await api("me",{method:"GET"});
-    if(d.loggedIn && !d.needsRole){ location.replace(NEXT||"/account.html"); return; }
+    if(d.loggedIn && !d.needsRole){ if(!PICK){ location.replace(NEXT||"/account.html"); return; } }
     else if(d.loggedIn && d.needsRole){ email = d.email; show("s-role"); }
   }catch{}
 })();
