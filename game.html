@@ -189,14 +189,14 @@ function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").rep
 
 let CURRENT_GAME=null;
 const CM_I18N = {
-  en:{ title:"Developer Contact", already:"(previously unlocked — free)", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
+  en:{ title:"Developer Contact", already:"(previously unlocked — free)", fallback:"The developer hasn't provided contact details. To reach them, email us at wangyanhui@sryinteractive.com — this doesn't use your quota.", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
        over:(u,q)=>`Monthly limit reached (${u}/${q}). Your quota resets on the 1st of next month.`, close:"CLOSE", copied:"COPIED ✓" },
-  zh:{ title:"开发者联系方式", already:"(此前已解锁,不占额度)", quota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
+  zh:{ title:"开发者联系方式", already:"(此前已解锁,不占额度)", fallback:"该开发者未留下联系方式。如需联系,请邮件 wangyanhui@sryinteractive.com,此操作不占用你的查看次数。", quota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
        over:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`, close:"关闭", copied:"已复制 ✓" },
-  ko:{ title:"개발자 연락처", already:"(이미 해제됨 — 무료)", quota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
+  ko:{ title:"개발자 연락처", already:"(이미 해제됨 — 무료)", fallback:"개발자가 연락처를 제공하지 않았습니다. 연락하려면 wangyanhui@sryinteractive.com 으로 메일 주세요. 조회 횟수가 차감되지 않습니다.", quota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
        over:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일에 초기화됩니다.`, close:"닫기", copied:"복사됨 ✓" }
 };
-function cmShow({name, contact, already, used, quota, overLimit}){
+function cmShow({name, contact, already, used, quota, overLimit, fallback}){
   const M = CM_I18N[lang]||CM_I18N.en;
   document.getElementById("cm-title").textContent = M.title;
   document.getElementById("cm-name").textContent = name || "";
@@ -210,7 +210,7 @@ function cmShow({name, contact, already, used, quota, overLimit}){
     a.textContent = contact;
     a.href = /^https?:/i.test(contact) ? contact : "mailto:"+contact;
     if(/^https?:/i.test(contact)) { a.target="_blank"; a.rel="noopener"; } else { a.removeAttribute("target"); }
-    document.getElementById("cm-quota").textContent = M.quota(used, quota) + (already ? " " + M.already : "");
+    document.getElementById("cm-quota").textContent = fallback ? M.fallback : (M.quota(used, quota) + (already ? " " + M.already : ""));
   }
   document.getElementById("cm-close").textContent = M.close;
   document.getElementById("cmask").style.display="flex";
@@ -265,13 +265,7 @@ async function contactClick(e){
   try{
     const r=await fetch("/api/auth/me"); const d=await r.json();
     if(d.loggedIn && !d.needsRole && d.role==="partner" && d.status==="verified"){
-      if(!CURRENT_GAME || !CURRENT_GAME.has_owner){
-        // 飞书来源的老游戏:走 SRY 邮件别名,不占额度
-        const href=contactHref(CURRENT_GAME);
-        if(/^https?:/i.test(href)) window.open(href,"_blank","noopener"); else location.href=href;
-        return false;
-      }
-      // 开发者提交的游戏:配额制解锁真实联系方式
+      // 所有游戏统一走解锁接口(联系方式为空时后端返回平台邮箱、不扣额度)
       try{
         const res = await fetch("/api/contacts/reveal",{ method:"POST", headers:{"content-type":"application/json"},
           body:JSON.stringify({ type:"developer", game_id: CURRENT_GAME.id }) });
@@ -293,14 +287,6 @@ async function contactClick(e){
   }
 }
 
-function contactHref(g){
-  const slug=slugify((g&&(g.t_en||g.t_zh))||"");
-  if(!slug) return SUBMIT;
-  const name=(g.t_en||g.t_zh||"").trim();
-  const subject=encodeURIComponent(`[${name}] Partnership Inquiry — via SRY Game Hub`);
-  const bodyTxt=encodeURIComponent(`Hi ${ (g.developer||"team") },\n\nI found ${name} on SRY Game Hub and would like to discuss a potential partnership.\n\n`);
-  return `mailto:${slug}@${CONTACT_DOMAIN}?subject=${subject}&body=${bodyTxt}`;
-}
 function videoEmbed(u){ if(!u) return null;
   let m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/); if(m) return {type:"iframe",src:`https://www.youtube.com/embed/${m[1]}?autoplay=1`};
   m=u.match(/bilibili\.com\/video\/(BV[\w]+)/); if(m) return {type:"iframe",src:`https://player.bilibili.com/player.html?bvid=${m[1]}&autoplay=1`};
@@ -338,7 +324,7 @@ function render(){ if(!GAME){ renderNotFound(); return; }
   const tag=field(g,'d');
   const full=mdToHtml(field(g,'full'));
   const sd=field(g,'studio');
-  CURRENT_GAME=g; const ch=contactHref(g); const ext=/^https?:/i.test(ch)?' target="_blank" rel="noopener"':'';
+  CURRENT_GAME=g;
   const hasStudio=(g.developer&&g.developer.trim())||(sd&&sd.trim());
   const genres=g.genres||[], needs=g.needs||[], platforms=g.platforms||[];
   $("#app").innerHTML=`

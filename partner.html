@@ -132,7 +132,7 @@ const I18N = {
     get:"GET CONTACT", cmTitle:"Partner Contact", cmAlready:"(previously unlocked — free)",
     cmQuota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
     cmOver:(u,q)=>`Monthly limit reached (${u}/${q}). Resets on the 1st of next month.`,
-    cmClose:"CLOSE", cmCopied:"COPIED ✓", cmSelf:"This is your own public contact — other partners can't see it.",
+    cmClose:"CLOSE", cmCopied:"COPIED ✓", cmSelf:"This is your own public contact — other partners can't see it.", cmFallback:"This partner hasn't provided contact details. To reach them, email us at wangyanhui@sryinteractive.com — this doesn't use your quota.",
     gClose:"CLOSE",
     gGuest:{ t:"Developers Only", m:"Partner contacts are visible to developers with at least one approved game. Sign in — or register — as a developer to unlock them.", cta:"SIGN IN AS DEVELOPER →" },
     gPartner:{ t:"This is a Developer Feature", m:"Contacting partners is for developers. Partner accounts can't view other partners' contacts. To use this, register a developer account with a different email.", cta:"REGISTER AS DEVELOPER →" },
@@ -143,7 +143,7 @@ const I18N = {
     get:"获取联系方式", cmTitle:"合作方联系方式", cmAlready:"(此前已解锁,不占额度)",
     cmQuota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
     cmOver:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`,
-    cmClose:"关闭", cmCopied:"已复制 ✓", cmSelf:"这是你自己的对外联系方式,其他合作方看不到。",
+    cmClose:"关闭", cmCopied:"已复制 ✓", cmSelf:"这是你自己的对外联系方式,其他合作方看不到。", cmFallback:"该合作方未留下联系方式。如需联系,请邮件 wangyanhui@sryinteractive.com,此操作不占用你的查看次数。",
     gClose:"关闭",
     gGuest:{ t:"开发者专属", m:"合作方的联系方式仅对拥有已过审游戏的开发者开放。请以开发者身份登录或注册后解锁。", cta:"以开发者身份登录 →" },
     gPartner:{ t:"这是开发者功能", m:"联系合作方是开发者的功能,合作方账号之间不能互相查看联系方式。如需使用,请用另一个邮箱注册开发者账号。", cta:"注册开发者账号 →" },
@@ -154,7 +154,7 @@ const I18N = {
     get:"연락처 보기", cmTitle:"파트너 연락처", cmAlready:"(이미 해제됨 — 무료)",
     cmQuota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
     cmOver:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일 초기화.`,
-    cmClose:"닫기", cmCopied:"복사됨 ✓", cmSelf:"이것은 회원님의 공개 연락처입니다. 다른 파트너에게는 보이지 않습니다.",
+    cmClose:"닫기", cmCopied:"복사됨 ✓", cmSelf:"이것은 회원님의 공개 연락처입니다. 다른 파트너에게는 보이지 않습니다.", cmFallback:"이 파트너는 연락처를 제공하지 않았습니다. wangyanhui@sryinteractive.com 으로 메일 주세요. 조회 횟수가 차감되지 않습니다.",
     gClose:"닫기",
     gGuest:{ t:"개발자 전용", m:"파트너 연락처는 승인된 게임이 있는 개발자에게만 공개됩니다. 개발자로 로그인 또는 가입 후 해제하세요.", cta:"개발자로 로그인 →" },
     gPartner:{ t:"개발자 전용 기능입니다", m:"파트너 연락은 개발자 기능입니다. 파트너 계정끼리는 연락처를 볼 수 없습니다. 다른 이메일로 개발자 계정을 등록하세요.", cta:"개발자 계정 등록 →" },
@@ -220,7 +220,7 @@ function gateShow(kind){
 $("#gm-close").onclick=()=>{ $("#gmask").style.display="none"; };
 $("#gmask").addEventListener("click",(e)=>{ if(e.target.id==="gmask") e.target.style.display="none"; });
 
-function cmShow({name, contact, already, used, quota, overLimit, self}){
+function cmShow({name, contact, already, used, quota, overLimit, self, fallback}){
   const t=T();
   $("#cm-title").textContent=t.cmTitle;
   $("#cm-name").textContent=name||"";
@@ -230,7 +230,7 @@ function cmShow({name, contact, already, used, quota, overLimit, self}){
     box.style.display="flex";
     const a=$("#cm-contact"); a.textContent=contact;
     a.href=/^https?:/i.test(contact)?contact:"mailto:"+contact;
-    $("#cm-quota").textContent = self ? t.cmSelf : (t.cmQuota(used,quota)+(already?" "+t.cmAlready:""));
+    $("#cm-quota").textContent = fallback ? t.cmFallback : self ? t.cmSelf : (t.cmQuota(used,quota)+(already?" "+t.cmAlready:""));
   }
   $("#cm-close").textContent=t.cmClose;
   $("#cmask").style.display="flex";
