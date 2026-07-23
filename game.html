@@ -30,8 +30,13 @@
   .logo b{ color:var(--ink-dim); font-weight:700; } .logo .hub{ color:#fff; }
   .poweredby{ font-family:var(--mono); font-size:9.5px; letter-spacing:.03em; color:var(--ink-faint); transition:color .15s; padding-left:20px; }
   .poweredby:hover{ color:var(--accent); }
-  .nav-links a{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:#fff; padding:8px 12px; }
-  .nav-links a.active{ color:var(--accent); }
+  .nav-links a{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-dim); padding:8px 12px; border-radius:6px; position:relative; transition:color .15s; }
+  .nav-links a:hover{ color:#fff; }
+  .nav-links a.active{ color:#fff; }
+  .nav-links a.active::after{ content:""; position:absolute; left:12px; right:12px; bottom:2px; height:2px; background:var(--accent); }
+  .nav-links a.soon{ color:var(--ink-faint); cursor:default; }
+  .nav-links a.soon .soon-tag{ font-size:8px; vertical-align:super; color:var(--accent); margin-left:3px; letter-spacing:.1em; }
   .nav-spacer{ flex:1; }
   .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
   .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
@@ -131,7 +136,11 @@
     <a class="logo" href="/"><span class="mark"></span><b>SRY</b> <span class="hub">GAME HUB</span></a>
     <a class="poweredby" href="https://sryinteractive.com" target="_blank" rel="noopener" data-en="powered by SRY Interactive ↗" data-zh="由 SRY Interactive 出品 ↗" data-ko="SRY Interactive 제공 ↗">powered by SRY Interactive ↗</a>
   </div>
-  <div class="nav-links"><a href="/" class="active" data-en="Projects" data-zh="项目" data-ko="프로젝트">Projects</a></div>
+  <div class="nav-links">
+    <a href="/" class="active" data-en="Projects" data-zh="项目" data-ko="프로젝트">Projects</a>
+    <a href="/partners.html" data-en="Partners" data-zh="合作发行商" data-ko="파트너">Partners</a>
+    <a class="soon" data-en="Events" data-zh="行业活动" data-ko="행사">Events<span class="soon-tag">SOON</span></a>
+  </div>
   <div class="nav-spacer"></div>
   <div class="lang" id="lang"><button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button></div>
   <a class="acct" id="acct" href="/login.html" data-en="Sign In" data-zh="登录" data-ko="로그인">Sign In</a>
@@ -363,9 +372,12 @@ function render(){ if(!GAME){ renderNotFound(); return; }
 }
 function bindPb(){ const pb=$("#pb"); if(pb) pb.addEventListener("click",()=>{playing=true;$("#mainview").innerHTML=renderMain();bindPb();}); }
 
-$("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");lang=b.dataset.l;document.querySelectorAll(".nav [data-en]").forEach(el=>el.textContent=el.getAttribute("data-"+lang));render();});
+function applyNavLang(){ document.querySelectorAll(".nav [data-en]").forEach(el=>{ const v=el.getAttribute("data-"+lang);
+  if(el.childNodes[0] && el.childNodes[0].nodeType===3) el.childNodes[0].nodeValue=v; else el.textContent=v; }); }
+$("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#lang button").forEach(x=>x.classList.remove("on"));b.classList.add("on");lang=b.dataset.l;applyNavLang();render();});
 
 (async function(){
+  applyNavLang();
   renderLoading();
   const id=(new URLSearchParams(location.search).get("id")||"").toLowerCase();
   try{

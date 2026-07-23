@@ -25,8 +25,12 @@
   body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
 
   .nav{ display:flex; align-items:center; gap:22px; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
-  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .brand{ display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .logo{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-weight:900; font-size:17px; letter-spacing:-.01em; }
   .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo b{ color:var(--ink-dim); font-weight:700; } .logo .hub{ color:#fff; }
+  .poweredby{ font-family:var(--mono); font-size:9.5px; letter-spacing:.03em; color:var(--ink-faint); transition:color .15s; padding-left:20px; }
+  .poweredby:hover{ color:var(--accent); }
   .nav-links{ display:flex; align-items:center; gap:4px; }
   .nav-links a{ position:relative; font-size:13px; color:var(--ink-dim); padding:8px 12px; }
   .nav-links a:hover{ color:#fff; }
@@ -106,7 +110,10 @@
 </style>
 
 <nav class="nav">
-  <a class="logo" href="/"><span class="mark"></span><b>SRY</b>&nbsp;GAME HUB</a>
+  <div class="brand">
+    <a class="logo" href="/"><span class="mark"></span><b>SRY</b> <span class="hub">GAME HUB</span></a>
+    <a class="poweredby" id="poweredby" href="https://sryinteractive.com" target="_blank" rel="noopener">powered by SRY Interactive ↗</a>
+  </div>
   <div class="nav-links">
     <a href="/" id="nl-projects">Projects</a>
     <a href="/partners.html" class="active" id="nl-partners">Partners</a>
@@ -159,7 +166,7 @@ const flagOf = (cc)=>/^[A-Z]{2}$/.test(cc||"") ? String.fromCodePoint(...[...cc]
 
 const I18N = {
   en:{ kicker:"NETWORK // PARTNERS", title:"Partners", nlProjects:"Projects", nlPartners:"Partners",
-    lead:"Verified publishers and investors in the SRY network. Every partner here has passed our verification.",
+    poweredBy:"powered by SRY Interactive ↗", lead:"Verified publishers and investors in the SRY network. Every partner here has passed our verification.",
     fAll:"ALL", fPub:"PUBLISHING", fInv:"INVESTMENT", fRegionAll:"ALL REGIONS",
     empty:"No partners match the filters yet.", soon:"We are verifying our first batch of publishers and investors. The partner directory will open soon — developers who list games now will be first in line.",
     cta1:"Are you a publisher or investor?", cta2:"Join the network, get verified, and connect with indie developers.",
@@ -170,7 +177,7 @@ const I18N = {
     cmClose:"CLOSE", cmCopied:"COPIED ✓",
     genreLabel:(g)=>g, marketOf:(m)=>MARKET_L.en[m]||m },
   zh:{ kicker:"网络 // 合作方", title:"合作发行商与投资方", nlProjects:"项目", nlPartners:"合作发行商",
-    lead:"SRY 网络中经过认证的发行商与投资方,每一家都通过了我们的资质审核。",
+    poweredBy:"由 SRY Interactive 出品 ↗", lead:"SRY 网络中经过认证的发行商与投资方,每一家都通过了我们的资质审核。",
     fAll:"全部", fPub:"发行", fInv:"投资", fRegionAll:"全部地区",
     empty:"当前筛选下暂无合作方。", soon:"我们正在认证首批发行商与投资方,合作方名录即将开放。现在提交游戏的开发者,将最先被他们看到。",
     cta1:"你是发行商或投资方?", cta2:"加入网络、完成认证,与独立开发者建立联系。",
@@ -181,7 +188,7 @@ const I18N = {
     cmClose:"关闭", cmCopied:"已复制 ✓",
     genreLabel:(g)=>GENRE_ZH[g]||g, marketOf:(m)=>MARKET_L.zh[m]||m },
   ko:{ kicker:"네트워크 // 파트너", title:"파트너", nlProjects:"프로젝트", nlPartners:"파트너",
-    lead:"SRY 네트워크의 인증된 퍼블리셔와 투자자입니다. 모든 파트너는 자격 심사를 통과했습니다.",
+    poweredBy:"SRY Interactive 제공 ↗", lead:"SRY 네트워크의 인증된 퍼블리셔와 투자자입니다. 모든 파트너는 자격 심사를 통과했습니다.",
     fAll:"전체", fPub:"퍼블리싱", fInv:"투자", fRegionAll:"모든 지역",
     empty:"필터에 해당하는 파트너가 없습니다.", soon:"첫 번째 퍼블리셔·투자자를 인증하는 중입니다. 파트너 디렉터리가 곧 열립니다. 지금 게임을 등록하는 개발자가 가장 먼저 노출됩니다.",
     cta1:"퍼블리셔 또는 투자자이신가요?", cta2:"네트워크에 가입하고 인증을 받아 인디 개발자와 연결하세요.",
@@ -265,7 +272,7 @@ function renderText(){
   buildRegionNames();
   const t = T();
   $("#kicker").textContent=t.kicker; $("#title").textContent=t.title; $("#lead").textContent=t.lead;
-  $("#nl-projects").textContent=t.nlProjects; $("#nl-partners").textContent=t.nlPartners;
+  $("#poweredby").textContent=t.poweredBy; $("#nl-projects").textContent=t.nlProjects; $("#nl-partners").textContent=t.nlPartners;
   $("#f-all").textContent=t.fAll; $("#f-pub").textContent=t.fPub; $("#f-inv").textContent=t.fInv;
   $("#cta1").textContent=t.cta1; $("#cta2").textContent=t.cta2; $("#ctabtn").textContent=t.ctabtn;
   const a=$("#acct"); if(!a.dataset.logged) a.textContent=t.signin;

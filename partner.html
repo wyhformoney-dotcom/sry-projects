@@ -25,8 +25,21 @@
   body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
 
   .nav{ display:flex; align-items:center; gap:22px; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
-  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .brand{ display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .logo{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-weight:900; font-size:17px; letter-spacing:-.01em; }
   .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo b{ color:var(--ink-dim); font-weight:700; } .logo .hub{ color:#fff; }
+  .poweredby{ font-family:var(--mono); font-size:9.5px; letter-spacing:.03em; color:var(--ink-faint); transition:color .15s; padding-left:20px; }
+  .poweredby:hover{ color:var(--accent); }
+  .nav-links{ display:flex; align-items:center; gap:4px; }
+  .nav-links a{ font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-dim); padding:8px 12px; border-radius:6px; position:relative; transition:color .15s; }
+  .nav-links a:hover{ color:#fff; }
+  .nav-links a.active{ color:#fff; }
+  .nav-links a.active::after{ content:""; position:absolute; left:12px; right:12px; bottom:2px; height:2px; background:var(--accent); }
+  .nav-links a.soon{ color:var(--ink-faint); cursor:default; }
+  .nav-links a.soon .soon-tag{ font-size:8px; vertical-align:super; color:var(--accent); margin-left:3px; letter-spacing:.1em; }
+  @media (max-width:640px){ .nav-links{ display:none; } }
   .nav-spacer{ flex:1; }
   .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
   .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
@@ -76,7 +89,15 @@
 </style>
 
 <nav class="nav">
-  <a class="logo" href="/"><span class="mark"></span><b>SRY</b>&nbsp;GAME HUB</a>
+  <div class="brand">
+    <a class="logo" href="/"><span class="mark"></span><b>SRY</b> <span class="hub">GAME HUB</span></a>
+    <a class="poweredby" id="poweredby" href="https://sryinteractive.com" target="_blank" rel="noopener">powered by SRY Interactive ↗</a>
+  </div>
+  <div class="nav-links">
+    <a href="/" id="nl-projects">Projects</a>
+    <a href="/partners.html" class="active" id="nl-partners">Partners</a>
+    <a class="soon" id="nl-events">Events<span class="soon-tag">SOON</span></a>
+  </div>
   <div class="nav-spacer"></div>
   <div class="lang" id="lang">
     <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
@@ -128,7 +149,7 @@ const KIND_L = { en:{publishing:"PUBLISHING",investment:"INVESTMENT"}, zh:{publi
 const flagOf = (cc)=>/^[A-Z]{2}$/.test(cc||"") ? String.fromCodePoint(...[...cc].map(c=>0x1F1A5+c.charCodeAt(0))) : "";
 
 const I18N = {
-  en:{ back:"← All Partners", notfound:"Partner not found or not yet verified.", signin:"Sign In",
+  en:{ nlProjects:"Projects", nlPartners:"Partners", nlEvents:"Events", poweredBy:"powered by SRY Interactive ↗", back:"← All Partners", notfound:"Partner not found or not yet verified.", signin:"Sign In",
     get:"GET CONTACT", cmTitle:"Partner Contact", cmAlready:"(previously unlocked — free)",
     cmQuota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
     cmOver:(u,q)=>`Monthly limit reached (${u}/${q}). Resets on the 1st of next month.`,
@@ -139,7 +160,7 @@ const I18N = {
     gNeedGame:{ t:"Approved Game Required", m:"Unlocking partner contacts requires at least one approved game on your account. Submit your game — once it passes review, come back and reach out.", cta:"SUBMIT YOUR GAME →" },
     needGame:'Contact unlocking is for developers with at least one approved game. <a href="/submit-game.html">Submit your game →</a>',
     partnerSide:'Partner accounts can\'t view other partners\' contacts. To use this as a developer, register a developer account with a different email. <a href="/login.html?pick=1">Register →</a>', guestMsg:'Unlocking contacts requires a developer account with at least one approved game. <a href="/login.html?pick=1&next=NEXT">Sign in / register as developer →</a>' },
-  zh:{ back:"← 全部合作方", notfound:"未找到该合作方,或尚未通过认证。", signin:"登录",
+  zh:{ nlProjects:"项目", nlPartners:"合作发行商", nlEvents:"行业活动", poweredBy:"由 SRY Interactive 出品 ↗", back:"← 全部合作方", notfound:"未找到该合作方,或尚未通过认证。", signin:"登录",
     get:"获取联系方式", cmTitle:"合作方联系方式", cmAlready:"(此前已解锁,不占额度)",
     cmQuota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
     cmOver:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`,
@@ -150,7 +171,7 @@ const I18N = {
     gNeedGame:{ t:"需要一款已过审的游戏", m:"解锁合作方联系方式,需要你名下至少有一款通过审核的游戏。先去提交游戏,过审后再来主动出击。", cta:"去提交游戏 →" },
     needGame:'解锁联系方式需要你至少有一款已通过审核的游戏。<a href="/submit-game.html">去提交游戏 →</a>',
     partnerSide:'合作方之间不能互相查看联系方式。如需以开发者身份使用,请用另一个邮箱注册开发者账号。<a href="/login.html?pick=1">去注册 →</a>', guestMsg:'解锁联系方式需要开发者账号(且至少有一款已过审的游戏)。<a href="/login.html?pick=1&next=NEXT">以开发者身份登录 / 注册 →</a>' },
-  ko:{ back:"← 모든 파트너", notfound:"파트너를 찾을 수 없거나 아직 인증되지 않았습니다.", signin:"로그인",
+  ko:{ nlProjects:"프로젝트", nlPartners:"파트너", nlEvents:"행사", poweredBy:"SRY Interactive 제공 ↗", back:"← 모든 파트너", notfound:"파트너를 찾을 수 없거나 아직 인증되지 않았습니다.", signin:"로그인",
     get:"연락처 보기", cmTitle:"파트너 연락처", cmAlready:"(이미 해제됨 — 무료)",
     cmQuota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
     cmOver:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일 초기화.`,
@@ -186,6 +207,10 @@ function render(){
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   buildRegionNames();
   const t=T();
+  $("#poweredby").textContent=t.poweredBy;
+  $("#nl-projects").textContent=t.nlProjects;
+  $("#nl-partners").textContent=t.nlPartners;
+  $("#nl-events").childNodes[0].nodeValue=t.nlEvents;
   $("#backlink").textContent=t.back;
   $("#notfound").textContent=t.notfound;
   const a=$("#acct"); if(!a.dataset.logged) a.textContent=t.signin;
