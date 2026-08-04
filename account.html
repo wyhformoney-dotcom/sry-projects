@@ -158,6 +158,11 @@
         <span class="tx" id="m-browse-t"></span>
         <span class="arr">→</span>
       </button>
+      <button class="mi" id="m-admin" style="display:none">
+        <span class="ic">⚙</span>
+        <span class="tx" id="m-admin-t"></span>
+        <span class="arr">→</span>
+      </button>
       <button class="mi out" id="m-logout">
         <span class="ic">⏻</span>
         <span class="tx" id="m-logout-t"></span>
@@ -187,7 +192,7 @@ const I18N = {
     mBrowse:"Browse Projects", mBrowseSub:"Back to the game library", mBrowseDev:"Find Publishers & Investors", mBrowseDevSub:"Browse verified partners in the network", submitCard:"Submit a Game",
     myContacts:"UNLOCKED CONTACTS", ctDev:"DEV", ctPar:"PARTNER",
     ctQuota:(u,q)=>`This month: ${u}/${q} unlocked · resets on the 1st`,
-    mLogout:"Sign Out"
+    mAdmin:"Review Console", mAdminSub:"Partner & game review, account management", mLogout:"Sign Out"
   },
   zh:{
     kicker:"账号 // 主页", title:"账号中心",
@@ -208,7 +213,7 @@ const I18N = {
     mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表", mBrowseDev:"寻找发行商 / 投资方", mBrowseDevSub:"浏览网络中已认证的合作方", submitCard:"提交新游戏",
     myContacts:"已解锁的联系人", ctDev:"开发者", ctPar:"合作方",
     ctQuota:(u,q)=>`本月已解锁 ${u}/${q} 个 · 每月 1 日重置`,
-    mLogout:"退出登录"
+    mAdmin:"审核后台", mAdminSub:"合作方 / 游戏审核、账号管理", mLogout:"退出登录"
   },
   ko:{
     kicker:"계정 // 홈", title:"내 계정",
@@ -229,7 +234,7 @@ const I18N = {
     mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로", mBrowseDev:"퍼블리셔 / 투자자 찾기", mBrowseDevSub:"네트워크의 인증된 파트너 둘러보기", submitCard:"게임 제출",
     myContacts:"해제한 연락처", ctDev:"개발자", ctPar:"파트너",
     ctQuota:(u,q)=>`이번 달 ${u}/${q}개 해제 · 매월 1일 초기화`,
-    mLogout:"로그아웃"
+    mAdmin:"심사 콘솔", mAdminSub:"파트너·게임 심사, 계정 관리", mLogout:"로그아웃"
   }
 };
 
@@ -237,7 +242,7 @@ const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 
 function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.solo) : v; }
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
-let role="", status="", email="", profile=null, myGames=[], myContacts=null;
+let role="", status="", email="", profile=null, myGames=[], myContacts=null, isAdmin=false;
 
 function T(){ return I18N[lang]; }
 const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -313,10 +318,13 @@ function render(){
     $("#contacts-quota").textContent = t.ctQuota(myContacts.used, myContacts.quota);
   } else { $("#contacts-section").style.display="none"; }
   $("#m-browse-t").innerHTML = (isDev?t.mBrowseDev:t.mBrowse) + `<span class="sub">${isDev?t.mBrowseDevSub:t.mBrowseSub}</span>`;
+  $("#m-admin").style.display = isAdmin ? "flex" : "none";
+  $("#m-admin-t").innerHTML = t.mAdmin + `<span class="sub">${t.mAdminSub}</span>`;
   $("#m-logout-t").textContent = t.mLogout;
 }
 
 $("#m-profile").onclick = ()=>{ location.href="/profile.html"; };
+$("#m-admin").onclick = ()=>{ location.href="/admin.html"; };
 $("#m-browse").onclick = ()=>{ location.href = role==="developer" ? "/partners.html" : "/"; };
 $("#m-logout").onclick = async ()=>{
   try{ await fetch("/api/auth/logout",{method:"POST"}); }catch{}
@@ -331,6 +339,7 @@ $("#lang").addEventListener("click",(e)=>{
   render();
   try{
     const r1 = await fetch("/api/auth/me"); const a = await r1.json();
+    isAdmin = !!a.isAdmin;
     if(!a.loggedIn){ $("#locked").style.display="block"; return; }
     if(a.needsRole){ location.href="/login.html"; return; }
     const r2 = await fetch("/api/profile/me"); const d = await r2.json();

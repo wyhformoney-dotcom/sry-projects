@@ -118,7 +118,9 @@
   </div>
   <div id="syncbar" style="display:none;margin:-8px 0 16px">
     <button class="abtn ok" id="syncbtn" style="padding:9px 18px">⟳ 从飞书同步游戏库</button>
+    <button class="abtn" id="claimbtn" style="padding:9px 18px;margin-left:8px;background:transparent;border:1px solid var(--line);color:var(--ink)">⚯ 老游戏一键归户</button>
     <span id="syncmsg" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-left:10px"></span>
+    <div id="claimresult" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.7"></div>
   </div>
 
   <div class="locked" id="locked"><p>没有权限或未登录。<br>请先用管理员邮箱<a href="/login.html">登录</a>,再回到本页。</p></div>
@@ -419,6 +421,34 @@ $("#tabs").addEventListener("click",(e)=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
   load();
 });
+
+$("#claimbtn").onclick = async ()=>{
+  const b=$("#claimbtn"), box=$("#claimresult");
+  b.disabled=true; box.style.color="var(--ink-dim)"; box.textContent="扫描中…";
+  try{
+    const d = await api("claim-legacy?dry=1",{ method:"POST" });
+    const skipTxt = d.skipped.length
+      ? `<br>⚠ ${d.skipped.length} 款的联系方式不是有效邮箱,将跳过:<br>` +
+        d.skipped.slice(0,10).map(x=>`&nbsp;&nbsp;· ${esc(x.title||"")} — ${esc(x.contact||"(空)")}${x.reason?" ("+esc(x.reason)+")":""}`).join("<br>") +
+        (d.skipped.length>10?`<br>&nbsp;&nbsp;…另有 ${d.skipped.length-10} 款`:"")
+      : "";
+    if(!d.wouldLink){ box.innerHTML = "没有需要归户的游戏。" + skipTxt; b.disabled=false; return; }
+    box.innerHTML = `将把 <b style="color:var(--accent)">${d.wouldLink}</b> 款游戏归到 <b style="color:var(--accent)">${d.emails}</b> 个开发者账号下(按邮箱去重,不存在的账号会自动创建并激活)。${skipTxt}<br><br>`;
+    const go = document.createElement("button");
+    go.className="abtn ok"; go.style.padding="8px 16px"; go.textContent="确认执行";
+    go.onclick = async ()=>{
+      go.disabled=true; go.textContent="执行中…";
+      try{
+        const r = await api("claim-legacy",{ method:"POST" });
+        box.innerHTML = `✓ 完成:${r.linked} 款游戏已归户,新建 ${r.accountsCreated} 个开发者账号(共 ${r.emails} 个邮箱)。` +
+          (r.skipped.length?`<br>⚠ 跳过 ${r.skipped.length} 款(联系方式非邮箱)。`:"");
+        box.style.color="var(--accent)";
+      }catch(e){ box.textContent="执行失败:"+e; box.style.color="var(--danger)"; }
+      finally{ b.disabled=false; }
+    };
+    box.appendChild(go);
+  }catch(e){ box.textContent="扫描失败:"+e; box.style.color="var(--danger)"; b.disabled=false; }
+};
 
 $("#syncbtn").onclick = async ()=>{
   const b=$("#syncbtn"), m=$("#syncmsg");
