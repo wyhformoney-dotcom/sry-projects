@@ -106,7 +106,8 @@ async function handleMe(env, s) {
   } else {
     profile = await env.DB.prepare(
       `SELECT name_zh, name_en, name_ko, logo, kinds, region, intro, genres, markets,
-              steam_url, website, contact_email, proof_type, proof_image, verified_email, review_note
+              steam_url, website, contact_email, proof_type, proof_image, verified_email, review_note,
+              contact_public, pref_genres, pref_regions, pref_budget, pref_notes, pref_updated_at
        FROM partner_profiles WHERE account_id = ?`
     ).bind(s.aid).first();
     if (profile) {
@@ -181,18 +182,19 @@ async function handleSave(env, s, request) {
 
     await env.DB.prepare(
       `INSERT INTO partner_profiles (account_id, name_zh, name_en, name_ko, logo, kinds, region, intro, genres, markets,
-                                     steam_url, website, contact_email, proof_type, proof_image, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                                     steam_url, website, contact_email, proof_type, proof_image, contact_public, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(account_id) DO UPDATE SET
          name_zh=excluded.name_zh, name_en=excluded.name_en, name_ko=excluded.name_ko, logo=excluded.logo,
          kinds=excluded.kinds, region=excluded.region, intro=excluded.intro, genres=excluded.genres,
          markets=excluded.markets, steam_url=excluded.steam_url, website=excluded.website,
+         contact_public=excluded.contact_public,
          contact_email=excluded.contact_email, proof_type=excluded.proof_type, proof_image=excluded.proof_image,
          updated_at=datetime('now')`
     ).bind(
       s.aid, name_zh, name_en, name_ko, logo, JSON.stringify(kinds), region, intro,
       JSON.stringify(genres), JSON.stringify(markets), steam_url, website,
-      contact_email, proof_type, proof_image
+      contact_email, proof_type, proof_image, b.contact_public === false ? 0 : 1
     ).run();
   }
 
@@ -276,6 +278,18 @@ async function handleVerifyWorkCode(env, s, request) {
 }
 
 /* ---------- 路由 ---------- */
+async function handlePrefsSave(env, s, request) {
+  const b = await request.json().catch(() => ({}));
+  const acc = await env.DB.prepare("SELECT role FROM accounts WHERE id = ?").bind(s.aid).first();
+  if (!acc || acc.role !== "partner") return bad("partner_only", 403);
+  const arr = (v, max) => JSON.stringify(Array.isArray(v) ? v.map(String).slice(0, max) : []);
+  await env.DB.prepare(
+    `UPDATE partner_profiles SET pref_genres=?, pref_regions=?, pref_budget=?, pref_notes=?,
+       pref_updated_at=datetime('now') WHERE account_id=?`
+  ).bind(arr(b.genres, 20), arr(b.regions, 20), S(b.budget, 60), S(b.notes, 600), s.aid).run();
+  return json({ ok: true });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -288,6 +302,7 @@ export async function onRequest(context) {
 
     if (method === "GET" && path === "me") return await handleMe(env, s);
     if (method === "POST" && path === "save") return await handleSave(env, s, request);
+    if (method === "POST" && path === "prefs") return await handlePrefsSave(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
     if (method === "POST" && path === "send-work-code") return await handleSendWorkCode(env, s, request);
     if (method === "POST" && path === "verify-work-code") return await handleVerifyWorkCode(env, s, request);
