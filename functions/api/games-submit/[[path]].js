@@ -196,7 +196,7 @@ async function handleSteamFetch(env, s, request) {
   return json({
     ok: true,
     t_en, t_zh: zhName, t_ko: koName,
-    d_en: stripHtml(en.short_description).slice(0, 160),
+    d_en: stripHtml(en.short_description).slice(0, 300),
     full_en: stripHtml(en.about_the_game || en.detailed_description).slice(0, 2000),
     cover, screenshots: shots.filter(Boolean),
     video,
@@ -219,7 +219,8 @@ async function requireDeveloper(env, s) {
 
 async function handleMine(env, s) {
   const { results } = await env.DB.prepare(
-    `SELECT id, slug, t_en, t_zh, t_ko, cover, status, review_note, created_at
+    `SELECT id, slug, t_en, t_zh, t_ko, cover, status, review_note, created_at,
+            featured, feature_state, feature_note
      FROM games WHERE claimed_by = ? ORDER BY id DESC LIMIT 100`
   ).bind(s.aid).all();
   return json({ ok: true, rows: results || [] });
@@ -229,7 +230,7 @@ async function handleCreate(env, s, request) {
   const b = await request.json().catch(() => ({}));
 
   const t_en = S(b.t_en, 120), t_zh = S(b.t_zh, 120), t_ko = S(b.t_ko, 120);
-  const d_en = S(b.d_en, 160);
+  const d_en = S(b.d_en, 300);
   const full_en = S(b.full_en, 2000);
   const stage = S(b.stage, 30);
   const genres = arrOf(b.genres, GENRES, 20);
@@ -280,6 +281,26 @@ async function handleCreate(env, s, request) {
   return json({ ok: true });
 }
 
+async function handleFeatureApply(env, s, request) {
+  const b = await request.json().catch(() => ({}));
+  const gid = parseInt(b.game_id, 10);
+  const demo_url = S(b.demo_url, 500);
+  const demo_note = S(b.demo_note, 1000);
+  if (!gid) return bad("invalid_id");
+  if (!demo_url || !isUrl(demo_url)) return bad("demo_required");
+  const g = await env.DB.prepare(
+    "SELECT id, status, featured, feature_state FROM games WHERE id = ? AND claimed_by = ?"
+  ).bind(gid, s.aid).first();
+  if (!g) return bad("not_found", 404);
+  if (g.status !== "approved") return bad("not_approved", 403);
+  if (g.featured) return bad("already_featured");
+  if (g.feature_state === "pending") return bad("already_pending");
+  await env.DB.prepare(
+    "UPDATE games SET feature_state='pending', demo_url=?, demo_note=?, feature_note=NULL WHERE id = ?"
+  ).bind(demo_url, demo_note, gid).run();
+  return json({ ok: true });
+}
+
 async function handleUpload(env, s, request) {
   const form = await request.formData().catch(() => null);
   if (!form) return bad("bad_form");
@@ -317,6 +338,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "create") return await handleCreate(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
     if (method === "POST" && path === "steam-fetch") return await handleSteamFetch(env, s, request);
+    if (method === "POST" && path === "feature-apply") return await handleFeatureApply(env, s, request);
     return bad("not_found", 404);
   } catch (e) {
     return bad("server_error: " + String(e.message || e).slice(0, 300), 500);
