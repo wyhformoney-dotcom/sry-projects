@@ -1,0 +1,239 @@
+<!-- SRY Game Hub — 合作方推荐订阅(每月按偏好邮件推荐项目) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recommendations · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{ background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh; }
+  body[lang="zh"] .cjk-swap{ font-family:var(--cjk); }
+  body[lang="ko"] .cjk-swap{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; gap:22px; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .brand{ display:flex; flex-direction:column; justify-content:center; gap:2px; }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; letter-spacing:-.01em; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo b{ color:var(--ink-dim); font-weight:700; } .logo .hub{ color:#fff; }
+  .poweredby{ font-family:var(--mono); font-size:9.5px; color:var(--ink-faint); padding-left:20px; }
+  .poweredby:hover{ color:var(--accent); }
+  .nav-spacer{ flex:1; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+
+  .wrap{ max-width:600px; margin:0 auto; padding:44px 20px 90px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:10px; }
+  h1{ font-size:28px; font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+  .lead{ color:var(--ink-dim); font-size:13.5px; line-height:1.7; margin-bottom:14px; }
+  .freenote{ border:1px solid var(--accent); background:rgba(198,242,78,.07); border-radius:10px;
+    padding:12px 14px; font-size:12.5px; color:var(--ink-dim); line-height:1.7; margin-bottom:26px; }
+  .freenote b{ color:var(--accent); }
+
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:6px 24px 26px; counter-reset:q; }
+  .f{ margin-bottom:28px; }
+  .f > label{ display:flex; align-items:baseline; gap:9px; font-size:14px; font-weight:800; margin:22px 0 5px; }
+  .f > label::before{ counter-increment:q; content:counter(q,decimal-leading-zero);
+    font-family:var(--mono); font-size:10.5px; font-weight:700; color:var(--accent); opacity:.85; }
+  .sub{ font-size:11.5px; color:var(--ink-faint); line-height:1.55; margin:0 0 10px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:var(--mono); font-size:11.5px; padding:7px 12px; border:1px solid var(--line); border-radius:20px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .chip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  input[type=text], textarea{ width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:14px; padding:11px 13px; outline:none; font-family:inherit; }
+  input:focus, textarea:focus{ border-color:var(--accent); }
+  textarea{ min-height:80px; resize:vertical; line-height:1.6; }
+  .budgetrow{ display:flex; align-items:center; gap:10px; }
+  .budgetrow .cur{ font-family:var(--mono); font-size:13px; color:var(--ink-faint); flex:none; }
+  .btn{ width:100%; margin-top:10px; padding:14px 0; border:none; border-radius:8px; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px; letter-spacing:.08em; }
+  .btn:disabled{ opacity:.45; cursor:default; }
+  .msg{ font-size:12.5px; margin-top:12px; display:none; }
+  .back{ display:inline-block; margin-top:22px; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
+  .back:hover{ color:var(--accent); }
+  .locked{ text-align:center; padding:70px 10px; display:none; color:var(--ink-dim); font-size:13.5px; line-height:1.8; }
+  .locked a{ color:var(--accent); }
+  #form{ display:none; }
+</style>
+
+<nav class="nav">
+  <div class="brand">
+    <a class="logo" href="/"><span class="mark"></span><b>SRY</b> <span class="hub">GAME HUB</span></a>
+    <a class="poweredby" id="poweredby" href="https://sryinteractive.com" target="_blank" rel="noopener">powered by SRY Interactive ↗</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+</nav>
+
+<div class="wrap">
+  <div class="kicker" id="kicker"></div>
+  <h1 id="title"></h1>
+  <p class="lead cjk-swap" id="lead"></p>
+  <div class="freenote cjk-swap" id="freenote"></div>
+
+  <div class="locked" id="locked"></div>
+
+  <div class="card" id="form">
+    <div class="f"><label id="q1"></label>
+      <p class="sub cjk-swap" id="q1n"></p>
+      <div class="chips" id="genres"></div></div>
+
+    <div class="f"><label id="q2"></label>
+      <p class="sub cjk-swap" id="q2n"></p>
+      <div class="chips" id="regions"></div></div>
+
+    <div class="f"><label id="q3"></label>
+      <p class="sub cjk-swap" id="q3n"></p>
+      <div class="budgetrow"><span class="cur">USD $</span><input type="text" id="budget" placeholder="50,000 – 200,000"></div></div>
+
+    <div class="f"><label id="q4"></label>
+      <p class="sub cjk-swap" id="q4n"></p>
+      <textarea id="notes" maxlength="600"></textarea></div>
+
+    <button class="btn" id="save"></button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <a class="back" href="/account.html" id="back"></a>
+</div>
+
+<script>
+const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
+const GENRE_L = {
+  en: Object.fromEntries(GENRES.map(g=>[g,g])),
+  zh: {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"},
+  ko: {"Action":"액션","Adventure":"어드벤처","RPG":"RPG","Strategy":"전략","Simulation":"시뮬레이션","Puzzle":"퍼즐","Platformer":"플랫포머","Shooter":"슈터","Survival":"생존","Horror":"호러","Roguelite":"로그라이트","Metroidvania":"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드","Narrative":"내러티브","Comedy":"코미디","Co-op":"협동","Multiplayer":"멀티플레이어"}
+};
+const REGIONS = ["China","Korea","Japan","SEA","North America","Europe","Global"];
+const REGION_L = {
+  en: Object.fromEntries(REGIONS.map(r=>[r,r])),
+  zh: {"China":"中国","Korea":"韩国","Japan":"日本","SEA":"东南亚","North America":"北美","Europe":"欧洲","Global":"全球"},
+  ko: {"China":"중국","Korea":"한국","Japan":"일본","SEA":"동남아","North America":"북미","Europe":"유럽","Global":"글로벌"}
+};
+
+const I18N = {
+  en:{ kicker:"PARTNER // RECOMMENDATIONS", title:"Monthly Game Recommendations",
+    lead:"Tell us what you're looking for. Each month we go through new and updated projects in the library and email you the ones that fit — whether or not developers have reached out to you.",
+    free:"This service is currently <b>free for all verified partners</b> — an early-partner benefit.",
+    poweredBy:"powered by SRY Interactive ↗",
+    q1:"Genres you're looking for", q1n:"Pick as many as apply.",
+    q2:"Regions you publish or invest in", q2n:"Where you can take a project.",
+    q3:"Budget range per project", q3n:"MG, investment ticket or total spend — a rough range is fine.",
+    q4:"Anything else", q4n:"Stage, team size, platform, things you never take — anything that helps us filter.",
+    save:"SAVE PREFERENCES", saving:"SAVING…", ok:"Saved. You'll get your first digest in the next monthly run.",
+    back:"← Back to My Account",
+    lockedGuest:'Please <a href="/login.html">sign in</a> with a partner account.',
+    lockedDev:'This is a partner feature. You are signed in as a developer.',
+    lockedPending:'Your partner profile is still under review. Once verified, you can set up recommendations here.',
+    err:"Couldn't save. Please try again." },
+  zh:{ kicker:"合作方 // 推荐订阅", title:"每月项目推荐",
+    lead:"告诉我们你在找什么。我们每月梳理一遍库里新增和更新的项目,把符合你要求的用邮件发给你——不管开发者有没有主动联系过你。",
+    free:"该服务目前对所有已认证合作方<b>免费开放</b>(早期合作方权益)。",
+    poweredBy:"由 SRY Interactive 出品 ↗",
+    q1:"你在找什么类型的游戏", q1n:"符合的都可以选。",
+    q2:"你能发行 / 投资的区域", q2n:"你有能力把项目带去的市场。",
+    q3:"单个项目的预算区间", q3n:"MG、单笔投资额或总投入均可,填个大致范围就行。",
+    q4:"其他要求", q4n:"阶段、团队规模、平台、绝对不碰的类型——任何有助于我们筛选的信息。",
+    save:"保存偏好", saving:"保存中…", ok:"已保存。下一次月度推送就会按这个偏好给你发。",
+    back:"← 返回账号中心",
+    lockedGuest:'请先用合作方账号<a href="/login.html">登录</a>。',
+    lockedDev:"这是合作方功能,你当前是开发者身份。",
+    lockedPending:"你的合作方资料还在审核中,通过认证后即可在这里设置推荐偏好。",
+    err:"保存失败,请重试。" },
+  ko:{ kicker:"파트너 // 추천 구독", title:"월간 프로젝트 추천",
+    lead:"찾으시는 조건을 알려주세요. 매월 신규·업데이트된 프로젝트를 검토해 조건에 맞는 게임을 메일로 보내드립니다. 개발자의 연락 여부와 무관합니다.",
+    free:"이 서비스는 현재 인증된 모든 파트너에게 <b>무료로 제공</b>됩니다(얼리 파트너 혜택).",
+    poweredBy:"SRY Interactive 제공 ↗",
+    q1:"찾고 있는 장르", q1n:"해당하는 것을 모두 선택하세요.",
+    q2:"퍼블리싱·투자 가능 지역", q2n:"프로젝트를 가져갈 수 있는 시장.",
+    q3:"프로젝트당 예산 범위", q3n:"MG, 투자 규모 또는 총 지출 — 대략적인 범위면 충분합니다.",
+    q4:"기타 요청 사항", q4n:"단계, 팀 규모, 플랫폼, 취급하지 않는 장르 등 선별에 도움이 되는 정보.",
+    save:"설정 저장", saving:"저장 중…", ok:"저장되었습니다. 다음 월간 발송부터 반영됩니다.",
+    back:"← 내 계정으로",
+    lockedGuest:'파트너 계정으로 <a href="/login.html">로그인</a>하세요.',
+    lockedDev:"파트너 전용 기능입니다. 현재 개발자 계정입니다.",
+    lockedPending:"파트너 프로필이 심사 중입니다. 인증 후 추천 설정을 할 수 있습니다.",
+    err:"저장하지 못했습니다. 다시 시도하세요." }
+};
+
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+let selGenres = [], selRegions = [];
+function T(){ return I18N[lang]; }
+
+function chips(el, list, labels, selected){
+  el.innerHTML = "";
+  list.forEach(v=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="chip"+(selected.includes(v)?" on":""); b.textContent=labels[lang][v]||v;
+    b.onclick=()=>{ const i=selected.indexOf(v); if(i>=0) selected.splice(i,1); else selected.push(v); chips(el,list,labels,selected); };
+    el.appendChild(b);
+  });
+}
+
+function render(){
+  document.body.setAttribute("lang",lang);
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
+  const t=T();
+  $("#kicker").textContent=t.kicker; $("#title").textContent=t.title;
+  $("#lead").textContent=t.lead; $("#freenote").innerHTML=t.free;
+  $("#poweredby").textContent=t.poweredBy; $("#back").textContent=t.back;
+  $("#q1").textContent=t.q1; $("#q1n").textContent=t.q1n;
+  $("#q2").textContent=t.q2; $("#q2n").textContent=t.q2n;
+  $("#q3").textContent=t.q3; $("#q3n").textContent=t.q3n;
+  $("#q4").textContent=t.q4; $("#q4n").textContent=t.q4n;
+  $("#save").textContent=t.save;
+  chips($("#genres"), GENRES, GENRE_L, selGenres);
+  chips($("#regions"), REGIONS, REGION_L, selRegions);
+}
+
+$("#lang").addEventListener("click",(e)=>{
+  const b=e.target.closest("button"); if(!b) return;
+  lang=b.dataset.l; localStorage.setItem("sry_lang",lang); render();
+});
+
+$("#save").onclick = async ()=>{
+  const t=T(), m=$("#msg"); m.style.display="none";
+  $("#save").disabled=true; $("#save").textContent=t.saving;
+  try{
+    const r=await fetch("/api/profile/prefs",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ genres:selGenres, regions:selRegions, budget:$("#budget").value, notes:$("#notes").value }) });
+    const d=await r.json();
+    if(d.ok){ m.textContent=t.ok; m.style.color="var(--accent)"; m.style.display="block"; }
+    else { m.textContent=t.err; m.style.color="var(--danger)"; m.style.display="block"; }
+  }catch(e){ m.textContent=t.err; m.style.color="var(--danger)"; m.style.display="block"; }
+  finally{ $("#save").disabled=false; $("#save").textContent=t.save; }
+};
+
+(async ()=>{
+  render();
+  try{
+    const r=await fetch("/api/profile/me"); const d=await r.json();
+    if(!d.ok){ $("#locked").innerHTML=T().lockedGuest; $("#locked").style.display="block"; return; }
+    if(d.role!=="partner"){ $("#locked").textContent=T().lockedDev; $("#locked").style.display="block"; return; }
+    if(d.status!=="verified"){ $("#locked").textContent=T().lockedPending; $("#locked").style.display="block"; return; }
+    const p=d.profile||{};
+    try{ selGenres=JSON.parse(p.pref_genres||"[]")||[]; }catch(e){ selGenres=[]; }
+    try{ selRegions=JSON.parse(p.pref_regions||"[]")||[]; }catch(e){ selRegions=[]; }
+    $("#budget").value=p.pref_budget||"";
+    $("#notes").value=p.pref_notes||"";
+    $("#form").style.display="block";
+    render();
+  }catch(e){ $("#locked").innerHTML=T().lockedGuest; $("#locked").style.display="block"; }
+})();
+</script>

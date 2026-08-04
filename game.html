@@ -129,6 +129,8 @@
   .cmodal .copybtn:hover{ border-color:#c6f24e; color:#c6f24e; }
   .cmodal .cq{ font-family:'Space Mono',monospace; font-size:11px; color:#6b6d62; margin-top:14px; }
   .cmodal .cclose{ margin-top:16px; width:100%; padding:11px 0; background:#c6f24e; color:#0c0d0a; border:none; border-radius:8px; font-family:'Space Mono',monospace; font-weight:700; font-size:12px; letter-spacing:.08em; cursor:pointer; }
+  .feat-pill{ display:inline-block; margin-left:10px; background:var(--accent); color:var(--bg);
+    font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; padding:3px 9px; border-radius:11px; vertical-align:1px; }
 </style>
 
 <nav class="nav">
@@ -197,6 +199,7 @@ const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(va
 function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
 
 let CURRENT_GAME=null;
+const FEAT_L={en:"FEATURED",zh:"精选",ko:"추천"};
 const CM_I18N = {
   en:{ title:"Developer Contact", already:"(previously unlocked — free)", fallback:"The developer hasn't provided contact details. To reach them, email us at wangyanhui@sryinteractive.com — this doesn't use your quota.", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
        over:(u,q)=>`Monthly limit reached (${u}/${q}). Your quota resets on the 1st of next month.`, close:"CLOSE", copied:"COPIED ✓" },
@@ -338,7 +341,7 @@ function render(){ if(!GAME){ renderNotFound(); return; }
   const genres=g.genres||[], needs=g.needs||[], platforms=g.platforms||[];
   $("#app").innerHTML=`
     <a class="back" href="/">${t.back}</a>
-    <div class="kicker">SRY GAME HUB // DEVELOPER × PUBLISHER</div>
+    <div class="kicker">SRY GAME HUB // DEVELOPER × PUBLISHER${g.featured?`<span class="feat-pill">★ ${FEAT_L[lang]||FEAT_L.en}</span>`:""}</div>
     <h1 class="ptitle cjk-swap">${esc(title)}</h1>
     ${tag?`<p class="tagline cjk-swap">${esc(tag)}</p>`:''}
     ${genres.length?`<div class="head-chips">${genres.map(x=>`<span class="gtag">${L('genre',x)}</span>`).join("")}</div>`:''}

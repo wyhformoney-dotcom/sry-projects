@@ -81,6 +81,26 @@
   .ci .cct{ font-family:var(--mono); font-size:12px; color:var(--accent); word-break:break-all; text-align:right; }
   .ci .ctag{ font-family:var(--mono); font-size:9px; color:var(--ink-faint); border:1px solid var(--line); border-radius:10px; padding:2px 7px; flex:none; }
   .cfoot{ font-family:var(--mono); font-size:10.5px; color:var(--ink-faint); padding:11px 18px; border-top:1px solid var(--line-soft); }
+  .gcard.feat{ border-color:var(--accent); border-width:2px; }
+  .featrow{ margin-top:8px; }
+  .featbtn{ width:100%; padding:6px 0; border:1px solid var(--line); border-radius:6px; background:transparent;
+    color:var(--ink-dim); font-family:var(--mono); font-size:9.5px; letter-spacing:.05em; cursor:pointer; }
+  .featbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .featstat{ display:block; font-family:var(--mono); font-size:9px; letter-spacing:.05em; padding:4px 0 0; }
+  .featstat.on{ color:var(--accent); } .featstat.pend{ color:var(--warn); } .featstat.rej{ color:var(--danger); }
+  .fmask{ position:fixed; inset:0; background:rgba(0,0,0,.72); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+  .fmodal{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:26px; max-width:440px; width:100%; }
+  .fmodal h3{ font-size:17px; font-weight:900; margin-bottom:6px; }
+  .fmodal p{ font-size:12.5px; color:var(--ink-dim); line-height:1.7; margin-bottom:16px; }
+  .fmodal label{ display:block; font-size:12.5px; font-weight:700; margin:12px 0 5px; }
+  .fmodal input, .fmodal textarea{ width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:13px; padding:10px 12px; outline:none; font-family:inherit; }
+  .fmodal textarea{ min-height:80px; resize:vertical; line-height:1.6; }
+  .fmodal .fbtn{ width:100%; margin-top:16px; padding:12px 0; border:none; border-radius:8px; background:var(--accent);
+    color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:12px; letter-spacing:.08em; cursor:pointer; }
+  .fmodal .fcancel{ width:100%; margin-top:9px; padding:10px 0; border:1px solid var(--line); border-radius:8px;
+    background:transparent; color:var(--ink-dim); font-family:var(--mono); font-size:11.5px; cursor:pointer; }
+  .fmodal .fmsg{ font-size:12px; margin-top:10px; display:none; }
   .gamegrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
   .gcard{ background:var(--panel); border:1px solid var(--line); border-radius:11px; overflow:hidden; display:flex; flex-direction:column; }
   .gcard .gcover{ aspect-ratio:16/9; background:var(--panel2); object-fit:cover; width:100%; }
@@ -114,6 +134,18 @@
     <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
   </div>
 </nav>
+
+<div class="fmask" id="fmask"><div class="fmodal">
+  <h3 id="fm-title"></h3>
+  <p id="fm-desc"></p>
+  <label id="fm-l1"></label>
+  <input type="url" id="fm-url" placeholder="https://...">
+  <label id="fm-l2"></label>
+  <textarea id="fm-note"></textarea>
+  <button class="fbtn" id="fm-submit"></button>
+  <button class="fcancel" id="fm-cancel"></button>
+  <div class="fmsg" id="fm-msg"></div>
+</div></div>
 
 <div class="wrap">
   <div class="kicker" id="kicker">ACCOUNT // HOME</div>
@@ -158,6 +190,11 @@
         <span class="tx" id="m-browse-t"></span>
         <span class="arr">→</span>
       </button>
+      <button class="mi" id="m-recommend" style="display:none">
+        <span class="ic">✦</span>
+        <span class="tx" id="m-recommend-t"></span>
+        <span class="arr">→</span>
+      </button>
       <button class="mi" id="m-admin" style="display:none">
         <span class="ic">⚙</span>
         <span class="tx" id="m-admin-t"></span>
@@ -191,8 +228,13 @@ const I18N = {
     mGames:"Submit a Game", mGamesSub:"Goes into review, then appears in the library", myGames:"MY GAMES", gst:{pending:"IN REVIEW",approved:"LIVE",rejected:"REJECTED"},
     mBrowse:"Browse Projects", mBrowseSub:"Back to the game library", mBrowseDev:"Find Publishers & Investors", mBrowseDevSub:"Browse verified partners in the network", submitCard:"Submit a Game",
     myContacts:"UNLOCKED CONTACTS", ctDev:"DEV", ctPar:"PARTNER",
+    featApply:"★ APPLY FOR FEATURED", featOn:"★ FEATURED", featPend:"FEATURED — IN REVIEW", featRej:"FEATURED — NOT APPROVED",
+    fmTitle:"Apply for Featured", fmDesc:"Featured games get a highlighted card and top placement in the library. To apply, share a playable demo — it's reviewed by our team only and never shown publicly.",
+    fmL1:"Demo link (required)", fmL2:"Access notes (password, key, platform, what to look at)",
+    fmSubmit:"SUBMIT APPLICATION", fmCancel:"CANCEL", fmOk:"Application submitted. We'll review it shortly.",
+    fmErr:{ demo_required:"Please provide a valid demo link.", already_pending:"This game already has an application in review.", already_featured:"This game is already featured.", not_approved:"Only approved games can apply." },
     ctQuota:(u,q)=>`This month: ${u}/${q} unlocked · resets on the 1st`,
-    mAdmin:"Review Console", mAdminSub:"Partner & game review, account management", mLogout:"Sign Out"
+    mRecommend:"Monthly Recommendations", mRecommendSub:"Tell us what you're looking for — free for now", mAdmin:"Review Console", mAdminSub:"Partner & game review, account management", mLogout:"Sign Out"
   },
   zh:{
     kicker:"账号 // 主页", title:"账号中心",
@@ -212,8 +254,13 @@ const I18N = {
     mGames:"提交新游戏", mGamesSub:"提交后审核,通过即上架项目库", myGames:"我的游戏", gst:{pending:"待审核",approved:"已上架",rejected:"未通过"},
     mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表", mBrowseDev:"寻找发行商 / 投资方", mBrowseDevSub:"浏览网络中已认证的合作方", submitCard:"提交新游戏",
     myContacts:"已解锁的联系人", ctDev:"开发者", ctPar:"合作方",
+    featApply:"★ 申请精选", featOn:"★ 精选中", featPend:"精选申请审核中", featRej:"精选申请未通过",
+    fmTitle:"申请精选", fmDesc:"精选游戏会获得高亮卡片,并排在项目库最前面。申请需提供可试玩的 Demo——仅供我们团队评估,不会对外公开。",
+    fmL1:"Demo 链接(必填)", fmL2:"访问说明(密码、激活码、平台、建议试玩的部分)",
+    fmSubmit:"提交申请", fmCancel:"取消", fmOk:"申请已提交,我们会尽快评估。",
+    fmErr:{ demo_required:"请填写有效的 Demo 链接。", already_pending:"该游戏已有正在审核的申请。", already_featured:"该游戏已是精选。", not_approved:"仅已过审的游戏可以申请。" },
     ctQuota:(u,q)=>`本月已解锁 ${u}/${q} 个 · 每月 1 日重置`,
-    mAdmin:"审核后台", mAdminSub:"合作方 / 游戏审核、账号管理", mLogout:"退出登录"
+    mRecommend:"每月项目推荐", mRecommendSub:"告诉我们你在找什么,目前免费开放", mAdmin:"审核后台", mAdminSub:"合作方 / 游戏审核、账号管理", mLogout:"退出登录"
   },
   ko:{
     kicker:"계정 // 홈", title:"내 계정",
@@ -233,8 +280,13 @@ const I18N = {
     mGames:"게임 제출", mGamesSub:"심사 후 라이브러리에 등록됩니다", myGames:"내 게임", gst:{pending:"심사 중",approved:"등록됨",rejected:"반려됨"},
     mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로", mBrowseDev:"퍼블리셔 / 투자자 찾기", mBrowseDevSub:"네트워크의 인증된 파트너 둘러보기", submitCard:"게임 제출",
     myContacts:"해제한 연락처", ctDev:"개발자", ctPar:"파트너",
+    featApply:"★ 추천 신청", featOn:"★ 추천됨", featPend:"추천 심사 중", featRej:"추천 반려됨",
+    fmTitle:"추천 신청", fmDesc:"추천 게임은 강조된 카드와 라이브러리 상단 노출을 받습니다. 신청하려면 플레이 가능한 데모를 제공하세요. 저희 팀만 확인하며 공개되지 않습니다.",
+    fmL1:"데모 링크(필수)", fmL2:"접속 안내(비밀번호, 키, 플랫폼, 확인할 부분)",
+    fmSubmit:"신청 제출", fmCancel:"취소", fmOk:"신청이 접수되었습니다. 곧 검토하겠습니다.",
+    fmErr:{ demo_required:"유효한 데모 링크를 입력하세요.", already_pending:"이미 심사 중인 신청이 있습니다.", already_featured:"이미 추천된 게임입니다.", not_approved:"승인된 게임만 신청할 수 있습니다." },
     ctQuota:(u,q)=>`이번 달 ${u}/${q}개 해제 · 매월 1일 초기화`,
-    mAdmin:"심사 콘솔", mAdminSub:"파트너·게임 심사, 계정 관리", mLogout:"로그아웃"
+    mRecommend:"월간 프로젝트 추천", mRecommendSub:"찾으시는 조건을 알려주세요 — 현재 무료", mAdmin:"심사 콘솔", mAdminSub:"파트너·게임 심사, 계정 관리", mLogout:"로그아웃"
   }
 };
 
@@ -292,11 +344,19 @@ function render(){
     const cards = myGames.map(g=>{
       const name = g.t_en || g.t_zh || g.t_ko || "—";
       const stClass = g.status==="approved" ? "verified" : g.status;
-      return `<div class="gcard">
+      let featHtml = "";
+      if(g.status==="approved"){
+        if(g.featured) featHtml = `<span class="featstat on">${t.featOn}</span>`;
+        else if(g.feature_state==="pending") featHtml = `<span class="featstat pend">${t.featPend}</span>`;
+        else if(g.feature_state==="rejected") featHtml = `<span class="featstat rej">${t.featRej}</span>${g.feature_note?`<div class="grej">${esc(g.feature_note)}</div>`:""}<div class="featrow"><button class="featbtn" onclick="openFeature(${g.id})">${t.featApply}</button></div>`;
+        else featHtml = `<div class="featrow"><button class="featbtn" onclick="openFeature(${g.id})">${t.featApply}</button></div>`;
+      }
+      return `<div class="gcard${g.featured?" feat":""}">
         ${g.cover?`<img class="gcover" src="${esc(g.cover)}">`:`<div class="gcover"></div>`}
         <div class="gbody"><div class="gname">${esc(name)}</div>
           <span class="gpill ${stClass}">${t.gst[g.status]||g.status}</span>
           ${g.status==="rejected"&&g.review_note?`<div class="grej">${esc(g.review_note)}</div>`:""}
+          ${featHtml}
         </div></div>`;
     }).join("");
     const addCard = `<div class="gadd" onclick="location.href='/submit-game.html'"><div class="plus">+</div><div class="lbl">${t.submitCard}</div></div>`;
@@ -318,13 +378,50 @@ function render(){
     $("#contacts-quota").textContent = t.ctQuota(myContacts.used, myContacts.quota);
   } else { $("#contacts-section").style.display="none"; }
   $("#m-browse-t").innerHTML = (isDev?t.mBrowseDev:t.mBrowse) + `<span class="sub">${isDev?t.mBrowseDevSub:t.mBrowseSub}</span>`;
+  $("#m-recommend").style.display = (!isDev && status==="verified") ? "flex" : "none";
+  $("#m-recommend-t").innerHTML = t.mRecommend + `<span class="sub">${t.mRecommendSub}</span>`;
   $("#m-admin").style.display = isAdmin ? "flex" : "none";
   $("#m-admin-t").innerHTML = t.mAdmin + `<span class="sub">${t.mAdminSub}</span>`;
   $("#m-logout-t").textContent = t.mLogout;
 }
 
+let featGameId=0;
+function openFeature(id){
+  const t=T(); featGameId=id;
+  $("#fm-title").textContent=t.fmTitle; $("#fm-desc").textContent=t.fmDesc;
+  $("#fm-l1").textContent=t.fmL1; $("#fm-l2").textContent=t.fmL2;
+  $("#fm-submit").textContent=t.fmSubmit; $("#fm-cancel").textContent=t.fmCancel;
+  $("#fm-url").value=""; $("#fm-note").value="";
+  const m=$("#fm-msg"); m.style.display="none";
+  $("#fmask").style.display="flex";
+}
+$("#fm-cancel").onclick=()=>{ $("#fmask").style.display="none"; };
+$("#fmask").addEventListener("click",(e)=>{ if(e.target.id==="fmask") e.target.style.display="none"; });
+$("#fm-submit").onclick=async ()=>{
+  const t=T(), m=$("#fm-msg");
+  const url=$("#fm-url").value.trim();
+  m.style.display="none";
+  if(!/^https?:\/\/\S+$/i.test(url)){ m.textContent=t.fmErr.demo_required; m.style.color="var(--danger)"; m.style.display="block"; return; }
+  $("#fm-submit").disabled=true;
+  try{
+    const r=await fetch("/api/games-submit/feature-apply",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ game_id:featGameId, demo_url:url, demo_note:$("#fm-note").value }) });
+    const d=await r.json();
+    if(d.ok){
+      m.textContent=t.fmOk; m.style.color="var(--accent)"; m.style.display="block";
+      const g=myGames.find(x=>x.id===featGameId); if(g){ g.feature_state="pending"; g.feature_note=null; }
+      render();
+      setTimeout(()=>{ $("#fmask").style.display="none"; }, 1200);
+    } else {
+      m.textContent=t.fmErr[d.error]||String(d.error); m.style.color="var(--danger)"; m.style.display="block";
+    }
+  }catch(e){ m.textContent=String(e); m.style.color="var(--danger)"; m.style.display="block"; }
+  finally{ $("#fm-submit").disabled=false; }
+};
+
 $("#m-profile").onclick = ()=>{ location.href="/profile.html"; };
 $("#m-admin").onclick = ()=>{ location.href="/admin.html"; };
+$("#m-recommend").onclick = ()=>{ location.href="/recommend.html"; };
 $("#m-browse").onclick = ()=>{ location.href = role==="developer" ? "/partners.html" : "/"; };
 $("#m-logout").onclick = async ()=>{
   try{ await fetch("/api/auth/logout",{method:"POST"}); }catch{}

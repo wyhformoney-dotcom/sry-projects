@@ -131,6 +131,7 @@
       <button class="tab" data-s="verified" id="tab-verified">已通过<span class="n" id="n-verified"></span></button>
       <button class="tab" data-s="rejected">已驳回<span class="n" id="n-rejected"></span></button>
       <button class="tab" data-s="all">全部</button>
+      <button class="tab" data-s="feature" id="tab-feature" style="display:none">★ 精选申请<span class="n" id="n-feature"></span></button>
     </div>
     <div id="list"></div>
   </div>
@@ -227,6 +228,9 @@ function rowHtml(r){
           </div></div>
         ${kvHtml("认证", proofHtml(r), true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
+        ${r.demo_url ? kvHtml("Demo 链接(仅内部可见)", `<a href="${esc(r.demo_url)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(r.demo_url)}</a>`, true) : ""}
+        ${r.demo_note ? kvHtml("Demo 访问说明", esc(r.demo_note), true) : ""}
+        ${r.feature_note ? kvHtml("上次精选驳回原因", esc(r.feature_note), true) : ""}
       </div>
       ${r.status==="pending" ? `
       <div class="acts">
@@ -363,9 +367,36 @@ function gameRowHtml(r){
           <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
         </div>` : ""}
       </div>`}
+      <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
+        <span style="font-family:var(--mono);font-size:11px;color:${r.featured?"var(--accent)":"var(--ink-faint)"};margin-right:6px">
+          精选状态:${r.featured?"★ 已精选":r.feature_state==="pending"?"有待处理申请":r.feature_state==="rejected"?"申请已驳回":"未精选"}</span>
+        ${r.featured
+          ? `<button class="abtn no" onclick="featureSet(${r.id},'unfeature',this)">取消精选</button>`
+          : `<button class="abtn ok" onclick="featureSet(${r.id},'feature',this)">设为精选</button>`}
+        ${r.feature_state==="pending" ? `<button class="abtn no" onclick="toggleFeatReject(${r.id})">驳回申请…</button>
+        <div class="rejbox" id="frej-${r.id}" style="width:100%">
+          <textarea id="frejnote-${r.id}" placeholder="驳回原因(开发者会看到)"></textarea>
+          <button class="abtn no" onclick="featureSet(${r.id},'reject',this)">确认驳回</button>
+        </div>` : ""}
+      </div>
       <div class="amsg" id="amsg-${r.id}"></div>
     </div>
   </div>`;
+}
+
+function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("open"); }
+async function featureSet(id, action, btn){
+  btn.disabled=true;
+  const note = action==="reject" ? (document.getElementById("frejnote-"+id)||{}).value : "";
+  if(action==="reject" && !String(note||"").trim()){ btn.disabled=false; alert("请填写驳回原因"); return; }
+  try{
+    await api("feature-set",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id, action, note }) });
+    await load();
+  }catch(e){
+    const m=document.getElementById("amsg-"+id); if(m){ m.textContent="失败:"+e; m.style.color="var(--danger)"; }
+    btn.disabled=false;
+  }
 }
 
 async function load(){
@@ -382,6 +413,7 @@ async function load(){
   const d = await api(ep+"?status="+st, { method:"GET" });
   const c = d.counts||{};
   $("#n-pending").textContent = c.pending?`(${c.pending})`:"";
+  $("#n-feature").textContent = c.feature?`(${c.feature})`:"";
   $("#n-verified").textContent = (curMode==="games" ? (c.approved?`(${c.approved})`:"") : (c.verified?`(${c.verified})`:""));
   $("#n-rejected").textContent = c.rejected?`(${c.rejected})`:"";
   $("#list").innerHTML = d.rows.length
@@ -397,6 +429,7 @@ $("#modes").addEventListener("click",(e)=>{
   $("#tabs").style.display = curMode==="accounts" ? "none" : "flex";
   $("#acctbar").style.display = curMode==="accounts" ? "flex" : "none";
   $("#syncbar").style.display = curMode==="games" ? "block" : "none";
+  $("#tab-feature").style.display = curMode==="games" ? "inline-flex" : "none";
   $("#modelead").textContent = curMode==="accounts"
     ? "管理所有注册账号。可按身份筛选、按邮箱搜索;停用后账号无法登录,恢复后即可正常使用。"
     : curMode==="games"
@@ -418,7 +451,7 @@ $("#acct-q").addEventListener("input",()=>{
 $("#tabs").addEventListener("click",(e)=>{
   const b=e.target.closest(".tab"); if(!b) return;
   curTab=b.dataset.s;
-  document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("on",x===b));
   load();
 });
 

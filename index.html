@@ -68,6 +68,10 @@
   .hero p{ font-family:var(--mono); font-size:13px; line-height:1.75; color:var(--ink-dim); max-width:600px; }
 
   /* ================= FILTER PANEL ================= */
+  .card.feat{ border-color:var(--accent) !important; border-width:2px !important; }
+  .feat-badge{ position:absolute; top:0; left:0; z-index:3; background:var(--accent); color:var(--bg);
+    font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; padding:4px 10px; border-radius:0 0 8px 0; }
+  .chip.feat-chip.on{ background:var(--accent); color:var(--bg); }
   .filters{ margin:38px 0 10px; border:1px solid var(--line); background:rgba(18,19,16,.5); }
   .filter-top{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px; border-bottom:1px solid var(--line-soft); }
   .search{ display:flex; align-items:center; gap:9px; border:1px solid var(--line); background:var(--bg); padding:9px 13px; min-width:240px; flex:1; max-width:340px; }
@@ -172,6 +176,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
         <input id="search" type="text">
       </label>
+      <span class="chip feat-chip" id="f-featured" data-en="★ Featured" data-zh="★ 精选" data-ko="★ 추천">★ Featured</span>
       <div class="nav-spacer"></div>
       <span class="clear hide" id="clear" data-en="Clear all ✕" data-zh="清除全部 ✕" data-ko="모두 지우기 ✕">Clear all ✕</span>
     </div>
@@ -236,6 +241,9 @@ const KO = {
 let lang="en", search="", page=1;
 const PER_PAGE=12; // 每页显示数量（12 ≈ 桌面端 4 排；想改成 6 排=18，或 9、15 等，改这个数字即可）
 const sel={ genre:new Set(), stage:new Set(), need:new Set(), platform:new Set(), region:new Set() };
+let onlyFeatured=false;
+const FEAT_L={en:"FEATURED",zh:"精选",ko:"추천"};
+function L18(k){ return k==="featBadge" ? (FEAT_L[lang]||FEAT_L.en) : ""; }
 const uniq=(arr)=>[...new Set(arr)];
 const OPTS={
   genre:["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"],
@@ -278,8 +286,9 @@ const slugify=s=>(s||"").toLowerCase().trim().replace(/['’]/g,"").replace(/[^a
 
 function cardHTML(g,i,pos){
   const eager = pos<3;
-  return `<a class="card" data-i="${i}" href="game.html?id=${slugify(g.t_en||g.t_zh)}">
+  return `<a class="card${g.featured?" feat":""}" data-i="${i}" href="game.html?id=${slugify(g.t_en||g.t_zh)}">
     <div class="cover">
+      ${g.featured?`<span class="feat-badge">${L18("featBadge")}</span>`:""}
       <span class="stage-badge">${L('stage',g.stage)}</span>
       <span class="region-badge">${L('region',g.region)}</span>
       <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="640" height="400" data-t="${title(g).replace(/"/g,'&quot;')}"
@@ -311,7 +320,7 @@ function renderChips(){
   $("#clear").classList.toggle("hide",!any);
 }
 function renderGrid(){
-  const list=GAMES.map((g,i)=>({g,i})).filter(o=>matches(o.g));
+  const list=GAMES.map((g,i)=>({g,i})).filter(o=>matches(o.g) && (!onlyFeatured || o.g.featured));
   const grid=$("#grid"),empty=$("#empty"),pager=$("#pager");
   if(!list.length){grid.innerHTML="";empty.style.display="block";empty.textContent=I18N[lang].empty;pager.innerHTML="";pager.classList.add("hide");return;}
   empty.style.display="none";
@@ -344,7 +353,8 @@ $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 $("#search").addEventListener("input",e=>{search=e.target.value;page=1;renderChips();renderGrid();saveState();});
 document.querySelector(".filters").addEventListener("click",e=>{const c=e.target.closest(".chip");if(!c)return;
   const cat=c.dataset.cat,v=c.dataset.v; sel[cat].has(v)?sel[cat].delete(v):sel[cat].add(v); page=1; renderChips();renderGrid();saveState();});
-$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";page=1;$("#search").value="";renderChips();renderGrid();saveState();});
+$("#f-featured").addEventListener("click",()=>{ onlyFeatured=!onlyFeatured; $("#f-featured").classList.toggle("on",onlyFeatured); page=1; renderGrid(); saveState(); });
+$("#clear").addEventListener("click",()=>{Object.values(sel).forEach(s=>s.clear());search="";page=1;$("#search").value="";onlyFeatured=false;$("#f-featured").classList.remove("on");renderChips();renderGrid();saveState();});
 $("#pager").addEventListener("click",e=>{const b=e.target.closest(".pg");if(!b||b.classList.contains("dis"))return;
   const p=+b.dataset.pg; if(!p||p===page)return; page=p; renderGrid(); saveState();
   const y=$("#grid").getBoundingClientRect().top+window.pageYOffset-90; window.scrollTo({top:y,behavior:"smooth"});});
