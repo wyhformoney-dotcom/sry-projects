@@ -108,11 +108,14 @@ async function handleGamesList(env, request) {
   const status = url.searchParams.get("status") || "pending";
   const where = ["1=1"];
   const binds = [];
-  if (["pending", "approved", "rejected"].includes(status)) {
+  if (status === "feature") {
+    where.push("g.feature_state = 'pending'");
+  } else if (["pending", "approved", "rejected"].includes(status)) {
     where.push("g.status = ?"); binds.push(status);
   }
   const { results } = await env.DB.prepare(
-    `SELECT g.id, g.slug, g.feishu_id, g.visible, g.t_en, g.t_zh, g.t_ko, g.d_en, g.full_en, g.stage,
+    `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featured, g.feature_state, g.feature_note,
+            g.demo_url, g.demo_note, g.t_en, g.t_zh, g.t_ko, g.d_en, g.full_en, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
             g.video, g.steam_url, g.status, g.review_note, g.created_at,
             a.email AS login_email, dp.studio_name
@@ -135,6 +138,8 @@ async function handleGamesList(env, request) {
   ).all();
   const counts = {};
   (cnt || []).forEach((x) => { counts[x.status] = x.c; });
+  const fc = await env.DB.prepare("SELECT COUNT(*) AS c FROM games WHERE feature_state='pending'").first();
+  counts.feature = (fc && fc.c) || 0;
   return json({ ok: true, rows, counts });
 }
 
@@ -371,6 +376,22 @@ async function handleClaimLegacy(env, request) {
   return json({ ok: true, linked, accountsCreated, emails: byEmail.size, skipped });
 }
 
+async function handleFeatureSet(env, request) {
+  const { id, action, note } = await request.json().catch(() => ({}));
+  const gid = parseInt(id, 10);
+  if (!gid) return bad("invalid_id");
+  const cleanNote = String(note || "").trim().slice(0, 500);
+  if (action === "feature") {
+    await env.DB.prepare("UPDATE games SET featured=1, feature_state='featured', feature_note=NULL WHERE id=?").bind(gid).run();
+  } else if (action === "unfeature") {
+    await env.DB.prepare("UPDATE games SET featured=0, feature_state='none', feature_note=NULL WHERE id=?").bind(gid).run();
+  } else if (action === "reject") {
+    if (!cleanNote) return bad("note_required");
+    await env.DB.prepare("UPDATE games SET featured=0, feature_state='rejected', feature_note=? WHERE id=?").bind(cleanNote, gid).run();
+  } else return bad("invalid_action");
+  return json({ ok: true });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -388,6 +409,7 @@ export async function onRequest(context) {
     if (method === "GET" && path === "games") return await handleGamesList(env, request);
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
     if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);
+    if (method === "POST" && path === "feature-set") return await handleFeatureSet(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
     if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
