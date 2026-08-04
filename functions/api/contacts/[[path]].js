@@ -107,11 +107,25 @@ async function handleReveal(env, s, request) {
     targetId = parseInt(b.target_id, 10);
     if (!targetId) return bad("invalid_id");
     const tp = await env.DB.prepare(
-      `SELECT a.status, p.contact_email, p.name_en, p.name_zh
+      `SELECT a.status, p.contact_email, p.name_en, p.name_zh, p.contact_public
        FROM accounts a JOIN partner_profiles p ON p.account_id = a.id
        WHERE a.id = ? AND a.role = 'partner'`
     ).bind(targetId).first();
     if (!tp || tp.status !== "verified") return bad("not_found", 404);
+    // 对方选择不公开邮箱:记录意向、不扣额度、不返回邮箱
+    if (tp.contact_public === 0) {
+      const dup = await env.DB.prepare(
+        "SELECT id FROM contact_views WHERE viewer_id = ? AND target_type = 'partner' AND target_id = ?"
+      ).bind(viewer.id, targetId).first();
+      if (!dup) {
+        await env.DB.prepare(
+          "INSERT INTO contact_views (viewer_id, target_type, target_id, ym) VALUES (?, 'partner', ?, ?)"
+        ).bind(viewer.id, targetId, "interest").run();
+      }
+      const usedNow = await usedThisMonth(env, viewer.id);
+      return json({ ok: true, contact: FALLBACK_EMAIL, name: tp.name_en || tp.name_zh || "",
+                    privateContact: true, used: usedNow, quota: MONTHLY_QUOTA });
+    }
     contact = tp.contact_email || "";
     name = tp.name_en || tp.name_zh || "";
     if (!contact) {
