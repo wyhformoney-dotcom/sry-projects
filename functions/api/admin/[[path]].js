@@ -304,6 +304,73 @@ async function handleAccountStatus(env, request) {
   return json({ ok: true, status: newStatus });
 }
 
+/* ---------- 老游戏一键归户:按 contact 邮箱建开发者账号并挂载游戏 ---------- */
+const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(v || "").trim());
+
+async function handleClaimLegacy(env, request) {
+  const dry = new URL(request.url).searchParams.get("dry") === "1";
+
+  const { results } = await env.DB.prepare(
+    `SELECT id, t_en, t_zh, contact, developer, studio_logo
+     FROM games WHERE claimed_by IS NULL AND contact IS NOT NULL AND contact != ''`
+  ).all();
+
+  let linked = 0, accountsCreated = 0;
+  const skipped = [];
+  const byEmail = new Map();
+
+  for (const g of results || []) {
+    const email = String(g.contact || "").trim().toLowerCase();
+    const title = g.t_en || g.t_zh || ("#" + g.id);
+    if (!isEmail(email)) { skipped.push({ id: g.id, title, contact: g.contact }); continue; }
+    if (!byEmail.has(email)) byEmail.set(email, []);
+    byEmail.get(email).push(g);
+  }
+
+  if (dry) {
+    return json({
+      ok: true, dry: true,
+      wouldLink: [...byEmail.values()].reduce((n, arr) => n + arr.length, 0),
+      emails: byEmail.size, skipped,
+    });
+  }
+
+  for (const [email, games] of byEmail) {
+    // 账号:存在则复用(仅当是开发者),否则新建并激活
+    let acc = await env.DB.prepare("SELECT id, role FROM accounts WHERE email = ?").bind(email).first();
+    if (!acc) {
+      const r = await env.DB.prepare(
+        "INSERT INTO accounts (email, role, status) VALUES (?, 'developer', 'verified')"
+      ).bind(email).run();
+      acc = { id: r.meta.last_row_id, role: "developer" };
+      accountsCreated++;
+    } else if (acc.role !== "developer") {
+      games.forEach((g) => skipped.push({ id: g.id, title: g.t_en || g.t_zh, contact: email, reason: "该邮箱已是合作方账号" }));
+      continue;
+    }
+
+    // 工作室资料:没有则用游戏上的开发商名/Logo 建一份
+    const dp = await env.DB.prepare(
+      "SELECT account_id, studio_name FROM developer_profiles WHERE account_id = ?"
+    ).bind(acc.id).first();
+    if (!dp) {
+      const g0 = games.find((g) => g.developer) || games[0];
+      await env.DB.prepare(
+        `INSERT INTO developer_profiles (account_id, studio_name, logo, contact_email, updated_at)
+         VALUES (?, ?, ?, ?, datetime('now'))`
+      ).bind(acc.id, String(g0.developer || "").slice(0, 120), g0.studio_logo || "preset:solo", email).run();
+    }
+
+    for (const g of games) {
+      await env.DB.prepare("UPDATE games SET claimed_by = ? WHERE id = ? AND claimed_by IS NULL")
+        .bind(acc.id, g.id).run();
+      linked++;
+    }
+  }
+
+  return json({ ok: true, linked, accountsCreated, emails: byEmail.size, skipped });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -320,6 +387,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "intro") return await handleIntroSave(env, request);
     if (method === "GET" && path === "games") return await handleGamesList(env, request);
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
+    if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
     if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
