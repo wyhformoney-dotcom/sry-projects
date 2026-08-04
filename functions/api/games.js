@@ -14,13 +14,13 @@ export async function onRequestGet(context) {
 
   try {
     const { results } = await env.DB.prepare(
-      `SELECT id, claimed_by, slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko,
+      `SELECT id, claimed_by, featured, slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko,
               studio_en, studio_zh, studio_ko, developer, stage,
               genres, needs, platforms, region, cover, screenshots,
               studio_logo, video, contact, steam_url, sort
        FROM games
        WHERE visible = 1 AND status = 'approved' AND (t_en != '' OR t_zh != '')
-       ORDER BY sort ASC, id DESC
+       ORDER BY featured DESC, sort ASC, id DESC
        LIMIT 500`
     ).all();
 
@@ -48,6 +48,7 @@ export async function onRequestGet(context) {
       slug: r.slug || "",
       id: r.id,
       has_owner: !!r.claimed_by,
+      featured: !!r.featured,
     }));
 
     return new Response(JSON.stringify(games), {
