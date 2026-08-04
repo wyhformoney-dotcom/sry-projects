@@ -215,10 +215,12 @@ async function handleMe(env, request) {
   ).bind(s.aid).first();
   if (!account) return json({ ok: true, loggedIn: false });
 
+  const adminList = String(env.ADMIN_EMAILS || "").split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
   return json({
     ok: true, loggedIn: true, needsRole: false,
     email: account.email, role: account.role, status: account.status,
     hasProfile: !!account.has_profile,
+    isAdmin: adminList.includes(String(account.email || "").toLowerCase()),
   });
 }
 
