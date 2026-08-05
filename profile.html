@@ -223,6 +223,7 @@
         <label class="pubrow"><input type="checkbox" id="par-public" checked><span id="pubLabel"></span></label>
         <p class="pubhint cjk-swap" id="pubHintOn"></p>
         <p class="pubhint cjk-swap" id="pubHintOff" style="display:none"></p>
+        <p class="pubhint cjk-swap" id="pubRec" style="border-top:1px solid var(--line);margin-top:10px;padding-top:10px"></p>
       </div></div>
 
     <div class="sec"><span class="num">04</span><span class="st" id="psec4"></span><span class="rule"></span></div>
@@ -267,9 +268,9 @@
 </div>
 
 <script>
-const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
-const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"};
-const GENRE_KO = {"Action":"액션","Adventure":"어드벤처","RPG":"RPG","Strategy":"전략","Simulation":"시뮬레이션","Puzzle":"퍼즐","Platformer":"플랫포머","Shooter":"슈터","Survival":"생존","Horror":"호러","Roguelite":"로그라이트","Metroidvania":"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드","Narrative":"내러티브","Comedy":"코미디","Co-op":"협동","Multiplayer":"멀티플레이어"};
+const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer","Other"];
+const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人","Other":"其他"};
+const GENRE_KO = {"Action":"액션","Adventure":"어드벤처","RPG":"RPG","Strategy":"전략","Simulation":"시뮬레이션","Puzzle":"퍼즐","Platformer":"플랫포머","Shooter":"슈터","Survival":"생존","Horror":"호러","Roguelite":"로그라이트","Metroidvania":"메트로배니아","Souls-like":"소울라이크","Visual Novel":"비주얼 노벨","Card Game":"카드 게임","Open World":"오픈 월드","Narrative":"내러티브","Comedy":"코미디","Co-op":"협동","Multiplayer":"멀티플레이어","Other":"기타"};
 const GENRE_L = { en:Object.fromEntries(GENRES.map(g=>[g,g])), zh:GENRE_ZH, ko:GENRE_KO };
 const MARKETS = ["Global","China","Overseas"];
 const MARKET_L = { en:{Global:"Global",China:"China",Overseas:"Overseas"}, zh:{Global:"全球",China:"中国",Overseas:"海外"}, ko:{Global:"글로벌",China:"중국",Overseas:"해외"} };
@@ -313,8 +314,9 @@ const I18N = {
     p6:"Genres of Interest", p7:"Target Markets", p8:"Steam Publisher Page", p9:"Official Website",
     p10:"Contact Email", p10n:"Where developers reach you.",
     pubLabel:"Show my email on my partner page",
-    pubHintOn:"Recommended — developers can reach you directly, which gets you the best matches. <a href=\'/recommend.html\'>Set your recommendation preferences →</a>",
-    pubHintOff:"Your email stays hidden. We'll collect developer interest on your behalf and send you a summary once a month. <a href=\'/recommend.html\'>Set your recommendation preferences →</a>",
+    pubHintOn:"Recommended. Only verified developers can view it — one contact at a time, within a monthly limit, so your inbox stays manageable. Direct contact gets you the best matches.",
+    pubHintOff:"Your email stays hidden. Developer interest is collected by us and relayed to you in a monthly summary.",
+    pubRec:"Want us to go find projects for you? Tell us what you're looking for and we'll email you matching games every month. <a href=\'/recommend.html\'>Set your recommendation preferences →</a>",
     p11:"Verification Method", p11n:"Work email verification is the fastest way to get approved.",
     pw1:"Work Email", pw1n:"Use your company-domain email (e.g. you@yourcompany.com). We'll send a 6-digit code.",
     sendCode:"Send Code", verify:"Verify", verified:"Verified:",
@@ -355,8 +357,9 @@ const I18N = {
     p6:"关注品类", p7:"关注市场", p8:"Steam 发行页", p9:"官网",
     p10:"对外联系邮箱", p10n:"开发者通过它联系你。",
     pubLabel:"在我的合作方页面公开这个邮箱",
-    pubHintOn:"建议公开——开发者可以直接联系你,匹配效率最高。<a href=\'/recommend.html\'>设置推荐偏好 →</a>",
-    pubHintOff:"你的邮箱将不对外显示。我们会替你收集开发者的对接意向,<b>每月汇总反馈给你一次</b>。<a href=\'/recommend.html\'>设置推荐偏好 →</a>",
+    pubHintOn:"建议公开。只有<b>已认证的开发者</b>能看到,且每次只能解锁一个、每月有次数上限,不会打扰到你。开发者直接联系,匹配效率最高。",
+    pubHintOff:"你的邮箱将不对外显示。开发者的对接意向由我们代为收集,<b>每月汇总反馈给你一次</b>。",
+    pubRec:"想让我们主动帮你找项目?告诉我们你在找什么,我们每月按你的要求筛选游戏、邮件推荐给你。<a href=\'/recommend.html\'>设置推荐偏好 →</a>",
     p11:"验证方式", p11n:"企业邮箱验证通过最快。",
     pw1:"企业邮箱", pw1n:"使用公司域名邮箱(如 you@yourcompany.com),我们会发送 6 位验证码。",
     sendCode:"发送验证码", verify:"验证", verified:"已验证:",
@@ -397,8 +400,9 @@ const I18N = {
     p6:"관심 장르", p7:"관심 시장", p8:"Steam 퍼블리셔 페이지", p9:"공식 웹사이트",
     p10:"공개 연락 이메일", p10n:"개발자가 연락하는 경로입니다.",
     pubLabel:"파트너 페이지에 이메일 공개",
-    pubHintOn:"공개를 권장합니다. 개발자가 직접 연락할 수 있어 매칭 효율이 가장 높습니다. <a href=\'/recommend.html\'>추천 설정 →</a>",
-    pubHintOff:"이메일이 공개되지 않습니다. 저희가 개발자의 관심을 대신 수집해 <b>매월 한 번 정리해 보내드립니다</b>. <a href=\'/recommend.html\'>추천 설정 →</a>",
+    pubHintOn:"공개를 권장합니다. <b>인증된 개발자만</b> 볼 수 있으며 한 번에 하나씩, 월 한도 내에서만 열람됩니다. 직접 연락이 매칭 효율이 가장 높습니다.",
+    pubHintOff:"이메일이 공개되지 않습니다. 개발자의 관심은 저희가 수집해 <b>매월 정리해 보내드립니다</b>.",
+    pubRec:"저희가 직접 프로젝트를 찾아드릴까요? 조건을 알려주시면 매월 맞는 게임을 메일로 보내드립니다. <a href=\'/recommend.html\'>추천 설정 →</a>",
     p11:"인증 방식", p11n:"회사 이메일 인증이 가장 빠릅니다.",
     pw1:"회사 이메일", pw1n:"회사 도메인 이메일(예: you@yourcompany.com)을 사용하세요. 6자리 코드를 보내드립니다.",
     sendCode:"코드 보내기", verify:"확인", verified:"인증됨:",
@@ -608,7 +612,7 @@ function renderText(){
   $("#p8").textContent=t.p8; $("#p9").textContent=t.p9;
   $("#p10").textContent=t.p10; $("#p10n").textContent=t.p10n;
   $("#pubLabel").textContent=t.pubLabel;
-  $("#pubHintOn").innerHTML=t.pubHintOn; $("#pubHintOff").innerHTML=t.pubHintOff;
+  $("#pubHintOn").innerHTML=t.pubHintOn; $("#pubHintOff").innerHTML=t.pubHintOff; $("#pubRec").innerHTML=t.pubRec;
   syncPubHint();
   $("#p11").textContent=t.p11; $("#p11n").textContent=t.p11n;
   $("#pw1").textContent=t.pw1; $("#pw1n").textContent=t.pw1n;

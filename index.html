@@ -69,8 +69,8 @@
 
   /* ================= FILTER PANEL ================= */
   .card.feat{ border-color:var(--accent) !important; border-width:2px !important; }
-  .feat-badge{ position:absolute; top:0; left:0; z-index:3; background:var(--accent); color:var(--bg);
-    font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; padding:4px 10px; border-radius:0 0 8px 0; }
+  .feat-badge{ position:absolute; bottom:0; left:0; z-index:3; background:var(--accent); color:var(--accent-ink);
+    font-family:var(--mono); font-size:9.5px; font-weight:700; letter-spacing:.1em; padding:4px 11px; border-radius:0 8px 0 0; }
   .chip.feat-chip.on{ background:var(--accent); color:var(--bg); }
   .filters{ margin:38px 0 10px; border:1px solid var(--line); background:rgba(18,19,16,.5); }
   .filter-top{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px; border-bottom:1px solid var(--line-soft); }
@@ -288,7 +288,7 @@ function cardHTML(g,i,pos){
   const eager = pos<3;
   return `<a class="card${g.featured?" feat":""}" data-i="${i}" href="game.html?id=${slugify(g.t_en||g.t_zh)}">
     <div class="cover">
-      ${g.featured?`<span class="feat-badge">${L18("featBadge")}</span>`:""}
+      ${g.featured?`<span class="feat-badge">★ ${L18("featBadge")}</span>`:""}
       <span class="stage-badge">${L('stage',g.stage)}</span>
       <span class="region-badge">${L('region',g.region)}</span>
       <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="640" height="400" data-t="${title(g).replace(/"/g,'&quot;')}"

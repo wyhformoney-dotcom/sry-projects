@@ -344,7 +344,18 @@ function gameRowHtml(r){
         ${kvHtml("Steam 页面", linkHtml(r.steam_url))}
         ${kvHtml("预告片", linkHtml(r.video))}
         ${kvHtml("一句话简介", esc(r.d_en), true)}
-        ${kvHtml("完整介绍", esc(r.full_en), true)}
+        ${kvHtml("完整介绍(原文)", esc(r.full_en||r.full_zh||r.full_ko), true)}
+        <div class="kv full"><div class="k">三语内容(缺哪种就补哪种;网站按界面语言取,留空则回退到有内容的语言)</div>
+          <div class="v" style="display:grid;gap:14px">
+            ${["en","zh","ko"].map(L=>`
+              <div style="border:1px solid var(--line);border-radius:8px;padding:11px 12px">
+                <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent);margin-bottom:8px">${L.toUpperCase()}</div>
+                <input id="t${L}-${r.id}" placeholder="游戏名" value="${esc(r["t_"+L]||"")}" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;margin-bottom:7px;font-family:inherit">
+                <input id="d${L}-${r.id}" placeholder="一句话简介" value="${esc(r["d_"+L]||"")}" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;margin-bottom:7px;font-family:inherit">
+                <textarea id="f${L}-${r.id}" placeholder="完整介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:70px;font-family:inherit">${esc(r["full_"+L]||"")}</textarea>
+              </div>`).join("")}
+            <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveGameI18n(${r.id},this)">保存三语内容</button>
+          </div></div>
         ${kvHtml("封面", r.cover?`<img src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
         ${kvHtml("截图", shots||"—", true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
@@ -385,6 +396,19 @@ function gameRowHtml(r){
 }
 
 function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("open"); }
+async function saveGameI18n(id, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
+  const V=(p)=>{ const el=document.getElementById(p+"-"+id); return el?el.value:""; };
+  try{
+    await api("game-i18n",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id,
+        t_en:V("ten"), t_zh:V("tzh"), t_ko:V("tko"),
+        d_en:V("den"), d_zh:V("dzh"), d_ko:V("dko"),
+        full_en:V("fen"), full_zh:V("fzh"), full_ko:V("fko") }) });
+    btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1300);
+  }catch(e){ btn.textContent="失败:"+e; btn.disabled=false; }
+}
+
 async function featureSet(id, action, btn){
   btn.disabled=true;
   const note = action==="reject" ? (document.getElementById("frejnote-"+id)||{}).value : "";
