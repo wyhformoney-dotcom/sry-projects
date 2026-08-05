@@ -115,7 +115,8 @@ async function handleGamesList(env, request) {
   }
   const { results } = await env.DB.prepare(
     `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featured, g.feature_state, g.feature_note,
-            g.demo_url, g.demo_note, g.t_en, g.t_zh, g.t_ko, g.d_en, g.full_en, g.stage,
+            g.demo_url, g.demo_note, g.t_en, g.t_zh, g.t_ko, g.d_en, g.d_zh, g.d_ko,
+            g.full_en, g.full_zh, g.full_ko, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
             g.video, g.steam_url, g.status, g.review_note, g.created_at,
             a.email AS login_email, dp.studio_name
@@ -392,6 +393,22 @@ async function handleFeatureSet(env, request) {
   return json({ ok: true });
 }
 
+async function handleGameI18n(env, request) {
+  const b = await request.json().catch(() => ({}));
+  const gid = parseInt(b.id, 10);
+  if (!gid) return bad("invalid_id");
+  const T = (v, n) => String(v || "").trim().slice(0, n);
+  await env.DB.prepare(
+    `UPDATE games SET t_en=?, t_zh=?, t_ko=?, d_en=?, d_zh=?, d_ko=?,
+       full_en=?, full_zh=?, full_ko=? WHERE id=?`
+  ).bind(
+    T(b.t_en,120), T(b.t_zh,120), T(b.t_ko,120),
+    T(b.d_en,300), T(b.d_zh,300), T(b.d_ko,300),
+    T(b.full_en,2000), T(b.full_zh,2000), T(b.full_ko,2000), gid
+  ).run();
+  return json({ ok: true });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -410,6 +427,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
     if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);
     if (method === "POST" && path === "feature-set") return await handleFeatureSet(env, request);
+    if (method === "POST" && path === "game-i18n") return await handleGameI18n(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
     if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
