@@ -116,7 +116,7 @@ async function handleGamesList(env, request) {
   const { results } = await env.DB.prepare(
     `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featured, g.feature_state, g.feature_note,
             g.demo_url, g.demo_note, g.t_en, g.t_zh, g.t_ko, g.d_en, g.d_zh, g.d_ko,
-            g.full_en, g.full_zh, g.full_ko, g.stage,
+            g.full_en, g.full_zh, g.full_ko, g.studio_en, g.studio_zh, g.studio_ko, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
             g.video, g.steam_url, g.status, g.review_note, g.created_at,
             a.email AS login_email, dp.studio_name
@@ -124,7 +124,7 @@ async function handleGamesList(env, request) {
      LEFT JOIN accounts a ON a.id = g.claimed_by
      LEFT JOIN developer_profiles dp ON dp.account_id = g.claimed_by
      WHERE ${where.join(" AND ")}
-     ORDER BY g.id DESC LIMIT 200`
+     ORDER BY g.featured DESC, g.sort ASC, g.id DESC LIMIT 200`
   ).bind(...binds).all();
 
   const rows = (results || []).map((r) => {
@@ -240,7 +240,7 @@ async function handleImportFeishu(env) {
          developer=excluded.developer, stage=excluded.stage, genres=excluded.genres,
          needs=excluded.needs, platforms=excluded.platforms, region=excluded.region,
          cover=excluded.cover, screenshots=excluded.screenshots, studio_logo=excluded.studio_logo,
-         video=excluded.video, contact=excluded.contact, visible=excluded.visible, sort=excluded.sort`
+         video=excluded.video, contact=excluded.contact, visible=excluded.visible`
     ).bind(
       rid, fSlug(g("游戏名_EN")||g("游戏名_中文")),
       g("游戏名_EN"), g("游戏名_中文"), g("游戏名_韩文"),
@@ -400,13 +400,25 @@ async function handleGameI18n(env, request) {
   const T = (v, n) => String(v || "").trim().slice(0, n);
   await env.DB.prepare(
     `UPDATE games SET t_en=?, t_zh=?, t_ko=?, d_en=?, d_zh=?, d_ko=?,
-       full_en=?, full_zh=?, full_ko=? WHERE id=?`
+       full_en=?, full_zh=?, full_ko=?, studio_en=?, studio_zh=?, studio_ko=? WHERE id=?`
   ).bind(
     T(b.t_en,120), T(b.t_zh,120), T(b.t_ko,120),
     T(b.d_en,300), T(b.d_zh,300), T(b.d_ko,300),
-    T(b.full_en,2000), T(b.full_zh,2000), T(b.full_ko,2000), gid
+    T(b.full_en,2000), T(b.full_zh,2000), T(b.full_ko,2000),
+    T(b.studio_en,1000), T(b.studio_zh,1000), T(b.studio_ko,1000), gid
   ).run();
   return json({ ok: true });
+}
+
+async function handleGamesOrder(env, request) {
+  const { ids } = await request.json().catch(() => ({}));
+  if (!Array.isArray(ids) || !ids.length) return bad("invalid_ids");
+  const list = ids.map((x) => parseInt(x, 10)).filter(Boolean).slice(0, 500);
+  const stmts = list.map((id, i) =>
+    env.DB.prepare("UPDATE games SET sort = ? WHERE id = ?").bind(i + 1, id)
+  );
+  await env.DB.batch(stmts);
+  return json({ ok: true, count: list.length });
 }
 
 export async function onRequest(context) {
@@ -428,6 +440,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);
     if (method === "POST" && path === "feature-set") return await handleFeatureSet(env, request);
     if (method === "POST" && path === "game-i18n") return await handleGameI18n(env, request);
+    if (method === "POST" && path === "games-order") return await handleGamesOrder(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
     if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
