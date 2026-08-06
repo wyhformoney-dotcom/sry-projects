@@ -184,8 +184,8 @@
       </div></div>
     <div class="f"><label><span id="g2"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g2n"></p>
-      <input type="text" id="d-en" maxlength="160">
-      <div class="cnt"><span id="d-cnt">0</span>/160</div></div>
+      <input type="text" id="d-en" maxlength="300">
+      <div class="cnt"><span id="d-cnt">0</span>/300</div></div>
     <div class="f"><label><span id="g3"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g3n"></p>
       <textarea id="full-en" maxlength="2000"></textarea>
@@ -273,7 +273,7 @@ const I18N = {
     parse:"AUTO-FILL", parsing:"FETCHING…",
     parseOk:"Auto-filled from Steam. Please review each field — especially genres and stage — then complete the rest.",
     g10:"Trailer / Gameplay Video", g10n:"YouTube, Bilibili or a direct link.",
-    g11:"Cover Image", g11n:"Landscape 16:9 recommended (e.g. your Steam capsule). JPG/PNG/WebP, up to 5MB.",
+    g11:"Cover Image", g11n:"16:9 landscape, 1280×720 or larger. Wider images (like a Steam header) will be cropped slightly on the left and right. JPG/PNG/WebP, up to 5MB.",
     g12:"Screenshots", g12n:"Up to 5 images. JPG/PNG/WebP, up to 5MB each.",
     submit:"Submit for Review", submitting:"Submitting…",
     ok:"Submitted! We'll review it and get back to you soon.",
@@ -312,7 +312,7 @@ const I18N = {
     parse:"自动填充", parsing:"解析中…",
     parseOk:"已从 Steam 自动填充。请逐项检查(尤其品类和阶段),再补齐剩余内容。",
     g10:"预告片 / 实机视频", g10n:"YouTube、B 站或直链均可。",
-    g11:"封面图", g11n:"建议 16:9 横图(比如 Steam 胶囊图)。JPG/PNG/WebP,最大 5MB。",
+    g11:"封面图", g11n:"16:9 横图,建议 1280×720 以上。更宽的图(如 Steam 头图)左右会被轻微裁切。JPG/PNG/WebP,最大 5MB。",
     g12:"游戏截图", g12n:"最多 5 张,每张最大 5MB。",
     submit:"提交审核", submitting:"提交中…",
     ok:"已提交!我们会尽快审核并回复你。",
@@ -351,7 +351,7 @@ const I18N = {
     parse:"자동 입력", parsing:"가져오는 중…",
     parseOk:"Steam에서 자동 입력했습니다. 각 항목(특히 장르·단계)을 확인하고 나머지를 완성하세요.",
     g10:"트레일러 / 게임플레이 영상", g10n:"YouTube, Bilibili 또는 직접 링크.",
-    g11:"커버 이미지", g11n:"16:9 가로 이미지 권장(Steam 캡슐 등). JPG/PNG/WebP, 최대 5MB.",
+    g11:"커버 이미지", g11n:"16:9 가로 이미지, 1280×720 이상 권장. 더 넓은 이미지(Steam 헤더 등)는 좌우가 약간 잘립니다. JPG/PNG/WebP, 최대 5MB.",
     g12:"스크린샷", g12n:"최대 5장, 각 5MB 이하.",
     submit:"심사 제출", submitting:"제출 중…",
     ok:"제출되었습니다! 곧 심사 후 연락드리겠습니다.",

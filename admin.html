@@ -94,6 +94,11 @@
   .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:100; cursor:zoom-out; }
   .lightbox.on{ display:flex; }
   .lightbox img{ max-width:92vw; max-height:92vh; border-radius:8px; }
+  .draghandle{ cursor:grab; color:var(--ink-faint); font-size:15px; padding:0 4px; flex:none; user-select:none; }
+  .draghandle:hover{ color:var(--accent); }
+  .row.dragging{ opacity:.45; }
+  .row.dropbefore{ border-top:2px solid var(--accent); }
+  #orderbar{ display:none; align-items:center; gap:10px; margin:-4px 0 14px; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
 </style>
 
 <nav class="nav">
@@ -115,6 +120,11 @@
       <button class="tab" data-r="partner" id="ar-par">合作方</button>
     </div>
     <input id="acct-q" placeholder="按邮箱搜索…" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:13px;padding:9px 12px;outline:none;min-width:220px">
+  </div>
+  <div id="orderbar">
+    <button class="abtn ok" id="ordersave" style="padding:7px 14px">保存新顺序</button>
+    <button class="abtn" id="ordercancel" style="padding:7px 14px;background:transparent;border:1px solid var(--line);color:var(--ink)">撤销</button>
+    <span id="ordermsg"></span>
   </div>
   <div id="syncbar" style="display:none;margin:-8px 0 16px">
     <button class="abtn ok" id="syncbtn" style="padding:9px 18px">⟳ 从飞书同步游戏库</button>
@@ -324,8 +334,9 @@ function gameRowHtml(r){
   const isFeishu = !!r.feishu_id;
   const shots = (r.screenshots||[]).map(u=>`<img src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
   return `
-  <div class="row" data-id="${r.id}">
+  <div class="row" data-id="${r.id}" data-game="1">
     <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <span class="draghandle" draggable="true" title="拖拽调整展示顺序">⣿</span>
       <div class="avatar" style="width:64px">${r.cover?`<img src="${esc(r.cover)}">`:"▢"}</div>
       <div class="rmain">
         <div class="rname">${esc(name)}${r.t_zh&&r.t_en?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(r.t_zh)}</span>`:""}</div>
@@ -352,7 +363,8 @@ function gameRowHtml(r){
                 <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent);margin-bottom:8px">${L.toUpperCase()}</div>
                 <input id="t${L}-${r.id}" placeholder="游戏名" value="${esc(r["t_"+L]||"")}" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;margin-bottom:7px;font-family:inherit">
                 <input id="d${L}-${r.id}" placeholder="一句话简介" value="${esc(r["d_"+L]||"")}" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;margin-bottom:7px;font-family:inherit">
-                <textarea id="f${L}-${r.id}" placeholder="完整介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:70px;font-family:inherit">${esc(r["full_"+L]||"")}</textarea>
+                <textarea id="f${L}-${r.id}" placeholder="完整介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:70px;font-family:inherit;margin-bottom:7px">${esc(r["full_"+L]||"")}</textarea>
+                <textarea id="s${L}-${r.id}" placeholder="团队 / 工作室介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:56px;font-family:inherit">${esc(r["studio_"+L]||"")}</textarea>
               </div>`).join("")}
             <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveGameI18n(${r.id},this)">保存三语内容</button>
           </div></div>
@@ -404,10 +416,50 @@ async function saveGameI18n(id, btn){
       body:JSON.stringify({ id,
         t_en:V("ten"), t_zh:V("tzh"), t_ko:V("tko"),
         d_en:V("den"), d_zh:V("dzh"), d_ko:V("dko"),
-        full_en:V("fen"), full_zh:V("fzh"), full_ko:V("fko") }) });
+        full_en:V("fen"), full_zh:V("fzh"), full_ko:V("fko"),
+        studio_en:V("sen"), studio_zh:V("szh"), studio_ko:V("sko") }) });
     btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1300);
   }catch(e){ btn.textContent="失败:"+e; btn.disabled=false; }
 }
+
+/* ---------- 拖拽排序 ---------- */
+let dragEl=null, orderDirty=false;
+function currentIds(){ return [...document.querySelectorAll("#list .row[data-game]")].map(x=>+x.dataset.id); }
+document.addEventListener("dragstart",(e)=>{
+  const h=e.target.closest(".draghandle"); if(!h) return;
+  dragEl=h.closest(".row"); if(!dragEl) return;
+  dragEl.classList.add("dragging");
+  e.dataTransfer.effectAllowed="move";
+  try{ e.dataTransfer.setData("text/plain", dragEl.dataset.id); }catch(err){}
+});
+document.addEventListener("dragover",(e)=>{
+  if(!dragEl) return;
+  const row=e.target.closest("#list .row[data-game]"); if(!row||row===dragEl) return;
+  e.preventDefault();
+  document.querySelectorAll("#list .row.dropbefore").forEach(x=>x.classList.remove("dropbefore"));
+  row.classList.add("dropbefore");
+});
+document.addEventListener("drop",(e)=>{
+  if(!dragEl) return;
+  const row=e.target.closest("#list .row[data-game]");
+  document.querySelectorAll("#list .row.dropbefore").forEach(x=>x.classList.remove("dropbefore"));
+  if(row && row!==dragEl){ e.preventDefault(); row.parentElement.insertBefore(dragEl,row); orderDirty=true; $("#ordermsg").textContent="顺序已改动,记得保存"; $("#ordermsg").style.color="var(--warn)"; }
+});
+document.addEventListener("dragend",()=>{
+  if(dragEl) dragEl.classList.remove("dragging");
+  document.querySelectorAll("#list .row.dropbefore").forEach(x=>x.classList.remove("dropbefore"));
+  dragEl=null;
+});
+$("#ordersave").onclick = async ()=>{
+  const btn=$("#ordersave"); btn.disabled=true;
+  try{
+    const d=await api("games-order",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ ids: currentIds() }) });
+    orderDirty=false; $("#ordermsg").textContent=`已保存 ${d.count} 款的顺序 ✓`; $("#ordermsg").style.color="var(--accent)";
+  }catch(e){ $("#ordermsg").textContent="保存失败:"+e; $("#ordermsg").style.color="var(--danger)"; }
+  finally{ btn.disabled=false; }
+};
+$("#ordercancel").onclick = ()=>{ orderDirty=false; $("#ordermsg").textContent=""; load(); };
 
 async function featureSet(id, action, btn){
   btn.disabled=true;
@@ -453,6 +505,7 @@ $("#modes").addEventListener("click",(e)=>{
   $("#tabs").style.display = curMode==="accounts" ? "none" : "flex";
   $("#acctbar").style.display = curMode==="accounts" ? "flex" : "none";
   $("#syncbar").style.display = curMode==="games" ? "block" : "none";
+  $("#orderbar").style.display = curMode==="games" ? "flex" : "none";
   $("#tab-feature").style.display = curMode==="games" ? "inline-flex" : "none";
   $("#modelead").textContent = curMode==="accounts"
     ? "管理所有注册账号。可按身份筛选、按邮箱搜索;停用后账号无法登录,恢复后即可正常使用。"

@@ -104,7 +104,7 @@
 
   .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; min-width:0; overflow:hidden; display:flex; flex-direction:column; }
   .card:hover{ border-color:var(--accent); transform:translateY(-2px); }
-  .cover{ position:relative; aspect-ratio:16/10; overflow:hidden; background:#1a1a1a; }
+  .cover{ position:relative; aspect-ratio:16/9; overflow:hidden; background:#1a1a1a; }
   .cover img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.3,1); }
   .card:hover .cover img{ transform:scale(1.05); }
   .cover .fallback{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
@@ -291,7 +291,7 @@ function cardHTML(g,i,pos){
       ${g.featured?`<span class="feat-badge">★ ${L18("featBadge")}</span>`:""}
       <span class="stage-badge">${L('stage',g.stage)}</span>
       <span class="region-badge">${L('region',g.region)}</span>
-      <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="640" height="400" data-t="${title(g).replace(/"/g,'&quot;')}"
+      <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="640" height="360" data-t="${title(g).replace(/"/g,'&quot;')}"
         onerror="this.style.display='none';this.parentElement.style.background='${hashColor(g.t_en)}';this.insertAdjacentHTML('afterend','<div class=\\'fallback cjk-swap\\'>'+this.dataset.t+'</div>')">
     </div>
     <div class="card-body">
