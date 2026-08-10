@@ -51,7 +51,7 @@ async function handleList(env, request) {
   }
   const { results } = await env.DB.prepare(
     `SELECT a.id, a.email AS login_email, a.status, a.created_at,
-            p.name_zh, p.name_en, p.name_ko, p.logo, p.kinds, p.region, p.intro, p.intro_en, p.intro_zh, p.intro_ko,
+            p.name_zh, p.name_en, p.name_ko, p.logo, p.kinds, p.region, p.intro, p.intro_en, p.intro_zh, p.intro_ko, p.contact_public,
             p.genres, p.markets, p.steam_url, p.website, p.contact_email,
             p.proof_type, p.proof_image, p.verified_email, p.review_note, p.updated_at
      FROM accounts a
@@ -119,7 +119,8 @@ async function handleGamesList(env, request) {
             g.full_en, g.full_zh, g.full_ko, g.studio_en, g.studio_zh, g.studio_ko, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
             g.video, g.steam_url, g.status, g.review_note, g.created_at,
-            a.email AS login_email, dp.studio_name
+            g.contact AS legacy_contact, a.email AS login_email,
+            dp.studio_name, dp.contact_email AS dev_contact
      FROM games g
      LEFT JOIN accounts a ON a.id = g.claimed_by
      LEFT JOIN developer_profiles dp ON dp.account_id = g.claimed_by
@@ -421,6 +422,40 @@ async function handleGamesOrder(env, request) {
   return json({ ok: true, count: list.length });
 }
 
+async function handleContactSet(env, request) {
+  const b = await request.json().catch(() => ({}));
+  const type = String(b.type || "");
+  const id = parseInt(b.id, 10);
+  const email = String(b.email || "").trim().toLowerCase();
+  if (!id) return bad("invalid_id");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return bad("invalid_email");
+
+  if (type === "partner") {
+    await env.DB.prepare(
+      "UPDATE partner_profiles SET contact_email=?, contact_public=?, updated_at=datetime('now') WHERE account_id=?"
+    ).bind(email, b.public === false ? 0 : 1, id).run();
+    return json({ ok: true });
+  }
+
+  if (type === "game") {
+    const g = await env.DB.prepare("SELECT id, claimed_by FROM games WHERE id = ?").bind(id).first();
+    if (!g) return bad("not_found", 404);
+    if (g.claimed_by) {
+      // 已归户:写开发者资料(没有资料行则建一行)
+      const acc = await env.DB.prepare("SELECT email FROM accounts WHERE id = ?").bind(g.claimed_by).first();
+      await env.DB.prepare(
+        `INSERT INTO developer_profiles (account_id, studio_name, contact_email, updated_at)
+         VALUES (?, '', ?, datetime('now'))
+         ON CONFLICT(account_id) DO UPDATE SET contact_email=excluded.contact_email, updated_at=datetime('now')`
+      ).bind(g.claimed_by, email || (acc && acc.email) || "").run();
+    }
+    // 同时更新游戏自身的 contact(未归户的老游戏靠它)
+    await env.DB.prepare("UPDATE games SET contact=? WHERE id=?").bind(email, id).run();
+    return json({ ok: true, claimed: !!g.claimed_by });
+  }
+  return bad("invalid_type");
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -441,6 +476,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "feature-set") return await handleFeatureSet(env, request);
     if (method === "POST" && path === "game-i18n") return await handleGameI18n(env, request);
     if (method === "POST" && path === "games-order") return await handleGamesOrder(env, request);
+    if (method === "POST" && path === "contact-set") return await handleContactSet(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
     if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
