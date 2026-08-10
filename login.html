@@ -209,6 +209,7 @@ const I18N = {
 const QP = new URLSearchParams(location.search);
 const PICK = QP.get("pick")==="1";
 const NEXT = QP.get("next")||"";
+const ROLE_PRE = (QP.get("role")==="partner"||QP.get("role")==="developer") ? QP.get("role") : "";
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
 let email = "", pickedRole = "", cooldown = 0, cdTimer = null, isNew = false, hasProfile = false;
@@ -302,6 +303,10 @@ document.querySelectorAll(".role").forEach(b=>{
     b.classList.add("sel"); pickedRole = b.dataset.role; $("#b-register").disabled = false;
   };
 });
+if(ROLE_PRE){
+  const pre=document.querySelector(`.role[data-role="${ROLE_PRE}"]`);
+  if(pre){ pre.classList.add("sel"); pickedRole=ROLE_PRE; $("#b-register").disabled=false; }
+}
 
 $("#b-register").onclick = async ()=>{
   const t=T(); clearMsg($("#m3"));
@@ -310,7 +315,7 @@ $("#b-register").onclick = async ()=>{
     const d = await api("register",{ method:"POST", body:JSON.stringify({role:pickedRole}) });
     hasProfile = false;
     if(d.role==="developer"){ location.href = "/profile.html" + (NEXT ? "?next=submit" : ""); return; }
-    if(d.role==="partner" && NEXT){ location.href = NEXT; return; }
+    if(d.role==="partner"){ location.href = NEXT || "/profile.html"; return; }
     finishScreen(d.role);
   }catch(e){ err($("#m3"), e); $("#b-register").disabled=false; $("#b-register").textContent=t.register; }
 };
