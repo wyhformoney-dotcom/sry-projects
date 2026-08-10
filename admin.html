@@ -226,7 +226,15 @@ function rowHtml(r){
         ${kvHtml("关注品类", chipsHtml(r.genres, GENRE_ZH))}
         ${kvHtml("Steam 发行页", linkHtml(r.steam_url))}
         ${kvHtml("官网", linkHtml(r.website))}
-        ${kvHtml("对外联系邮箱", esc(r.contact_email))}
+        <div class="kv full"><div class="k">对外联系邮箱(可直接修改)</div>
+          <div class="v" style="display:grid;gap:9px">
+            <input id="pc-${r.id}" value="${esc(r.contact_email||"")}" placeholder="name@company.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-dim);cursor:pointer">
+              <input type="checkbox" id="pp-${r.id}" ${r.contact_public===0?"":"checked"} style="width:15px;height:15px;accent-color:var(--accent)">
+              在 Partners 页公开这个邮箱(取消勾选=由我们代为转达)
+            </label>
+            <button class="abtn ok" style="padding:7px 14px;width:fit-content" onclick="saveContact('partner',${r.id},this)">保存联系方式</button>
+          </div></div>
         ${kvHtml("登录邮箱", esc(r.login_email))}
         ${kvHtml("简介(对方提交的原文)", esc(r.intro), true)}
         <div class="kv full"><div class="k">简介三语版(网站按界面语言显示;没填的语言不显示)</div>
@@ -238,6 +246,11 @@ function rowHtml(r){
           </div></div>
         ${kvHtml("认证", proofHtml(r), true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
+        <div class="kv full"><div class="k">开发者联系方式(可直接修改;已归户的会同步写入该开发者账号)</div>
+          <div class="v" style="display:grid;gap:9px">
+            <input id="gc-${r.id}" value="${esc(r.dev_contact||r.legacy_contact||"")}" placeholder="dev@studio.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
+            <button class="abtn ok" style="padding:7px 14px;width:fit-content" onclick="saveContact('game',${r.id},this)">保存联系方式</button>
+          </div></div>
         ${r.demo_url ? kvHtml("Demo 链接(仅内部可见)", `<a href="${esc(r.demo_url)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(r.demo_url)}</a>`, true) : ""}
         ${r.demo_note ? kvHtml("Demo 访问说明", esc(r.demo_note), true) : ""}
         ${r.feature_note ? kvHtml("上次精选驳回原因", esc(r.feature_note), true) : ""}
@@ -408,6 +421,18 @@ function gameRowHtml(r){
 }
 
 function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("open"); }
+async function saveContact(type, id, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
+  const email=(document.getElementById((type==="partner"?"pc-":"gc-")+id)||{}).value||"";
+  const pub=type==="partner" ? !!(document.getElementById("pp-"+id)||{}).checked : true;
+  try{
+    await api("contact-set",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ type, id, email, public:pub }) });
+    btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1300);
+  }catch(e){ btn.textContent = e==="invalid_email" ? "邮箱格式不对" : "失败:"+e; btn.disabled=false;
+    setTimeout(()=>{ btn.textContent=old; },1800); }
+}
+
 async function saveGameI18n(id, btn){
   btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
   const V=(p)=>{ const el=document.getElementById(p+"-"+id); return el?el.value:""; };
