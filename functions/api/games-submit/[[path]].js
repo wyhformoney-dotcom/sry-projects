@@ -240,6 +240,7 @@ async function handleCreate(env, s, request) {
   const steam_url = S(b.steam_url, 400);
   const video = S(b.video, 400);
   const cover = S(b.cover, 500);
+  const deepCoop = b.deep_coop ? 1 : 0;
   const screenshots = Array.isArray(b.screenshots)
     ? b.screenshots.map((x) => S(x, 500)).filter(Boolean).slice(0, 5) : [];
 
@@ -270,12 +271,12 @@ async function handleCreate(env, s, request) {
   await env.DB.prepare(
     `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, full_en, developer, studio_logo, stage,
                         genres, needs, platforms, region, cover, screenshots, video, steam_url,
-                        claimed_by, visible, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
+                        claimed_by, deep_coop, visible, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
   ).bind(
     slugify(t_en || t_zh || t_ko), t_en, t_zh, t_ko, d_en, full_en, developer, studioLogo || "preset:solo", stage,
     JSON.stringify(genres), JSON.stringify(needs), JSON.stringify(platforms), region,
-    cover, JSON.stringify(screenshots), video, steam_url, s.aid
+    cover, JSON.stringify(screenshots), video, steam_url, s.aid, deepCoop
   ).run();
 
   return json({ ok: true });
