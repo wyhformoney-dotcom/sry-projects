@@ -129,6 +129,16 @@
   .cmodal .copybtn:hover{ border-color:#c6f24e; color:#c6f24e; }
   .cmodal .cq{ font-family:'Space Mono',monospace; font-size:11px; color:#6b6d62; margin-top:14px; }
   .cmodal .cclose{ margin-top:16px; width:100%; padding:11px 0; background:#c6f24e; color:#0c0d0a; border:none; border-radius:8px; font-family:'Space Mono',monospace; font-weight:700; font-size:12px; letter-spacing:.08em; cursor:pointer; }
+  .extlinks{ margin:14px 0 4px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .steamlink{ display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px; font-weight:700;
+    letter-spacing:.06em; padding:9px 16px; border-radius:8px; border:1px solid var(--accent); color:var(--accent);
+    background:rgba(198,242,78,.07); transition:all .15s; }
+  .steamlink:hover{ background:var(--accent); color:var(--bg); }
+  .favbtn{ display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11.5px; font-weight:700;
+    letter-spacing:.06em; padding:9px 16px; border-radius:8px; border:1px solid var(--line); color:var(--ink-dim);
+    background:transparent; cursor:pointer; transition:all .15s; }
+  .favbtn:hover{ border-color:var(--accent); color:var(--accent); }
+  .favbtn.on{ border-color:var(--accent); background:var(--accent); color:var(--bg); }
   .feat-pill{ display:inline-block; margin-left:10px; background:var(--accent); color:var(--bg);
     font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; padding:3px 9px; border-radius:11px; vertical-align:1px; }
 </style>
@@ -184,9 +194,9 @@ const KO={
   region:{Global:"글로벌",China:"중국",Overseas:"해외"}
 };
 const T={
-  en:{back:"← All Projects",developer:"Developer",platform:"Platform",market:"Target Market",seeking:"Seeking",overview:"Project Overview",studio:"Studio",stage:"Stage",contact:"Contact Developer ↗",ctaH:"Interested in this project?",ctaP:"Reach out to the team directly to request the full pitch deck, build access, or partnership terms.",ctaBtn:"Contact Developer ↗",trailer:"TRAILER",na:"—",loading:"Loading…",nfH:"Project not found",nfP:"This project may have been moved, unlisted, or the link is incorrect."},
-  zh:{back:"← 返回项目列表",developer:"开发商",platform:"平台",market:"目标市场",seeking:"寻求合作",overview:"项目概览",studio:"开发团队",stage:"进展",contact:"联系开发团队 ↗",ctaH:"对这个项目感兴趣？",ctaP:"直接联系开发团队，获取完整项目资料、试玩版本或合作条款。",ctaBtn:"联系开发团队 ↗",trailer:"预告片",na:"—",loading:"加载中…",nfH:"未找到该项目",nfP:"该项目可能已下架、未上架，或链接有误。"},
-  ko:{back:"← 전체 프로젝트",developer:"개발사",platform:"플랫폼",market:"타겟 시장",seeking:"모집",overview:"프로젝트 개요",studio:"스튜디오",stage:"단계",contact:"개발팀에 문의 ↗",ctaH:"이 프로젝트에 관심 있으신가요?",ctaP:"전체 피치 자료, 빌드 액세스, 파트너십 조건은 개발팀에 직접 문의해 주세요.",ctaBtn:"개발팀에 문의 ↗",trailer:"트레일러",na:"—",loading:"불러오는 중…",nfH:"프로젝트를 찾을 수 없습니다",nfP:"이 프로젝트는 이동되었거나 목록에서 제외되었거나 링크가 잘못되었을 수 있습니다."}
+  en:{steamBtn:"VIEW ON STEAM ↗",favAdd:"☆ SAVE",favOn:"★ SAVED",back:"← All Projects",developer:"Developer",platform:"Platform",market:"Target Market",seeking:"Seeking",overview:"Project Overview",studio:"Studio",stage:"Stage",contact:"Contact Developer ↗",ctaH:"Interested in this project?",ctaP:"Reach out to the team directly to request the full pitch deck, build access, or partnership terms.",ctaBtn:"Contact Developer ↗",trailer:"TRAILER",na:"—",loading:"Loading…",nfH:"Project not found",nfP:"This project may have been moved, unlisted, or the link is incorrect."},
+  zh:{steamBtn:"在 STEAM 上查看 ↗",favAdd:"☆ 收藏",favOn:"★ 已收藏",back:"← 返回项目列表",developer:"开发商",platform:"平台",market:"目标市场",seeking:"寻求合作",overview:"项目概览",studio:"开发团队",stage:"进展",contact:"联系开发团队 ↗",ctaH:"对这个项目感兴趣？",ctaP:"直接联系开发团队，获取完整项目资料、试玩版本或合作条款。",ctaBtn:"联系开发团队 ↗",trailer:"预告片",na:"—",loading:"加载中…",nfH:"未找到该项目",nfP:"该项目可能已下架、未上架，或链接有误。"},
+  ko:{steamBtn:"STEAM에서 보기 ↗",favAdd:"☆ 저장",favOn:"★ 저장됨",back:"← 전체 프로젝트",developer:"개발사",platform:"플랫폼",market:"타겟 시장",seeking:"모집",overview:"프로젝트 개요",studio:"스튜디오",stage:"단계",contact:"개발팀에 문의 ↗",ctaH:"이 프로젝트에 관심 있으신가요?",ctaP:"전체 피치 자료, 빌드 액세스, 파트너십 조건은 개발팀에 직접 문의해 주세요.",ctaBtn:"개발팀에 문의 ↗",trailer:"트레일러",na:"—",loading:"불러오는 중…",nfH:"프로젝트를 찾을 수 없습니다",nfP:"이 프로젝트는 이동되었거나 목록에서 제외되었거나 링크가 잘못되었을 수 있습니다."}
 };
 const STAGES=["In Development","Demo","Playtest","Early Access","Released"];
 
@@ -198,7 +208,34 @@ const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
 const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
 function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
 
-let CURRENT_GAME=null;
+let CURRENT_GAME=null, IS_FAVED=false, CAN_FAV=false;
+function paintFav(){
+  const b=document.getElementById("favbtn"); if(!b) return;
+  b.style.display = CAN_FAV ? "inline-flex" : "none";
+  b.className = "favbtn" + (IS_FAVED ? " on" : "");
+  b.textContent = IS_FAVED ? T[lang].favOn : T[lang].favAdd;
+}
+async function toggleFav(){
+  if(!CURRENT_GAME || !CURRENT_GAME.id) return;
+  const b=document.getElementById("favbtn"); if(b) b.disabled=true;
+  try{
+    const r=await fetch("/api/favorites/toggle",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ game_id: CURRENT_GAME.id }) });
+    const d=await r.json();
+    if(d.ok){ IS_FAVED=!!d.faved; paintFav(); }
+  }catch(e){}
+  finally{ if(b) b.disabled=false; }
+}
+async function initFav(){
+  try{
+    const r=await fetch("/api/auth/me"); const d=await r.json();
+    if(!(d.loggedIn && !d.needsRole && d.role==="partner" && d.status==="verified")) return;
+    CAN_FAV=true;
+    const r2=await fetch("/api/favorites/ids"); const d2=await r2.json();
+    if(d2.ok && CURRENT_GAME) IS_FAVED = (d2.ids||[]).includes(CURRENT_GAME.id);
+    paintFav();
+  }catch(e){}
+}
 const FEAT_L={en:"FEATURED",zh:"精选",ko:"추천"};
 const CM_I18N = {
   en:{ title:"Developer Contact", already:"(previously unlocked — free)", fallback:"The developer hasn't provided contact details. To reach them, email us at wangyanhui@sryinteractive.com — this doesn't use your quota.", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
@@ -345,6 +382,10 @@ function render(){ if(!GAME){ renderNotFound(); return; }
     <h1 class="ptitle cjk-swap">${esc(title)}</h1>
     ${tag?`<p class="tagline cjk-swap">${esc(tag)}</p>`:''}
     ${genres.length?`<div class="head-chips">${genres.map(x=>`<span class="gtag">${L('genre',x)}</span>`).join("")}</div>`:''}
+    <div class="extlinks">
+      ${g.steam_url?`<a class="steamlink" href="${esc(g.steam_url)}" target="_blank" rel="noopener">${t.steamBtn}</a>`:''}
+      <button class="favbtn" id="favbtn" style="display:none" onclick="toggleFav()"></button>
+    </div>
 
     <div class="media"><div id="mainview">${renderMain()}</div><div id="thumbview">${renderThumbs()}</div></div>
 
@@ -381,6 +422,7 @@ $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
 
 (async function(){
   applyNavLang();
+  setTimeout(initFav, 300);
   renderLoading();
   const id=(new URLSearchParams(location.search).get("id")||"").toLowerCase();
   try{
@@ -390,6 +432,7 @@ $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
     GAME = data.find(g=>slugify(g.t_en)===id) || data.find(g=>slugify(g.t_zh)===id) || null;
   }catch(err){ GAME=null; }
   media = GAME?buildMedia(GAME):[];
+  setTimeout(paintFav,0);
   render();
 })();
 </script>

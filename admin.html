@@ -246,11 +246,6 @@ function rowHtml(r){
           </div></div>
         ${kvHtml("认证", proofHtml(r), true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
-        <div class="kv full"><div class="k">开发者联系方式(可直接修改;已归户的会同步写入该开发者账号)</div>
-          <div class="v" style="display:grid;gap:9px">
-            <input id="gc-${r.id}" value="${esc(r.dev_contact||r.legacy_contact||"")}" placeholder="dev@studio.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
-            <button class="abtn ok" style="padding:7px 14px;width:fit-content" onclick="saveContact('game',${r.id},this)">保存联系方式</button>
-          </div></div>
         ${r.deep_coop ? kvHtml("深度合作", `<span style="color:var(--accent);font-family:var(--mono);font-size:12px">★ 该开发者已勾选「有兴趣申请深度合作」</span>`, true) : ""}
         ${r.demo_url ? kvHtml("Demo 链接(仅内部可见)", `<a href="${esc(r.demo_url)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(r.demo_url)}</a>`, true) : ""}
         ${r.demo_note ? kvHtml("Demo 访问说明", esc(r.demo_note), true) : ""}
@@ -361,6 +356,11 @@ function gameRowHtml(r){
     </div>
     <div class="detail">
       <div class="grid">
+        <div class="kv full"><div class="k">开发者联系方式(可直接修改;已归户的会同步写入该开发者账号)</div>
+          <div class="v" style="display:grid;gap:9px">
+            <input id="gc-${r.id}" value="${esc(r.dev_contact||r.legacy_contact||"")}" placeholder="dev@studio.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
+            <button class="abtn ok" style="padding:7px 14px;width:fit-content" onclick="saveContact('game',${r.id},this)">保存联系方式</button>
+          </div></div>
         ${kvHtml("开发阶段", esc(STAGE_ZH[r.stage]||r.stage))}
         ${kvHtml("目标市场", esc({Global:"全球",China:"中国",Overseas:"海外"}[r.region]||r.region))}
         ${kvHtml("品类", chipsHtml(r.genres, GENRE_ZH))}

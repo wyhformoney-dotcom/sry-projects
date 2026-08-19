@@ -173,6 +173,11 @@
       <div class="gamegrid" id="gamegrid"></div>
     </div>
 
+    <div id="favs-section" style="display:none">
+      <div class="mhead" id="favs-t"></div>
+      <div class="gamegrid" id="favgrid"></div>
+    </div>
+
     <div class="menu" id="contacts-section" style="display:none">
       <div class="mhead" id="contacts-t"></div>
       <div id="contacts-list"></div>
@@ -227,7 +232,7 @@ const I18N = {
     mProfilePar:"Company Profile", mProfileParSub:"Edit and resubmit your profile",
     mGames:"Submit a Game", mGamesSub:"Goes into review, then appears in the library", myGames:"MY GAMES", gst:{pending:"IN REVIEW",approved:"LIVE",rejected:"REJECTED"},
     mBrowse:"Browse Projects", mBrowseSub:"Back to the game library", mBrowseDev:"Find Publishers & Investors", mBrowseDevSub:"Browse verified partners in the network", submitCard:"Submit a Game",
-    myContacts:"UNLOCKED CONTACTS", ctDev:"DEV", ctPar:"PARTNER",
+    myContacts:"UNLOCKED CONTACTS", myFavs:"SAVED GAMES", ctDev:"DEV", ctPar:"PARTNER",
     featApply:"★ APPLY FOR FEATURED", featOn:"★ FEATURED", featPend:"FEATURED — IN REVIEW", featRej:"FEATURED — NOT APPROVED",
     fmTitle:"Apply for Featured", fmDesc:"Featured games get a highlighted card and top placement in the library. To apply, share a playable demo — it's reviewed by our team only and never shown publicly.",
     fmL1:"Demo link (required)", fmL2:"Access notes (password, key, platform, what to look at)",
@@ -253,7 +258,7 @@ const I18N = {
     mProfilePar:"公司资料", mProfileParSub:"修改资料、重新提交审核",
     mGames:"提交新游戏", mGamesSub:"提交后审核,通过即上架项目库", myGames:"我的游戏", gst:{pending:"待审核",approved:"已上架",rejected:"未通过"},
     mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表", mBrowseDev:"寻找发行商 / 投资方", mBrowseDevSub:"浏览网络中已认证的合作方", submitCard:"提交新游戏",
-    myContacts:"已解锁的联系人", ctDev:"开发者", ctPar:"合作方",
+    myContacts:"已解锁的联系人", myFavs:"我收藏的游戏", ctDev:"开发者", ctPar:"合作方",
     featApply:"★ 申请精选", featOn:"★ 精选中", featPend:"精选申请审核中", featRej:"精选申请未通过",
     fmTitle:"申请精选", fmDesc:"精选游戏会获得高亮卡片,并排在项目库最前面。申请需提供可试玩的 Demo——仅供我们团队评估,不会对外公开。",
     fmL1:"Demo 链接(必填)", fmL2:"访问说明(密码、激活码、平台、建议试玩的部分)",
@@ -279,7 +284,7 @@ const I18N = {
     mProfilePar:"회사 프로필", mProfileParSub:"프로필 수정 및 재제출",
     mGames:"게임 제출", mGamesSub:"심사 후 라이브러리에 등록됩니다", myGames:"내 게임", gst:{pending:"심사 중",approved:"등록됨",rejected:"반려됨"},
     mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로", mBrowseDev:"퍼블리셔 / 투자자 찾기", mBrowseDevSub:"네트워크의 인증된 파트너 둘러보기", submitCard:"게임 제출",
-    myContacts:"해제한 연락처", ctDev:"개발자", ctPar:"파트너",
+    myContacts:"해제한 연락처", myFavs:"저장한 게임", ctDev:"개발자", ctPar:"파트너",
     featApply:"★ 추천 신청", featOn:"★ 추천됨", featPend:"추천 심사 중", featRej:"추천 반려됨",
     fmTitle:"추천 신청", fmDesc:"추천 게임은 강조된 카드와 라이브러리 상단 노출을 받습니다. 신청하려면 플레이 가능한 데모를 제공하세요. 저희 팀만 확인하며 공개되지 않습니다.",
     fmL1:"데모 링크(필수)", fmL2:"접속 안내(비밀번호, 키, 플랫폼, 확인할 부분)",
@@ -294,7 +299,7 @@ const PRESET_SVG={solo:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 
 function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "data:image/svg+xml,"+encodeURIComponent(PRESET_SVG[v.slice(7)]||PRESET_SVG.solo) : v; }
 const $ = (s)=>document.querySelector(s);
 let lang = localStorage.getItem("sry_lang") || "en";
-let role="", status="", email="", profile=null, myGames=[], myContacts=null, isAdmin=false;
+let role="", status="", email="", profile=null, myGames=[], myContacts=null, isAdmin=false, myFavs=[];
 
 function T(){ return I18N[lang]; }
 const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -362,6 +367,21 @@ function render(){
     const addCard = `<div class="gadd" onclick="location.href='/submit-game.html'"><div class="plus">+</div><div class="lbl">${t.submitCard}</div></div>`;
     $("#gamegrid").innerHTML = cards + addCard;
   } else { $("#games-section").style.display="none"; }
+  // 收藏的游戏(已认证合作方)
+  if(!isDev && myFavs.length){
+    $("#favs-section").style.display="block";
+    $("#favs-t").textContent=t.myFavs;
+    $("#favgrid").innerHTML = myFavs.map(g=>{
+      const nm = lang==="zh" ? (g.t_zh||g.t_en||g.t_ko) : lang==="ko" ? (g.t_ko||g.t_en||g.t_zh) : (g.t_en||g.t_zh||g.t_ko);
+      const slug = g.slug || "";
+      return `<a class="gcard${g.featured?" feat":""}" href="/game.html?id=${encodeURIComponent(slug)}" style="text-decoration:none">
+        ${g.cover?`<img class="gcover" src="${esc(g.cover)}">`:`<div class="gcover"></div>`}
+        <div class="gbody"><div class="gname">${esc(nm||"—")}</div>
+          <div style="font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:4px">${esc(g.developer||"")}</div>
+        </div></a>`;
+    }).join("");
+  } else { $("#favs-section").style.display="none"; }
+
   // 已解锁的联系人(开发者与已认证合作方都可能有)
   if(myContacts && (myContacts.rows.length || (isDev || status==="verified"))){
     $("#contacts-section").style.display = myContacts.rows.length ? "block" : "none";
@@ -446,6 +466,9 @@ $("#lang").addEventListener("click",(e)=>{
       try{ const r3=await fetch("/api/games-submit/mine"); const g=await r3.json(); if(g.ok) myGames=g.rows||[]; }catch(e){}
     }
     try{ const r4=await fetch("/api/contacts/mine"); const c=await r4.json(); if(c.ok) myContacts=c; }catch(e){}
+    if(role==="partner" && status==="verified"){
+      try{ const r5=await fetch("/api/favorites/mine"); const f=await r5.json(); if(f.ok) myFavs=f.rows||[]; }catch(e){}
+    }
     $("#main").style.display="block";
     render();
   }catch(e){

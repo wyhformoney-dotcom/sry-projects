@@ -306,7 +306,11 @@ function cardHTML(g,i,pos){
 function matchFacet(values,set){ return set.size===0 || values.some(v=>set.has(v)); }
 function matches(g){
   const q=search.trim().toLowerCase();
-  if(q && !g.t_en.toLowerCase().includes(q) && !g.t_zh.toLowerCase().includes(q)) return false;
+  if(q){
+    const hay = [g.t_en, g.t_zh, g.t_ko, g.developer, g.d_en, g.d_zh, g.d_ko]
+      .filter(Boolean).join(" ").toLowerCase();
+    if(!hay.includes(q)) return false;
+  }
   return matchFacet(g.genres,sel.genre) && matchFacet([g.stage],sel.stage)
       && matchFacet(g.needs,sel.need) && matchFacet(g.platforms,sel.platform)
       && matchFacet([g.region],sel.region);
