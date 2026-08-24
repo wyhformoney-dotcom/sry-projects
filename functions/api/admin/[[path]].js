@@ -456,6 +456,92 @@ async function handleContactSet(env, request) {
   return bad("invalid_type");
 }
 
+/* ---------- 管理员新增游戏(按联系邮箱自动建号并挂载) ---------- */
+const A_STAGES = ["In Development","Demo","Playtest","Early Access","Released"];
+const A_MARKETS = ["Global","China","Overseas"];
+const aSlug = (t) => {
+  const base = String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+  return (base || "game") + "-" + crypto.randomUUID().slice(0, 6);
+};
+
+async function handleGameCreate(env, request) {
+  const b = await request.json().catch(() => ({}));
+  const T = (v, n) => String(v || "").trim().slice(0, n);
+  const email = T(b.contact, 200).toLowerCase();
+  const t_en = T(b.t_en, 120), t_zh = T(b.t_zh, 120), t_ko = T(b.t_ko, 120);
+  if (!t_en && !t_zh && !t_ko) return bad("title_required");
+  if (email && !isEmail(email)) return bad("invalid_email");
+
+  // 按邮箱建号 / 复用
+  let ownerId = null;
+  if (email) {
+    let acc = await env.DB.prepare("SELECT id, role FROM accounts WHERE email = ?").bind(email).first();
+    if (!acc) {
+      const r = await env.DB.prepare(
+        "INSERT INTO accounts (email, role, status) VALUES (?, 'developer', 'verified')"
+      ).bind(email).run();
+      acc = { id: r.meta.last_row_id, role: "developer" };
+    }
+    if (acc.role === "developer") {
+      ownerId = acc.id;
+      const dp = await env.DB.prepare("SELECT account_id FROM developer_profiles WHERE account_id = ?").bind(ownerId).first();
+      if (!dp) {
+        await env.DB.prepare(
+          `INSERT INTO developer_profiles (account_id, studio_name, logo, contact_email, updated_at)
+           VALUES (?, ?, ?, ?, datetime('now'))`
+        ).bind(ownerId, T(b.developer, 120), T(b.studio_logo, 500) || "preset:solo", email).run();
+      }
+    }
+  }
+
+  const arrJson = (v) => JSON.stringify(Array.isArray(v) ? v.map(String).slice(0, 20) : []);
+  const res = await env.DB.prepare(
+    `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko,
+                        developer, studio_logo, stage, genres, needs, platforms, region,
+                        cover, screenshots, video, steam_url, contact, claimed_by,
+                        visible, status, sort, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', 0, datetime('now'))`
+  ).bind(
+    aSlug(t_en || t_zh || t_ko), t_en, t_zh, t_ko,
+    T(b.d_en, 300), T(b.d_zh, 300), T(b.d_ko, 300),
+    T(b.full_en, 2000), T(b.full_zh, 2000), T(b.full_ko, 2000),
+    T(b.developer, 120), T(b.studio_logo, 500),
+    A_STAGES.includes(b.stage) ? b.stage : "Demo",
+    arrJson(b.genres), arrJson(b.needs), arrJson(b.platforms),
+    A_MARKETS.includes(b.region) ? b.region : "Global",
+    T(b.cover, 500), arrJson(b.screenshots), T(b.video, 400), T(b.steam_url, 400),
+    email, ownerId, b.visible === false ? 0 : 1
+  ).run();
+  return json({ ok: true, id: res.meta.last_row_id, ownerCreated: !!ownerId });
+}
+
+/* ---------- 删除 ---------- */
+async function handleGameDelete(env, request) {
+  const { id } = await request.json().catch(() => ({}));
+  const gid = parseInt(id, 10);
+  if (!gid) return bad("invalid_id");
+  await env.DB.prepare("DELETE FROM favorites WHERE game_id = ?").bind(gid).run().catch(() => {});
+  await env.DB.prepare("DELETE FROM games WHERE id = ?").bind(gid).run();
+  return json({ ok: true });
+}
+
+async function handlePartnerDelete(env, request) {
+  const { id, mode } = await request.json().catch(() => ({}));
+  const aid = parseInt(id, 10);
+  if (!aid) return bad("invalid_id");
+  const acc = await env.DB.prepare("SELECT id, role FROM accounts WHERE id = ?").bind(aid).first();
+  if (!acc || acc.role !== "partner") return bad("not_found", 404);
+  await env.DB.prepare("DELETE FROM partner_profiles WHERE account_id = ?").bind(aid).run();
+  if (mode === "account") {
+    await env.DB.prepare("DELETE FROM contact_views WHERE viewer_id = ? OR (target_type='partner' AND target_id = ?)").bind(aid, aid).run();
+    await env.DB.prepare("DELETE FROM favorites WHERE account_id = ?").bind(aid).run().catch(() => {});
+    await env.DB.prepare("DELETE FROM accounts WHERE id = ?").bind(aid).run();
+    return json({ ok: true, deleted: "account" });
+  }
+  await env.DB.prepare("UPDATE accounts SET status='pending' WHERE id = ?").bind(aid).run();
+  return json({ ok: true, deleted: "profile" });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -477,6 +563,9 @@ export async function onRequest(context) {
     if (method === "POST" && path === "game-i18n") return await handleGameI18n(env, request);
     if (method === "POST" && path === "games-order") return await handleGamesOrder(env, request);
     if (method === "POST" && path === "contact-set") return await handleContactSet(env, request);
+    if (method === "POST" && path === "game-create") return await handleGameCreate(env, request);
+    if (method === "POST" && path === "game-delete") return await handleGameDelete(env, request);
+    if (method === "POST" && path === "partner-delete") return await handlePartnerDelete(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
     if (method === "POST" && path === "account-status") return await handleAccountStatus(env, request);
     if (method === "POST" && path === "review-game") return await handleReviewGame(env, request);
