@@ -282,6 +282,19 @@ async function handleCreate(env, s, request) {
   return json({ ok: true });
 }
 
+async function handleGameDeleteMine(env, s, request) {
+  const { game_id } = await request.json().catch(() => ({}));
+  const gid = parseInt(game_id, 10);
+  if (!gid) return bad("invalid_id");
+  const g = await env.DB.prepare(
+    "SELECT id, status FROM games WHERE id = ? AND claimed_by = ?"
+  ).bind(gid, s.aid).first();
+  if (!g) return bad("not_found", 404);
+  if (g.status === "approved") return bad("cannot_delete_live", 403);
+  await env.DB.prepare("DELETE FROM games WHERE id = ? AND claimed_by = ?").bind(gid, s.aid).run();
+  return json({ ok: true });
+}
+
 async function handleFeatureApply(env, s, request) {
   const b = await request.json().catch(() => ({}));
   const gid = parseInt(b.game_id, 10);
@@ -340,6 +353,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
     if (method === "POST" && path === "steam-fetch") return await handleSteamFetch(env, s, request);
     if (method === "POST" && path === "feature-apply") return await handleFeatureApply(env, s, request);
+    if (method === "POST" && path === "delete") return await handleGameDeleteMine(env, s, request);
     return bad("not_found", 404);
   } catch (e) {
     return bad("server_error: " + String(e.message || e).slice(0, 300), 500);
