@@ -99,6 +99,20 @@
   .row.dragging{ opacity:.45; }
   .row.dropbefore{ border-top:2px solid var(--accent); }
   #orderbar{ display:none; align-items:center; gap:10px; margin:-4px 0 14px; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
+  .ngmask{ position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:300; display:none; align-items:flex-start; justify-content:center; padding:34px 20px; overflow:auto; }
+  .ngbox{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:26px; max-width:620px; width:100%; }
+  .ngbox h3{ font-size:18px; font-weight:900; margin-bottom:6px; }
+  .ngbox .ngp{ font-size:12.5px; color:var(--ink-dim); line-height:1.7; margin-bottom:18px; }
+  .ngbox label{ display:block; font-size:12.5px; font-weight:700; margin:14px 0 5px; }
+  .ngbox input, .ngbox textarea, .ngbox select{ width:100%; background:var(--panel2); border:1px solid var(--line);
+    border-radius:7px; color:var(--ink); font-size:13px; padding:9px 11px; outline:none; font-family:inherit; }
+  .ngbox textarea{ min-height:64px; resize:vertical; }
+  .ngbox .ng2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ngbox .ngchips{ display:flex; flex-wrap:wrap; gap:7px; }
+  .ngbox .ngchip{ font-family:var(--mono); font-size:11px; padding:6px 11px; border:1px solid var(--line); border-radius:16px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .ngbox .ngchip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .ngbox .ngmsg{ font-size:12.5px; margin-top:12px; display:none; }
 </style>
 
 <nav class="nav">
@@ -121,13 +135,56 @@
     </div>
     <input id="acct-q" placeholder="按邮箱搜索…" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:13px;padding:9px 12px;outline:none;min-width:220px">
   </div>
-  <div id="orderbar">
+  <div class="ngmask" id="ngmask"><div class="ngbox">
+  <h3>新增游戏</h3>
+  <p class="ngp">填写联系邮箱后,系统会自动为该邮箱创建开发者账号(已存在则复用),游戏直接挂在该账号下并上架。对方之后用这个邮箱登录就能管理这款游戏。</p>
+
+  <label>游戏名 EN / 中文 / 한국어</label>
+  <input id="ng-ten" placeholder="English title">
+  <div class="ng2" style="margin-top:8px"><input id="ng-tzh" placeholder="中文名"><input id="ng-tko" placeholder="한국어"></div>
+
+  <label>一句话简介 EN / 中文 / 한국어</label>
+  <input id="ng-den" placeholder="One-line pitch (EN)">
+  <div class="ng2" style="margin-top:8px"><input id="ng-dzh" placeholder="中文简介"><input id="ng-dko" placeholder="한국어 소개"></div>
+
+  <label>完整介绍(EN)</label><textarea id="ng-fen"></textarea>
+  <div class="ng2" style="margin-top:8px"><textarea id="ng-fzh" placeholder="中文完整介绍"></textarea><textarea id="ng-fko" placeholder="한국어 상세"></textarea></div>
+
+  <label>开发商名称</label><input id="ng-dev" placeholder="Studio name">
+  <label>联系邮箱(会据此建号并挂载)</label><input id="ng-contact" placeholder="dev@studio.com">
+
+  <label>开发阶段</label>
+  <select id="ng-stage">
+    <option value="In Development">开发中</option><option value="Demo">Demo</option>
+    <option value="Playtest">Playtest</option><option value="Early Access">抢先体验</option>
+    <option value="Released">已发售</option>
+  </select>
+
+  <label>目标市场</label>
+  <select id="ng-region"><option value="Global">全球</option><option value="China">中国</option><option value="Overseas">海外</option></select>
+
+  <label>品类(可多选)</label><div class="ngchips" id="ng-genres"></div>
+  <label>平台(可多选)</label><div class="ngchips" id="ng-platforms"></div>
+  <label>寻求(可多选)</label><div class="ngchips" id="ng-needs"></div>
+
+  <label>封面图 URL</label><input id="ng-cover" placeholder="https://assets.srygamehub.com/...">
+  <label>截图 URL(每行一个)</label><textarea id="ng-shots" placeholder="https://...&#10;https://..."></textarea>
+  <label>Steam 页面</label><input id="ng-steam" placeholder="https://store.steampowered.com/app/...">
+  <label>预告片链接</label><input id="ng-video" placeholder="https://youtube.com/...">
+
+  <button class="abtn ok" id="ng-submit" style="width:100%;margin-top:20px;padding:12px 0">创建并上架</button>
+  <button class="abtn" id="ng-cancel" style="width:100%;margin-top:9px;padding:10px 0;background:transparent;border:1px solid var(--line);color:var(--ink-dim)">取消</button>
+  <div class="ngmsg" id="ng-msg"></div>
+</div></div>
+
+<div id="orderbar">
     <button class="abtn ok" id="ordersave" style="padding:7px 14px">保存新顺序</button>
     <button class="abtn" id="ordercancel" style="padding:7px 14px;background:transparent;border:1px solid var(--line);color:var(--ink)">撤销</button>
     <span id="ordermsg"></span>
   </div>
   <div id="syncbar" style="display:none;margin:-8px 0 16px">
     <button class="abtn ok" id="syncbtn" style="padding:9px 18px">⟳ 从飞书同步游戏库</button>
+    <button class="abtn ok" id="newgamebtn" style="padding:9px 18px;margin-right:8px">+ 新增游戏</button>
     <button class="abtn" id="claimbtn" style="padding:9px 18px;margin-left:8px;background:transparent;border:1px solid var(--line);color:var(--ink)">⚯ 老游戏一键归户</button>
     <span id="syncmsg" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-left:10px"></span>
     <div id="claimresult" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.7"></div>
@@ -268,6 +325,10 @@ function rowHtml(r){
           <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
         </div>` : ""}
       </div>`}
+      <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
+        <button class="abtn no" onclick="deletePartner(${r.id}, ${JSON.stringify(esc(r.name_zh||r.name_en||r.email||""))}, 'profile')">清空资料(账号保留)</button>
+        <button class="abtn no" onclick="deletePartner(${r.id}, ${JSON.stringify(esc(r.name_zh||r.name_en||r.email||""))}, 'account')">彻底删除账号</button>
+      </div>
       <div class="amsg" id="amsg-${r.id}"></div>
     </div>
   </div>`;
@@ -416,12 +477,83 @@ function gameRowHtml(r){
           <button class="abtn no" onclick="featureSet(${r.id},'reject',this)">确认驳回</button>
         </div>` : ""}
       </div>
+      <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
+        <button class="abtn no" onclick="deleteGame(${r.id}, ${JSON.stringify(esc(name))}, this)">🗑 删除这款游戏</button>
+        <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)">删除后不可恢复;开发者提交的重复申请可以从这里清理。</span>
+      </div>
       <div class="amsg" id="amsg-${r.id}"></div>
     </div>
   </div>`;
 }
 
 function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("open"); }
+/* ---------- 新增游戏 ---------- */
+const NG_GENRES=["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
+const NG_PLATFORMS=["PC","Console","Mobile"];
+const NG_NEEDS=["Seeking Publisher","Seeking Publisher Partner","Seeking Investment"];
+const ngSel={genres:[],platforms:[],needs:[]};
+function ngChips(elId, list, key, labels){
+  const el=document.getElementById(elId); el.innerHTML="";
+  list.forEach(v=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="ngchip"+(ngSel[key].includes(v)?" on":"");
+    b.textContent=(labels&&labels[v])||v;
+    b.onclick=()=>{ const i=ngSel[key].indexOf(v); if(i>=0) ngSel[key].splice(i,1); else ngSel[key].push(v);
+      ngChips(elId,list,key,labels); };
+    el.appendChild(b);
+  });
+}
+$("#newgamebtn").onclick=()=>{
+  ngSel.genres=[]; ngSel.platforms=[]; ngSel.needs=[];
+  ngChips("ng-genres",NG_GENRES,"genres",GENRE_ZH);
+  ngChips("ng-platforms",NG_PLATFORMS,"platforms",PLATFORM_ZH);
+  ngChips("ng-needs",NG_NEEDS,"needs",NEED_ZH);
+  ["ten","tzh","tko","den","dzh","dko","fen","fzh","fko","dev","contact","cover","shots","steam","video"].forEach(k=>{
+    const el=document.getElementById("ng-"+k); if(el) el.value="";
+  });
+  $("#ng-msg").style.display="none";
+  $("#ngmask").style.display="flex";
+};
+$("#ng-cancel").onclick=()=>{ $("#ngmask").style.display="none"; };
+$("#ngmask").addEventListener("click",(e)=>{ if(e.target.id==="ngmask") e.target.style.display="none"; });
+$("#ng-submit").onclick=async ()=>{
+  const V=(k)=>{ const el=document.getElementById("ng-"+k); return el?el.value.trim():""; };
+  const m=$("#ng-msg"); m.style.display="none";
+  if(!V("ten")&&!V("tzh")&&!V("tko")){ m.textContent="请至少填写一个语言的游戏名。"; m.style.color="var(--danger)"; m.style.display="block"; return; }
+  $("#ng-submit").disabled=true; $("#ng-submit").textContent="创建中…";
+  try{
+    const d=await api("game-create",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        t_en:V("ten"), t_zh:V("tzh"), t_ko:V("tko"),
+        d_en:V("den"), d_zh:V("dzh"), d_ko:V("dko"),
+        full_en:V("fen"), full_zh:V("fzh"), full_ko:V("fko"),
+        developer:V("dev"), contact:V("contact"),
+        stage:$("#ng-stage").value, region:$("#ng-region").value,
+        genres:ngSel.genres, platforms:ngSel.platforms, needs:ngSel.needs,
+        cover:V("cover"), screenshots:V("shots").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),
+        steam_url:V("steam"), video:V("video")
+      })});
+    m.textContent = d.ownerCreated ? "已创建并上架,已挂到该邮箱的开发者账号下 ✓" : "已创建并上架 ✓(未填邮箱,暂未挂账号)";
+    m.style.color="var(--accent)"; m.style.display="block";
+    setTimeout(()=>{ $("#ngmask").style.display="none"; load(); }, 1200);
+  }catch(e){ m.textContent = e==="invalid_email" ? "邮箱格式不对" : "创建失败:"+e; m.style.color="var(--danger)"; m.style.display="block"; }
+  finally{ $("#ng-submit").disabled=false; $("#ng-submit").textContent="创建并上架"; }
+};
+
+/* ---------- 删除 ---------- */
+async function deleteGame(id, name, btn){
+  if(!confirm(`确定删除《${name}》?此操作不可恢复。`)) return;
+  btn.disabled=true; btn.textContent="删除中…";
+  try{ await api("game-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id}) }); await load(); }
+  catch(e){ btn.textContent="删除失败:"+e; btn.disabled=false; }
+}
+async function deletePartner(id, name, mode){
+  const tip = mode==="account" ? `确定彻底删除合作方账号「${name}」?账号、资料、解锁记录都会删除,不可恢复。` : `确定清空「${name}」的资料?账号保留,状态回到待审核,对方可重新填写。`;
+  if(!confirm(tip)) return;
+  try{ await api("partner-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id, mode}) }); await load(); }
+  catch(e){ alert("删除失败:"+e); }
+}
+
 async function saveContact(type, id, btn){
   btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
   const email=(document.getElementById((type==="partner"?"pc-":"gc-")+id)||{}).value||"";
