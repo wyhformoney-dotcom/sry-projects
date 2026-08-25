@@ -542,6 +542,83 @@ async function handlePartnerDelete(env, request) {
   return json({ ok: true, deleted: "profile" });
 }
 
+/* ---------- 管理员用:Steam 一键解析(图片存 R2) ---------- */
+const A_ASSET_HOST = "https://assets.srygamehub.com";
+const A_GENRE_MAP = { "Action":"Action", "Adventure":"Adventure", "RPG":"RPG", "Strategy":"Strategy",
+  "Simulation":"Simulation", "Massively Multiplayer":"Multiplayer" };
+
+const aStrip = (h) => String(h || "")
+  .replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<li[^>]*>/gi, "\n· ")
+  .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/\n{3,}/g, "\n\n").trim();
+
+async function aSteamApp(appid, l) {
+  const r = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appid}&l=${l}`, {
+    headers: { "User-Agent": "Mozilla/5.0" },
+  });
+  const d = await r.json().catch(() => null);
+  const node = d && d[appid];
+  return node && node.success ? node.data : null;
+}
+
+async function aSaveImg(env, url, tag) {
+  if (!env.R2) return url;
+  try {
+    const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0" } });
+    if (!r.ok) return "";
+    const ct = r.headers.get("content-type") || "image/jpeg";
+    const ext = ct.includes("png") ? "png" : "jpg";
+    const key = `steam/admin-${tag}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
+    await env.R2.put(key, r.body, { httpMetadata: { contentType: ct, cacheControl: "public, max-age=31536000" } });
+    return `${A_ASSET_HOST}/${key}`;
+  } catch { return ""; }
+}
+
+async function handleAdminSteamFetch(env, request) {
+  const { url } = await request.json().catch(() => ({}));
+  const m = String(url || "").match(/store\.steampowered\.com\/app\/(\d+)/i);
+  if (!m) return bad("steam_invalid");
+  const appid = m[1];
+
+  const [en, zh, ko] = await Promise.all([
+    aSteamApp(appid, "english"), aSteamApp(appid, "schinese"), aSteamApp(appid, "koreana"),
+  ]);
+  if (!en) return bad("steam_fetch_failed", 502);
+
+  const shotUrls = (en.screenshots || []).slice(0, 5).map((x) => x.path_full).filter(Boolean);
+  const [cover, ...shots] = await Promise.all([
+    en.header_image ? aSaveImg(env, en.header_image, "cover") : Promise.resolve(""),
+    ...shotUrls.map((u, i) => aSaveImg(env, u, "shot" + i)),
+  ]);
+
+  let video = "";
+  if (Array.isArray(en.movies) && en.movies[0]) {
+    const mv = en.movies[0];
+    video = (mv.mp4 && (mv.mp4.max || mv.mp4["480"])) || "";
+    if (video.startsWith("http://")) video = "https://" + video.slice(7);
+  }
+
+  return json({
+    ok: true,
+    t_en: String(en.name || "").slice(0, 120),
+    t_zh: zh && zh.name && zh.name !== en.name ? String(zh.name).slice(0, 120) : "",
+    t_ko: ko && ko.name && ko.name !== en.name ? String(ko.name).slice(0, 120) : "",
+    d_en: aStrip(en.short_description).slice(0, 300),
+    d_zh: zh ? aStrip(zh.short_description).slice(0, 300) : "",
+    d_ko: ko ? aStrip(ko.short_description).slice(0, 300) : "",
+    full_en: aStrip(en.about_the_game || en.detailed_description).slice(0, 2000),
+    full_zh: zh ? aStrip(zh.about_the_game || zh.detailed_description).slice(0, 2000) : "",
+    full_ko: ko ? aStrip(ko.about_the_game || ko.detailed_description).slice(0, 2000) : "",
+    developer: String((en.developers && en.developers[0]) || "").slice(0, 120),
+    cover, screenshots: shots.filter(Boolean), video,
+    genres: [...new Set((en.genres || []).map((g) => A_GENRE_MAP[g.description]).filter(Boolean))],
+    platforms: ["PC"],
+    stage: en.release_date && en.release_date.coming_soon ? "In Development" : "Released",
+    steam_url: `https://store.steampowered.com/app/${appid}/`,
+  });
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   const path = (params.path || []).join("/");
@@ -564,6 +641,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "games-order") return await handleGamesOrder(env, request);
     if (method === "POST" && path === "contact-set") return await handleContactSet(env, request);
     if (method === "POST" && path === "game-create") return await handleGameCreate(env, request);
+    if (method === "POST" && path === "steam-fetch") return await handleAdminSteamFetch(env, request);
     if (method === "POST" && path === "game-delete") return await handleGameDelete(env, request);
     if (method === "POST" && path === "partner-delete") return await handlePartnerDelete(env, request);
     if (method === "GET" && path === "accounts") return await handleAccountsList(env, request);
