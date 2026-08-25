@@ -1,0 +1,788 @@
+<!-- SRY Game Hub — 审核后台(仅管理员,中文界面) -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>审核后台 · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a; --danger:#f26d5b; --warn:#f2c94c;
+    --mono:'Space Mono',monospace; --sans:'Archivo','Noto Sans SC',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-weight:900; font-size:17px; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .logo .adm{ font-family:var(--mono); font-size:10px; color:var(--accent); border:1px solid var(--accent); border-radius:4px; padding:2px 6px; margin-left:4px; letter-spacing:.1em; }
+
+  .wrap{ max-width:880px; margin:0 auto; padding:36px 20px 90px; }
+  h1{ font-size:26px; font-weight:900; margin-bottom:6px; }
+  .lead{ color:var(--ink-dim); font-size:13px; margin-bottom:24px; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
+  .tab{ font-family:var(--mono); font-size:12px; padding:8px 14px; border:1px solid var(--line); border-radius:8px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .tab.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .tab .n{ opacity:.75; margin-left:4px; }
+
+  .empty{ text-align:center; color:var(--ink-faint); padding:60px 0; font-size:13.5px; }
+
+  .row{ background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:12px; overflow:hidden; }
+  .rhead{ display:flex; align-items:center; gap:14px; padding:14px 16px; cursor:pointer; }
+  .rhead:hover{ background:rgba(198,242,78,.03); }
+  .avatar{ width:44px; height:44px; border-radius:9px; background:var(--panel2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; flex:none; font-size:18px; color:var(--ink-faint); }
+  .avatar img{ width:100%; height:100%; object-fit:cover; }
+  .rmain{ flex:1; min-width:0; }
+  .rname{ font-weight:800; font-size:15px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .rname .flag{ font-size:15px; }
+  .rsub{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .pill{ font-family:var(--mono); font-size:10px; padding:3px 8px; border-radius:12px; border:1px solid var(--line); color:var(--ink-dim); white-space:nowrap; }
+  .pill.pending{ color:var(--warn); border-color:var(--warn); }
+  .pill.verified{ color:var(--accent); border-color:var(--accent); }
+  .pill.rejected{ color:var(--danger); border-color:var(--danger); }
+  .pill.mail{ color:var(--accent); border-color:var(--line); }
+  .arrow{ color:var(--ink-faint); font-family:var(--mono); font-size:12px; }
+
+  .detail{ display:none; border-top:1px solid var(--line-soft); padding:18px 16px 20px; }
+  .row.open .detail{ display:block; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px 22px; margin-bottom:16px; }
+  @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
+  .kv .k{ font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .kv .v{ font-size:13.5px; line-height:1.55; word-break:break-word; }
+  .kv .v a{ color:var(--accent); }
+  .kv.full{ grid-column:1 / -1; }
+  .chipline{ display:flex; flex-wrap:wrap; gap:6px; }
+  .chipline .c{ font-family:var(--mono); font-size:10.5px; padding:4px 9px; border:1px solid var(--line); border-radius:12px; color:var(--ink-dim); }
+
+  .proofbox{ border:1px solid var(--line); border-radius:10px; padding:12px; background:var(--panel2); }
+  .proofbox .ok{ font-family:var(--mono); font-size:12.5px; color:var(--accent); }
+  .proofbox img{ max-width:280px; max-height:180px; border-radius:6px; display:block; cursor:zoom-in; }
+  .proofbox .tip{ font-size:11px; color:var(--ink-faint); margin-top:6px; }
+
+  .acts{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .abtn{ font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.06em; padding:10px 22px;
+    border-radius:8px; cursor:pointer; border:none; }
+  .abtn.ok{ background:var(--accent); color:var(--accent-ink); }
+  .abtn.no{ background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .abtn:disabled{ opacity:.4; cursor:default; }
+  .rejbox{ display:none; margin-top:12px; }
+  .rejbox.on{ display:block; }
+  .rejbox textarea{ width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
+    color:var(--ink); font-size:13px; padding:10px 12px; min-height:64px; outline:none; font-family:inherit; }
+  .rejbox textarea:focus{ border-color:var(--danger); }
+  .rejbox .abtn{ margin-top:8px; }
+  .note{ font-size:12px; color:var(--warn); margin-top:10px; }
+  .amsg{ font-size:12.5px; margin-top:10px; display:none; }
+  .amsg.err{ display:block; color:var(--danger); }
+
+  .locked{ text-align:center; padding:80px 10px; display:none; }
+  .locked p{ color:var(--ink-dim); font-size:14px; line-height:1.8; }
+  .locked a{ color:var(--accent); }
+
+  .lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:100; cursor:zoom-out; }
+  .lightbox.on{ display:flex; }
+  .lightbox img{ max-width:92vw; max-height:92vh; border-radius:8px; }
+  .draghandle{ cursor:grab; color:var(--ink-faint); font-size:15px; padding:0 4px; flex:none; user-select:none; }
+  .draghandle:hover{ color:var(--accent); }
+  .row.dragging{ opacity:.45; }
+  .row.dropbefore{ border-top:2px solid var(--accent); }
+  #orderbar{ display:none; align-items:center; gap:10px; margin:-4px 0 14px; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
+  .ngmask{ position:fixed; inset:0; background:rgba(0,0,0,.75); z-index:300; display:none; align-items:flex-start; justify-content:center; padding:34px 20px; overflow:auto; }
+  .ngbox{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:26px; max-width:620px; width:100%; }
+  .ngbox h3{ font-size:18px; font-weight:900; margin-bottom:6px; }
+  .ngbox .ngp{ font-size:12.5px; color:var(--ink-dim); line-height:1.7; margin-bottom:18px; }
+  .ngbox label{ display:block; font-size:12.5px; font-weight:700; margin:14px 0 5px; }
+  .ngbox input, .ngbox textarea, .ngbox select{ width:100%; background:var(--panel2); border:1px solid var(--line);
+    border-radius:7px; color:var(--ink); font-size:13px; padding:9px 11px; outline:none; font-family:inherit; }
+  .ngbox textarea{ min-height:64px; resize:vertical; }
+  .ngbox .ng2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .ngbox .ngchips{ display:flex; flex-wrap:wrap; gap:7px; }
+  .ngbox .ngchip{ font-family:var(--mono); font-size:11px; padding:6px 11px; border:1px solid var(--line); border-radius:16px;
+    background:transparent; color:var(--ink-dim); cursor:pointer; }
+  .ngbox .ngchip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  .ngbox .ngmsg{ font-size:12.5px; margin-top:12px; display:none; }
+  .ngsteam{ border:1px solid var(--accent); border-radius:10px; padding:14px 16px; margin-bottom:6px;
+    background:linear-gradient(180deg, rgba(198,242,78,.08), rgba(198,242,78,.02)); }
+  .ngsteam-t{ font-weight:900; font-size:14.5px; margin-bottom:4px; }
+  .ngsteam-p{ font-size:11.5px; color:var(--ink-faint); line-height:1.6; margin-bottom:11px; }
+  .ngsteam-row{ display:flex; gap:9px; }
+  .ngsteam-row input{ flex:1; }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB <span class="adm">ADMIN</span></a>
+</nav>
+
+<div class="wrap">
+  <h1>审核后台</h1>
+  <div class="tabs" id="modes" style="margin-bottom:10px">
+    <button class="tab on" data-m="partners">合作方审核</button>
+    <button class="tab" data-m="games">游戏审核</button>
+    <button class="tab" data-m="accounts">账号管理</button>
+  </div>
+  <p class="lead" id="modelead">审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到"待审核"。</p>
+  <div id="acctbar" style="display:none;margin:-4px 0 16px;gap:10px;align-items:center;flex-wrap:wrap">
+    <div class="tabs" style="margin:0">
+      <button class="tab on" data-r="all" id="ar-all">全部</button>
+      <button class="tab" data-r="developer" id="ar-dev">开发者</button>
+      <button class="tab" data-r="partner" id="ar-par">合作方</button>
+    </div>
+    <input id="acct-q" placeholder="按邮箱搜索…" style="background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:13px;padding:9px 12px;outline:none;min-width:220px">
+  </div>
+  <div class="ngmask" id="ngmask"><div class="ngbox">
+  <h3>新增游戏</h3>
+  <p class="ngp">填写联系邮箱后,系统会自动为该邮箱创建开发者账号(已存在则复用),游戏直接挂在该账号下并上架。对方之后用这个邮箱登录就能管理这款游戏。</p>
+
+  <div class="ngsteam">
+    <div class="ngsteam-t">⚡ 用 Steam 链接一键填充</div>
+    <div class="ngsteam-p">粘贴 Steam 商店链接,自动带出三语名称与简介、封面、截图、开发商、品类、阶段(图片会存进 R2)。填完仍可手动修改。</div>
+    <div class="ngsteam-row">
+      <input id="ng-parse" placeholder="https://store.steampowered.com/app/...">
+      <button class="abtn ok" id="ng-parsebtn" style="padding:9px 18px;white-space:nowrap">一键填充</button>
+    </div>
+    <div class="ngmsg" id="ng-parsemsg"></div>
+  </div>
+
+  <label>游戏名 EN / 中文 / 한국어</label>
+  <input id="ng-ten" placeholder="English title">
+  <div class="ng2" style="margin-top:8px"><input id="ng-tzh" placeholder="中文名"><input id="ng-tko" placeholder="한국어"></div>
+
+  <label>一句话简介 EN / 中文 / 한국어</label>
+  <input id="ng-den" placeholder="One-line pitch (EN)">
+  <div class="ng2" style="margin-top:8px"><input id="ng-dzh" placeholder="中文简介"><input id="ng-dko" placeholder="한국어 소개"></div>
+
+  <label>完整介绍(EN)</label><textarea id="ng-fen"></textarea>
+  <div class="ng2" style="margin-top:8px"><textarea id="ng-fzh" placeholder="中文完整介绍"></textarea><textarea id="ng-fko" placeholder="한국어 상세"></textarea></div>
+
+  <label>开发商名称</label><input id="ng-dev" placeholder="Studio name">
+  <label>联系邮箱(会据此建号并挂载)</label><input id="ng-contact" placeholder="dev@studio.com">
+
+  <label>开发阶段</label>
+  <select id="ng-stage">
+    <option value="In Development">开发中</option><option value="Demo">Demo</option>
+    <option value="Playtest">Playtest</option><option value="Early Access">抢先体验</option>
+    <option value="Released">已发售</option>
+  </select>
+
+  <label>目标市场</label>
+  <select id="ng-region"><option value="Global">全球</option><option value="China">中国</option><option value="Overseas">海外</option></select>
+
+  <label>品类(可多选)</label><div class="ngchips" id="ng-genres"></div>
+  <label>平台(可多选)</label><div class="ngchips" id="ng-platforms"></div>
+  <label>寻求(可多选)</label><div class="ngchips" id="ng-needs"></div>
+
+  <label>封面图 URL</label><input id="ng-cover" placeholder="https://assets.srygamehub.com/...">
+  <label>截图 URL(每行一个)</label><textarea id="ng-shots" placeholder="https://...&#10;https://..."></textarea>
+  <label>Steam 页面</label><input id="ng-steam" placeholder="https://store.steampowered.com/app/...">
+  <label>预告片链接</label><input id="ng-video" placeholder="https://youtube.com/...">
+
+  <button class="abtn ok" id="ng-submit" style="width:100%;margin-top:20px;padding:12px 0">创建并上架</button>
+  <button class="abtn" id="ng-cancel" style="width:100%;margin-top:9px;padding:10px 0;background:transparent;border:1px solid var(--line);color:var(--ink-dim)">取消</button>
+  <div class="ngmsg" id="ng-msg"></div>
+</div></div>
+
+<div id="orderbar">
+    <button class="abtn ok" id="ordersave" style="padding:7px 14px">保存新顺序</button>
+    <button class="abtn" id="ordercancel" style="padding:7px 14px;background:transparent;border:1px solid var(--line);color:var(--ink)">撤销</button>
+    <span id="ordermsg"></span>
+  </div>
+  <div id="syncbar" style="display:none;margin:-8px 0 16px">
+    <button class="abtn ok" id="syncbtn" style="padding:9px 18px">⟳ 从飞书同步游戏库</button>
+    <button class="abtn ok" id="newgamebtn" style="padding:9px 18px;margin-right:8px">+ 新增游戏</button>
+    <button class="abtn" id="claimbtn" style="padding:9px 18px;margin-left:8px;background:transparent;border:1px solid var(--line);color:var(--ink)">⚯ 老游戏一键归户</button>
+    <span id="syncmsg" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-left:10px"></span>
+    <div id="claimresult" style="font-family:var(--mono);font-size:11.5px;color:var(--ink-dim);margin-top:10px;line-height:1.7"></div>
+  </div>
+
+  <div class="locked" id="locked"><p>没有权限或未登录。<br>请先用管理员邮箱<a href="/login.html">登录</a>,再回到本页。</p></div>
+
+  <div id="main" style="display:none">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-s="pending">待审核<span class="n" id="n-pending"></span></button>
+      <button class="tab" data-s="verified" id="tab-verified">已通过<span class="n" id="n-verified"></span></button>
+      <button class="tab" data-s="rejected">已驳回<span class="n" id="n-rejected"></span></button>
+      <button class="tab" data-s="all">全部</button>
+      <button class="tab" data-s="feature" id="tab-feature" style="display:none">★ 精选申请<span class="n" id="n-feature"></span></button>
+    </div>
+    <div id="list"></div>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('on')"><img id="lightbox-img"></div>
+
+<script>
+const KIND_ZH = { publishing:"发行", investment:"投资" };
+const MARKET_ZH = { Global:"全球", China:"中国", Overseas:"海外" };
+const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人"};
+const PROOF_ZH = { work_email:"企业邮箱验证", steamworks:"Steamworks 后台截图", other:"其他(图片)", steam:"Steam 发行页截图(旧)", website:"官网截图(旧)" };
+const STATUS_ZH = { pending:"待审核", verified:"已通过", rejected:"已驳回", suspended:"已停用" };
+const flagOf = (cc)=>/^[A-Z]{2}$/.test(cc||"") ? String.fromCodePoint(...[...cc].map(c=>0x1F1A5+c.charCodeAt(0))) : "";
+let regionName = (cc)=>cc||"—";
+try{ const dn = new Intl.DisplayNames(["zh-Hans"],{type:"region"}); regionName = (cc)=>{ try{ return (cc && dn.of(cc)) || cc || "—"; }catch{ return cc||"—"; } }; }catch{}
+
+const STAGE_ZH = { "In Development":"开发中", "Demo":"Demo", "Playtest":"Playtest", "Early Access":"抢先体验", "Released":"已发售" };
+const PLATFORM_ZH = { PC:"PC", Console:"主机", Mobile:"移动端" };
+const NEED_ZH = { "Seeking Publisher":"寻找发行", "Seeking Publisher Partner":"寻找联合发行", "Seeking Investment":"寻找投资" };
+const GSTATUS_ZH = { pending:"待审核", approved:"已上架", rejected:"已驳回" };
+const $ = (s)=>document.querySelector(s);
+let curTab = "pending";
+let curMode = "partners";
+let acctRole = "all", acctQ = "";
+const ROLE_ZH = { developer:"开发者", partner:"合作方" };
+const ASTATUS_ZH = { pending:"待审核", verified:"已激活", rejected:"已驳回", suspended:"已停用" };
+
+async function api(path, opts){
+  const res = await fetch("/api/admin/"+path, opts);
+  let data=null; try{ data=await res.json(); }catch{}
+  if(!data) throw "network";
+  if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  return data;
+}
+
+const esc = (s)=>String(s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmtTime = (t)=>t ? String(t).replace("T"," ").slice(0,16) : "—";
+
+function kvHtml(k,v,full){ return `<div class="kv${full?" full":""}"><div class="k">${k}</div><div class="v">${v||"—"}</div></div>`; }
+function chipsHtml(arr, map){ return arr && arr.length ? `<div class="chipline">${arr.map(x=>`<span class="c">${esc(map[x]||x)}</span>`).join("")}</div>` : "—"; }
+function linkHtml(u){ return u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a>` : "—"; }
+
+function proofHtml(r){
+  if(r.proof_type === "work_email"){
+    return `<div class="proofbox">${
+      r.verified_email
+        ? `<div class="ok">✓ 企业邮箱已验证:${esc(r.verified_email)}</div><div class="tip">对照公司官网/名称核对邮箱域名即可</div>`
+        : `<div style="color:var(--danger);font-size:12.5px">选择了邮箱验证,但尚未完成验证</div>`
+    }</div>`;
+  }
+  return `<div class="proofbox">${
+    r.proof_image
+      ? `<img src="${esc(r.proof_image)}" onclick="showLightbox(this.src)"><div class="tip">${esc(PROOF_ZH[r.proof_type]||r.proof_type||"")} · 点击放大</div>`
+      : `<div style="color:var(--danger);font-size:12.5px">未上传认证材料</div>`
+  }</div>`;
+}
+
+function showLightbox(src){ $("#lightbox-img").src = src; $("#lightbox").classList.add("on"); }
+
+function rowHtml(r){
+  const name = r.name_en || r.name_zh || r.name_ko || "(未填名称)";
+  const zhko = [r.name_zh, r.name_ko].filter(Boolean).join(" / ");
+  const mailPill = r.proof_type==="work_email" && r.verified_email ? `<span class="pill mail">✓ 邮箱已验证</span>` : "";
+  return `
+  <div class="row" data-id="${r.id}">
+    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <div class="avatar">${r.logo?`<img src="${esc(r.logo)}">`:"▢"}</div>
+      <div class="rmain">
+        <div class="rname"><span class="flag">${flagOf(r.region)}</span>${esc(name)}${zhko?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(zhko)}</span>`:""}</div>
+        <div class="rsub">${esc(r.login_email)} · ${(r.kinds||[]).map(k=>KIND_ZH[k]||k).join("+")||"—"} · 注册 ${fmtTime(r.created_at)}</div>
+      </div>
+      ${mailPill}
+      <span class="pill ${r.status}">${STATUS_ZH[r.status]||r.status}</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="detail">
+      <div class="grid">
+        ${kvHtml("国家/地区", `${flagOf(r.region)} ${esc(regionName(r.region))}`)}
+        ${kvHtml("业务类型", chipsHtml(r.kinds, KIND_ZH))}
+        ${kvHtml("关注市场", chipsHtml(r.markets, MARKET_ZH))}
+        ${kvHtml("关注品类", chipsHtml(r.genres, GENRE_ZH))}
+        ${kvHtml("Steam 发行页", linkHtml(r.steam_url))}
+        ${kvHtml("官网", linkHtml(r.website))}
+        <div class="kv full"><div class="k">对外联系邮箱(可直接修改)</div>
+          <div class="v" style="display:grid;gap:9px">
+            <input id="pc-${r.id}" value="${esc(r.contact_email||"")}" placeholder="name@company.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-dim);cursor:pointer">
+              <input type="checkbox" id="pp-${r.id}" ${r.contact_public===0?"":"checked"} style="width:15px;height:15px;accent-color:var(--accent)">
+              在 Partners 页公开这个邮箱(取消勾选=由我们代为转达)
+            </label>
+            <button class="abtn ok" style="padding:7px 14px;width:fit-content" onclick="saveContact('partner',${r.id},this)">保存联系方式</button>
+          </div></div>
+        ${kvHtml("登录邮箱", esc(r.login_email))}
+        ${kvHtml("简介(对方提交的原文)", esc(r.intro), true)}
+        <div class="kv full"><div class="k">简介三语版(网站按界面语言显示;没填的语言不显示)</div>
+          <div class="v" style="display:grid;gap:8px">
+            <textarea id="ien-${r.id}" placeholder="English intro" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:12.5px;padding:9px 11px;min-height:54px;font-family:inherit">${esc(r.intro_en)}</textarea>
+            <textarea id="izh-${r.id}" placeholder="中文简介" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:12.5px;padding:9px 11px;min-height:54px;font-family:inherit">${esc(r.intro_zh)}</textarea>
+            <textarea id="iko-${r.id}" placeholder="한국어 소개" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:12.5px;padding:9px 11px;min-height:54px;font-family:inherit">${esc(r.intro_ko)}</textarea>
+            <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveIntro(${r.id},this)">保存三语简介</button>
+          </div></div>
+        ${kvHtml("认证", proofHtml(r), true)}
+        ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
+        ${r.deep_coop ? kvHtml("深度合作", `<span style="color:var(--accent);font-family:var(--mono);font-size:12px">★ 该开发者已勾选「有兴趣申请深度合作」</span>`, true) : ""}
+        ${r.demo_url ? kvHtml("Demo 链接(仅内部可见)", `<a href="${esc(r.demo_url)}" target="_blank" rel="noopener" style="color:var(--accent)">${esc(r.demo_url)}</a>`, true) : ""}
+        ${r.demo_note ? kvHtml("Demo 访问说明", esc(r.demo_note), true) : ""}
+        ${r.feature_note ? kvHtml("上次精选驳回原因", esc(r.feature_note), true) : ""}
+      </div>
+      ${r.status==="pending" ? `
+      <div class="acts">
+        <button class="abtn ok" onclick="review(${r.id},'approve',this)">通过</button>
+        <button class="abtn no" onclick="toggleReject(${r.id})">驳回…</button>
+      </div>
+      <div class="rejbox" id="rej-${r.id}">
+        <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到,请写清楚需要补充或修改什么)"></textarea>
+        <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+      </div>` : `
+      <div class="acts">
+        ${r.status!=="verified" ? `<button class="abtn ok" onclick="review(${r.id},'approve',this)">改为通过</button>` : ""}
+        ${r.status!=="rejected" ? `<button class="abtn no" onclick="toggleReject(${r.id})">改为驳回…</button>
+        <div class="rejbox" id="rej-${r.id}" style="width:100%">
+          <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到)"></textarea>
+          <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+        </div>` : ""}
+      </div>`}
+      <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
+        <button class="abtn no" onclick="deletePartner(${r.id}, ${JSON.stringify(esc(r.name_zh||r.name_en||r.email||""))}, 'profile')">清空资料(账号保留)</button>
+        <button class="abtn no" onclick="deletePartner(${r.id}, ${JSON.stringify(esc(r.name_zh||r.name_en||r.email||""))}, 'account')">彻底删除账号</button>
+      </div>
+      <div class="amsg" id="amsg-${r.id}"></div>
+    </div>
+  </div>`;
+}
+
+async function saveIntro(id, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
+  try{
+    await api("intro",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id,
+        intro_en:document.getElementById("ien-"+id).value,
+        intro_zh:document.getElementById("izh-"+id).value,
+        intro_ko:document.getElementById("iko-"+id).value }) });
+    btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1200);
+  }catch(e){ btn.textContent="失败:"+e; btn.disabled=false; }
+}
+function toggleReject(id){ document.getElementById("rej-"+id).classList.toggle("on"); }
+
+async function review(id, action, btn){
+  const msg = document.getElementById("amsg-"+id);
+  msg.className="amsg";
+  const note = action==="reject" ? (document.getElementById("rejnote-"+id)?.value||"").trim() : "";
+  if(action==="reject" && !note){ msg.className="amsg err"; msg.textContent="请填写驳回原因。"; return; }
+  btn.disabled=true;
+  try{
+    await api(curMode==="games" ? "review-game" : "review",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id, action, note }) });
+    await load();
+  }catch(e){
+    msg.className="amsg err"; msg.textContent="操作失败:"+e; btn.disabled=false;
+  }
+}
+
+function acctRowHtml(r){
+  const name = r.role==="developer" ? (r.studio_name||"(未填工作室)") : (r.name_zh||r.name_en||"(未填公司名)");
+  const stCls = r.status==="verified" ? "verified" : r.status;
+  return `
+  <div class="row" data-id="${r.id}">
+    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <div class="rmain">
+        <div class="rname">${esc(r.email)}</div>
+        <div class="rsub">${ROLE_ZH[r.role]||r.role} · ${esc(name)}${r.role==="developer"?` · 提交游戏 ${r.games_cnt} 款`:""} · 注册 ${fmtTime(r.created_at)}</div>
+      </div>
+      <span class="pill ${stCls}">${ASTATUS_ZH[r.status]||r.status}</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="detail">
+      <div class="acts">
+        ${r.status!=="suspended"
+          ? `<button class="abtn no" onclick="acctAction(${r.id},'suspend',this)">停用账号(禁止登录)</button>`
+          : `<button class="abtn ok" onclick="acctAction(${r.id},'restore',this)">恢复账号</button>`}
+      </div>
+      <div class="amsg" id="amsg-a${r.id}"></div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--ink-faint);margin-top:8px">停用后该账号无法登录;资料与已提交内容保留。恢复后状态为"已激活/已认证"。</div>
+    </div>
+  </div>`;
+}
+
+async function acctAction(id, action, btn){
+  btn.disabled=true;
+  try{
+    await api("account-status",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id, action }) });
+    await load();
+  }catch(e){
+    const m=document.getElementById("amsg-a"+id); if(m){ m.textContent="失败:"+e; m.style.color="var(--danger)"; }
+    btn.disabled=false;
+  }
+}
+
+function gameRowHtml(r){
+  const name = r.t_en || r.t_zh || r.t_ko || "(未填名称)";
+  const isFeishu = !!r.feishu_id;
+  const shots = (r.screenshots||[]).map(u=>`<img src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
+  return `
+  <div class="row" data-id="${r.id}" data-game="1">
+    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+      <span class="draghandle" draggable="true" title="拖拽调整展示顺序">⣿</span>
+      <div class="avatar" style="width:64px">${r.cover?`<img src="${esc(r.cover)}">`:"▢"}</div>
+      <div class="rmain">
+        <div class="rname">${esc(name)}${r.t_zh&&r.t_en?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(r.t_zh)}</span>`:""}</div>
+        <div class="rsub">${isFeishu ? "来源:飞书" : esc(r.studio_name||"")+" · "+esc(r.login_email||"")} · ${esc(STAGE_ZH[r.stage]||r.stage||"")}${isFeishu?(r.visible?" · 已上架":" · 未上架(是否上架=否)"):" · 提交 "+fmtTime(r.created_at)}</div>
+      </div>
+      <span class="pill ${r.status==="approved"?"verified":r.status}">${GSTATUS_ZH[r.status]||r.status}</span>
+      <span class="arrow">▾</span>
+    </div>
+    <div class="detail">
+      <div class="grid">
+        <div class="kv full"><div class="k">开发者联系方式(可直接修改;已归户的会同步写入该开发者账号)</div>
+          <div class="v" style="display:grid;gap:9px">
+            <input id="gc-${r.id}" value="${esc(r.dev_contact||r.legacy_contact||"")}" placeholder="dev@studio.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
+            <button class="abtn ok" style="padding:7px 14px;width:fit-content" onclick="saveContact('game',${r.id},this)">保存联系方式</button>
+          </div></div>
+        ${kvHtml("开发阶段", esc(STAGE_ZH[r.stage]||r.stage))}
+        ${kvHtml("目标市场", esc({Global:"全球",China:"中国",Overseas:"海外"}[r.region]||r.region))}
+        ${kvHtml("品类", chipsHtml(r.genres, GENRE_ZH))}
+        ${kvHtml("平台", chipsHtml(r.platforms, PLATFORM_ZH))}
+        ${kvHtml("寻求", chipsHtml(r.needs, NEED_ZH), true)}
+        ${kvHtml("Steam 页面", linkHtml(r.steam_url))}
+        ${kvHtml("预告片", linkHtml(r.video))}
+        ${kvHtml("一句话简介", esc(r.d_en), true)}
+        ${kvHtml("完整介绍(原文)", esc(r.full_en||r.full_zh||r.full_ko), true)}
+        <div class="kv full"><div class="k">三语内容(缺哪种就补哪种;网站按界面语言取,留空则回退到有内容的语言)</div>
+          <div class="v" style="display:grid;gap:14px">
+            ${["en","zh","ko"].map(L=>`
+              <div style="border:1px solid var(--line);border-radius:8px;padding:11px 12px">
+                <div style="font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--accent);margin-bottom:8px">${L.toUpperCase()}</div>
+                <input id="t${L}-${r.id}" placeholder="游戏名" value="${esc(r["t_"+L]||"")}" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;margin-bottom:7px;font-family:inherit">
+                <input id="d${L}-${r.id}" placeholder="一句话简介" value="${esc(r["d_"+L]||"")}" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;margin-bottom:7px;font-family:inherit">
+                <textarea id="f${L}-${r.id}" placeholder="完整介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:70px;font-family:inherit;margin-bottom:7px">${esc(r["full_"+L]||"")}</textarea>
+                <textarea id="s${L}-${r.id}" placeholder="团队 / 工作室介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:56px;font-family:inherit">${esc(r["studio_"+L]||"")}</textarea>
+              </div>`).join("")}
+            <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveGameI18n(${r.id},this)">保存三语内容</button>
+          </div></div>
+        ${kvHtml("封面", r.cover?`<img src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
+        ${kvHtml("截图", shots||"—", true)}
+        ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
+      </div>
+      ${isFeishu ? `
+      <div class="acts" style="font-family:var(--mono);font-size:11px;color:var(--ink-faint)">此游戏由飞书同步而来:内容和上/下架请在飞书表里改,然后点顶部"从飞书同步"刷新。</div>` : r.status==="pending" ? `
+      <div class="acts">
+        <button class="abtn ok" onclick="review(${r.id},'approve',this)">通过并上架</button>
+        <button class="abtn no" onclick="toggleReject(${r.id})">驳回…</button>
+      </div>
+      <div class="rejbox" id="rej-${r.id}">
+        <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到,请写清楚需要补充或修改什么)"></textarea>
+        <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+      </div>` : `
+      <div class="acts">
+        ${r.status!=="approved" ? `<button class="abtn ok" onclick="review(${r.id},'approve',this)">改为通过并上架</button>` : ""}
+        ${r.status!=="rejected" ? `<button class="abtn no" onclick="toggleReject(${r.id})">改为驳回…</button>
+        <div class="rejbox" id="rej-${r.id}" style="width:100%">
+          <textarea id="rejnote-${r.id}" placeholder="驳回原因(对方会看到)"></textarea>
+          <button class="abtn no" onclick="review(${r.id},'reject',this)">确认驳回</button>
+        </div>` : ""}
+      </div>`}
+      <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
+        <span style="font-family:var(--mono);font-size:11px;color:${r.featured?"var(--accent)":"var(--ink-faint)"};margin-right:6px">
+          精选状态:${r.featured?"★ 已精选":r.feature_state==="pending"?"有待处理申请":r.feature_state==="rejected"?"申请已驳回":"未精选"}</span>
+        ${r.featured
+          ? `<button class="abtn no" onclick="featureSet(${r.id},'unfeature',this)">取消精选</button>`
+          : `<button class="abtn ok" onclick="featureSet(${r.id},'feature',this)">设为精选</button>`}
+        ${r.feature_state==="pending" ? `<button class="abtn no" onclick="toggleFeatReject(${r.id})">驳回申请…</button>
+        <div class="rejbox" id="frej-${r.id}" style="width:100%">
+          <textarea id="frejnote-${r.id}" placeholder="驳回原因(开发者会看到)"></textarea>
+          <button class="abtn no" onclick="featureSet(${r.id},'reject',this)">确认驳回</button>
+        </div>` : ""}
+      </div>
+      <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
+        <button class="abtn no" onclick="deleteGame(${r.id}, ${JSON.stringify(esc(name))}, this)">🗑 删除这款游戏</button>
+        <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)">删除后不可恢复;开发者提交的重复申请可以从这里清理。</span>
+      </div>
+      <div class="amsg" id="amsg-${r.id}"></div>
+    </div>
+  </div>`;
+}
+
+function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("open"); }
+/* ---------- 新增游戏 ---------- */
+const NG_GENRES=["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
+const NG_PLATFORMS=["PC","Console","Mobile"];
+const NG_NEEDS=["Seeking Publisher","Seeking Publisher Partner","Seeking Investment"];
+const ngSel={genres:[],platforms:[],needs:[]};
+function ngChips(elId, list, key, labels){
+  const el=document.getElementById(elId); el.innerHTML="";
+  list.forEach(v=>{
+    const b=document.createElement("button");
+    b.type="button"; b.className="ngchip"+(ngSel[key].includes(v)?" on":"");
+    b.textContent=(labels&&labels[v])||v;
+    b.onclick=()=>{ const i=ngSel[key].indexOf(v); if(i>=0) ngSel[key].splice(i,1); else ngSel[key].push(v);
+      ngChips(elId,list,key,labels); };
+    el.appendChild(b);
+  });
+}
+$("#newgamebtn").onclick=()=>{
+  ngSel.genres=[]; ngSel.platforms=[]; ngSel.needs=[];
+  ngChips("ng-genres",NG_GENRES,"genres",GENRE_ZH);
+  ngChips("ng-platforms",NG_PLATFORMS,"platforms",PLATFORM_ZH);
+  ngChips("ng-needs",NG_NEEDS,"needs",NEED_ZH);
+  ["parse","ten","tzh","tko","den","dzh","dko","fen","fzh","fko","dev","contact","cover","shots","steam","video"].forEach(k=>{
+    const el=document.getElementById("ng-"+k); if(el) el.value="";
+  });
+  $("#ng-msg").style.display="none"; $("#ng-parsemsg").style.display="none";
+  $("#ngmask").style.display="flex";
+};
+$("#ng-parsebtn").onclick = async ()=>{
+  const btn=$("#ng-parsebtn"), m=$("#ng-parsemsg");
+  const u=$("#ng-parse").value.trim();
+  m.style.display="none";
+  if(!/store\.steampowered\.com\/app\/\d+/i.test(u)){
+    m.textContent="请粘贴有效的 Steam 商店链接(store.steampowered.com/app/…)。";
+    m.style.color="var(--danger)"; m.style.display="block"; return;
+  }
+  btn.disabled=true; btn.textContent="解析中…";
+  try{
+    const d=await api("steam-fetch",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({url:u}) });
+    const setIf=(id,val)=>{ const el=document.getElementById(id); if(el && val && !el.value) el.value=val; };
+    setIf("ng-ten",d.t_en); setIf("ng-tzh",d.t_zh); setIf("ng-tko",d.t_ko);
+    setIf("ng-den",d.d_en); setIf("ng-dzh",d.d_zh); setIf("ng-dko",d.d_ko);
+    setIf("ng-fen",d.full_en); setIf("ng-fzh",d.full_zh); setIf("ng-fko",d.full_ko);
+    setIf("ng-dev",d.developer); setIf("ng-cover",d.cover); setIf("ng-video",d.video);
+    const st=document.getElementById("ng-steam"); if(st) st.value=d.steam_url||u;
+    const sh=document.getElementById("ng-shots");
+    if(sh && !sh.value && (d.screenshots||[]).length) sh.value=d.screenshots.join("\n");
+    if(d.stage) $("#ng-stage").value=d.stage;
+    (d.genres||[]).forEach(g=>{ if(!ngSel.genres.includes(g)) ngSel.genres.push(g); });
+    (d.platforms||[]).forEach(pf=>{ if(!ngSel.platforms.includes(pf)) ngSel.platforms.push(pf); });
+    ngChips("ng-genres",NG_GENRES,"genres",GENRE_ZH);
+    ngChips("ng-platforms",NG_PLATFORMS,"platforms",PLATFORM_ZH);
+    m.textContent="已填充。请检查各字段(尤其品类、阶段、寻求),补齐联系邮箱后创建。";
+    m.style.color="var(--accent)"; m.style.display="block";
+  }catch(e){
+    m.textContent = e==="steam_invalid" ? "链接格式不对" : e==="steam_fetch_failed" ? "从 Steam 获取失败,请检查链接或稍后再试" : "解析失败:"+e;
+    m.style.color="var(--danger)"; m.style.display="block";
+  }finally{ btn.disabled=false; btn.textContent="一键填充"; }
+};
+
+$("#ng-cancel").onclick=()=>{ $("#ngmask").style.display="none"; };
+$("#ngmask").addEventListener("click",(e)=>{ if(e.target.id==="ngmask") e.target.style.display="none"; });
+$("#ng-submit").onclick=async ()=>{
+  const V=(k)=>{ const el=document.getElementById("ng-"+k); return el?el.value.trim():""; };
+  const m=$("#ng-msg"); m.style.display="none";
+  if(!V("ten")&&!V("tzh")&&!V("tko")){ m.textContent="请至少填写一个语言的游戏名。"; m.style.color="var(--danger)"; m.style.display="block"; return; }
+  $("#ng-submit").disabled=true; $("#ng-submit").textContent="创建中…";
+  try{
+    const d=await api("game-create",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({
+        t_en:V("ten"), t_zh:V("tzh"), t_ko:V("tko"),
+        d_en:V("den"), d_zh:V("dzh"), d_ko:V("dko"),
+        full_en:V("fen"), full_zh:V("fzh"), full_ko:V("fko"),
+        developer:V("dev"), contact:V("contact"),
+        stage:$("#ng-stage").value, region:$("#ng-region").value,
+        genres:ngSel.genres, platforms:ngSel.platforms, needs:ngSel.needs,
+        cover:V("cover"), screenshots:V("shots").split(/\r?\n/).map(x=>x.trim()).filter(Boolean),
+        steam_url:V("steam"), video:V("video")
+      })});
+    m.textContent = d.ownerCreated ? "已创建并上架,已挂到该邮箱的开发者账号下 ✓" : "已创建并上架 ✓(未填邮箱,暂未挂账号)";
+    m.style.color="var(--accent)"; m.style.display="block";
+    setTimeout(()=>{ $("#ngmask").style.display="none"; load(); }, 1200);
+  }catch(e){ m.textContent = e==="invalid_email" ? "邮箱格式不对" : "创建失败:"+e; m.style.color="var(--danger)"; m.style.display="block"; }
+  finally{ $("#ng-submit").disabled=false; $("#ng-submit").textContent="创建并上架"; }
+};
+
+/* ---------- 删除 ---------- */
+async function deleteGame(id, name, btn){
+  if(!confirm(`确定删除《${name}》?此操作不可恢复。`)) return;
+  btn.disabled=true; btn.textContent="删除中…";
+  try{ await api("game-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id}) }); await load(); }
+  catch(e){ btn.textContent="删除失败:"+e; btn.disabled=false; }
+}
+async function deletePartner(id, name, mode){
+  const tip = mode==="account" ? `确定彻底删除合作方账号「${name}」?账号、资料、解锁记录都会删除,不可恢复。` : `确定清空「${name}」的资料?账号保留,状态回到待审核,对方可重新填写。`;
+  if(!confirm(tip)) return;
+  try{ await api("partner-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id, mode}) }); await load(); }
+  catch(e){ alert("删除失败:"+e); }
+}
+
+async function saveContact(type, id, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
+  const email=(document.getElementById((type==="partner"?"pc-":"gc-")+id)||{}).value||"";
+  const pub=type==="partner" ? !!(document.getElementById("pp-"+id)||{}).checked : true;
+  try{
+    await api("contact-set",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ type, id, email, public:pub }) });
+    btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1300);
+  }catch(e){ btn.textContent = e==="invalid_email" ? "邮箱格式不对" : "失败:"+e; btn.disabled=false;
+    setTimeout(()=>{ btn.textContent=old; },1800); }
+}
+
+async function saveGameI18n(id, btn){
+  btn.disabled=true; const old=btn.textContent; btn.textContent="保存中…";
+  const V=(p)=>{ const el=document.getElementById(p+"-"+id); return el?el.value:""; };
+  try{
+    await api("game-i18n",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id,
+        t_en:V("ten"), t_zh:V("tzh"), t_ko:V("tko"),
+        d_en:V("den"), d_zh:V("dzh"), d_ko:V("dko"),
+        full_en:V("fen"), full_zh:V("fzh"), full_ko:V("fko"),
+        studio_en:V("sen"), studio_zh:V("szh"), studio_ko:V("sko") }) });
+    btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1300);
+  }catch(e){ btn.textContent="失败:"+e; btn.disabled=false; }
+}
+
+/* ---------- 拖拽排序 ---------- */
+let dragEl=null, orderDirty=false;
+function currentIds(){ return [...document.querySelectorAll("#list .row[data-game]")].map(x=>+x.dataset.id); }
+document.addEventListener("dragstart",(e)=>{
+  const h=e.target.closest(".draghandle"); if(!h) return;
+  dragEl=h.closest(".row"); if(!dragEl) return;
+  dragEl.classList.add("dragging");
+  e.dataTransfer.effectAllowed="move";
+  try{ e.dataTransfer.setData("text/plain", dragEl.dataset.id); }catch(err){}
+});
+document.addEventListener("dragover",(e)=>{
+  if(!dragEl) return;
+  const row=e.target.closest("#list .row[data-game]"); if(!row||row===dragEl) return;
+  e.preventDefault();
+  document.querySelectorAll("#list .row.dropbefore").forEach(x=>x.classList.remove("dropbefore"));
+  row.classList.add("dropbefore");
+});
+document.addEventListener("drop",(e)=>{
+  if(!dragEl) return;
+  const row=e.target.closest("#list .row[data-game]");
+  document.querySelectorAll("#list .row.dropbefore").forEach(x=>x.classList.remove("dropbefore"));
+  if(row && row!==dragEl){ e.preventDefault(); row.parentElement.insertBefore(dragEl,row); orderDirty=true; $("#ordermsg").textContent="顺序已改动,记得保存"; $("#ordermsg").style.color="var(--warn)"; }
+});
+document.addEventListener("dragend",()=>{
+  if(dragEl) dragEl.classList.remove("dragging");
+  document.querySelectorAll("#list .row.dropbefore").forEach(x=>x.classList.remove("dropbefore"));
+  dragEl=null;
+});
+$("#ordersave").onclick = async ()=>{
+  const btn=$("#ordersave"); btn.disabled=true;
+  try{
+    const d=await api("games-order",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ ids: currentIds() }) });
+    orderDirty=false; $("#ordermsg").textContent=`已保存 ${d.count} 款的顺序 ✓`; $("#ordermsg").style.color="var(--accent)";
+  }catch(e){ $("#ordermsg").textContent="保存失败:"+e; $("#ordermsg").style.color="var(--danger)"; }
+  finally{ btn.disabled=false; }
+};
+$("#ordercancel").onclick = ()=>{ orderDirty=false; $("#ordermsg").textContent=""; load(); };
+
+async function featureSet(id, action, btn){
+  btn.disabled=true;
+  const note = action==="reject" ? (document.getElementById("frejnote-"+id)||{}).value : "";
+  if(action==="reject" && !String(note||"").trim()){ btn.disabled=false; alert("请填写驳回原因"); return; }
+  try{
+    await api("feature-set",{ method:"POST", headers:{"content-type":"application/json"},
+      body:JSON.stringify({ id, action, note }) });
+    await load();
+  }catch(e){
+    const m=document.getElementById("amsg-"+id); if(m){ m.textContent="失败:"+e; m.style.color="var(--danger)"; }
+    btn.disabled=false;
+  }
+}
+
+async function load(){
+  if(curMode==="accounts"){
+    const d = await api("accounts?role="+acctRole+"&q="+encodeURIComponent(acctQ), { method:"GET" });
+    $("#ar-all").textContent = "全部" + ((d.counts.developer||0)+(d.counts.partner||0) ? `(${(d.counts.developer||0)+(d.counts.partner||0)})` : "");
+    $("#ar-dev").textContent = "开发者" + (d.counts.developer?`(${d.counts.developer})`:"");
+    $("#ar-par").textContent = "合作方" + (d.counts.partner?`(${d.counts.partner})`:"");
+    $("#list").innerHTML = d.rows.length ? d.rows.map(acctRowHtml).join("") : `<div class="empty">没有匹配的账号</div>`;
+    return;
+  }
+  const ep = curMode==="games" ? "games" : "partners";
+  const st = (curMode==="games" && curTab==="verified") ? "approved" : curTab;
+  const d = await api(ep+"?status="+st, { method:"GET" });
+  const c = d.counts||{};
+  $("#n-pending").textContent = c.pending?`(${c.pending})`:"";
+  $("#n-feature").textContent = c.feature?`(${c.feature})`:"";
+  $("#n-verified").textContent = (curMode==="games" ? (c.approved?`(${c.approved})`:"") : (c.verified?`(${c.verified})`:""));
+  $("#n-rejected").textContent = c.rejected?`(${c.rejected})`:"";
+  $("#list").innerHTML = d.rows.length
+    ? d.rows.map(curMode==="games" ? gameRowHtml : rowHtml).join("")
+    : `<div class="empty">这个状态下没有${curMode==="games"?"游戏":"账号"}</div>`;
+}
+
+$("#modes").addEventListener("click",(e)=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  curMode=b.dataset.m; curTab="pending";
+  document.querySelectorAll("#modes .tab").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("on",x.dataset.s==="pending"));
+  $("#tabs").style.display = curMode==="accounts" ? "none" : "flex";
+  $("#acctbar").style.display = curMode==="accounts" ? "flex" : "none";
+  $("#syncbar").style.display = curMode==="games" ? "block" : "none";
+  $("#orderbar").style.display = curMode==="games" ? "flex" : "none";
+  $("#tab-feature").style.display = curMode==="games" ? "inline-flex" : "none";
+  $("#modelead").textContent = curMode==="accounts"
+    ? "管理所有注册账号。可按身份筛选、按邮箱搜索;停用后账号无法登录,恢复后即可正常使用。"
+    : curMode==="games"
+    ? "审核开发者提交的游戏。通过即上架到项目库;驳回需填写原因,对方能在账号中心看到。"
+    : "审核合作方账号资料。通过后对方账号激活并可出现在 Partners 列表;驳回需填写原因,对方修改重交后会回到\"待审核\"。";
+  load();
+});
+$("#acctbar").addEventListener("click",(e)=>{
+  const b=e.target.closest(".tab"); if(!b||!b.dataset.r) return;
+  acctRole=b.dataset.r;
+  document.querySelectorAll("#acctbar .tab").forEach(x=>x.classList.toggle("on",x===b));
+  load();
+});
+let acctQTimer=null;
+$("#acct-q").addEventListener("input",()=>{
+  clearTimeout(acctQTimer);
+  acctQTimer=setTimeout(()=>{ acctQ=$("#acct-q").value.trim(); load(); }, 350);
+});
+$("#tabs").addEventListener("click",(e)=>{
+  const b=e.target.closest(".tab"); if(!b) return;
+  curTab=b.dataset.s;
+  document.querySelectorAll("#tabs .tab").forEach(x=>x.classList.toggle("on",x===b));
+  load();
+});
+
+$("#claimbtn").onclick = async ()=>{
+  const b=$("#claimbtn"), box=$("#claimresult");
+  b.disabled=true; box.style.color="var(--ink-dim)"; box.textContent="扫描中…";
+  try{
+    const d = await api("claim-legacy?dry=1",{ method:"POST" });
+    const skipTxt = d.skipped.length
+      ? `<br>⚠ ${d.skipped.length} 款的联系方式不是有效邮箱,将跳过:<br>` +
+        d.skipped.slice(0,10).map(x=>`&nbsp;&nbsp;· ${esc(x.title||"")} — ${esc(x.contact||"(空)")}${x.reason?" ("+esc(x.reason)+")":""}`).join("<br>") +
+        (d.skipped.length>10?`<br>&nbsp;&nbsp;…另有 ${d.skipped.length-10} 款`:"")
+      : "";
+    if(!d.wouldLink){ box.innerHTML = "没有需要归户的游戏。" + skipTxt; b.disabled=false; return; }
+    box.innerHTML = `将把 <b style="color:var(--accent)">${d.wouldLink}</b> 款游戏归到 <b style="color:var(--accent)">${d.emails}</b> 个开发者账号下(按邮箱去重,不存在的账号会自动创建并激活)。${skipTxt}<br><br>`;
+    const go = document.createElement("button");
+    go.className="abtn ok"; go.style.padding="8px 16px"; go.textContent="确认执行";
+    go.onclick = async ()=>{
+      go.disabled=true; go.textContent="执行中…";
+      try{
+        const r = await api("claim-legacy",{ method:"POST" });
+        box.innerHTML = `✓ 完成:${r.linked} 款游戏已归户,新建 ${r.accountsCreated} 个开发者账号(共 ${r.emails} 个邮箱)。` +
+          (r.skipped.length?`<br>⚠ 跳过 ${r.skipped.length} 款(联系方式非邮箱)。`:"");
+        box.style.color="var(--accent)";
+      }catch(e){ box.textContent="执行失败:"+e; box.style.color="var(--danger)"; }
+      finally{ b.disabled=false; }
+    };
+    box.appendChild(go);
+  }catch(e){ box.textContent="扫描失败:"+e; box.style.color="var(--danger)"; b.disabled=false; }
+};
+
+$("#syncbtn").onclick = async ()=>{
+  const b=$("#syncbtn"), m=$("#syncmsg");
+  b.disabled=true; m.textContent="同步中,拉取飞书数据…";
+  try{
+    const d = await api("import-feishu",{ method:"POST" });
+    m.textContent = `完成:同步 ${d.imported} 条(飞书共 ${d.total} 行)。飞书里改动后再点即可刷新。`;
+    await load();
+  }catch(e){ m.textContent = "同步失败:"+e; }
+  finally{ b.disabled=false; }
+};
+
+(async ()=>{
+  try{
+    await load();
+    $("#main").style.display="block";
+  }catch(e){
+    $("#locked").style.display="block";
+  }
+})();
+</script>
