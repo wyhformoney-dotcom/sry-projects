@@ -113,6 +113,12 @@
     background:transparent; color:var(--ink-dim); cursor:pointer; }
   .ngbox .ngchip.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
   .ngbox .ngmsg{ font-size:12.5px; margin-top:12px; display:none; }
+  .ngsteam{ border:1px solid var(--accent); border-radius:10px; padding:14px 16px; margin-bottom:6px;
+    background:linear-gradient(180deg, rgba(198,242,78,.08), rgba(198,242,78,.02)); }
+  .ngsteam-t{ font-weight:900; font-size:14.5px; margin-bottom:4px; }
+  .ngsteam-p{ font-size:11.5px; color:var(--ink-faint); line-height:1.6; margin-bottom:11px; }
+  .ngsteam-row{ display:flex; gap:9px; }
+  .ngsteam-row input{ flex:1; }
 </style>
 
 <nav class="nav">
@@ -138,6 +144,16 @@
   <div class="ngmask" id="ngmask"><div class="ngbox">
   <h3>新增游戏</h3>
   <p class="ngp">填写联系邮箱后,系统会自动为该邮箱创建开发者账号(已存在则复用),游戏直接挂在该账号下并上架。对方之后用这个邮箱登录就能管理这款游戏。</p>
+
+  <div class="ngsteam">
+    <div class="ngsteam-t">⚡ 用 Steam 链接一键填充</div>
+    <div class="ngsteam-p">粘贴 Steam 商店链接,自动带出三语名称与简介、封面、截图、开发商、品类、阶段(图片会存进 R2)。填完仍可手动修改。</div>
+    <div class="ngsteam-row">
+      <input id="ng-parse" placeholder="https://store.steampowered.com/app/...">
+      <button class="abtn ok" id="ng-parsebtn" style="padding:9px 18px;white-space:nowrap">一键填充</button>
+    </div>
+    <div class="ngmsg" id="ng-parsemsg"></div>
+  </div>
 
   <label>游戏名 EN / 中文 / 한국어</label>
   <input id="ng-ten" placeholder="English title">
@@ -508,12 +524,44 @@ $("#newgamebtn").onclick=()=>{
   ngChips("ng-genres",NG_GENRES,"genres",GENRE_ZH);
   ngChips("ng-platforms",NG_PLATFORMS,"platforms",PLATFORM_ZH);
   ngChips("ng-needs",NG_NEEDS,"needs",NEED_ZH);
-  ["ten","tzh","tko","den","dzh","dko","fen","fzh","fko","dev","contact","cover","shots","steam","video"].forEach(k=>{
+  ["parse","ten","tzh","tko","den","dzh","dko","fen","fzh","fko","dev","contact","cover","shots","steam","video"].forEach(k=>{
     const el=document.getElementById("ng-"+k); if(el) el.value="";
   });
-  $("#ng-msg").style.display="none";
+  $("#ng-msg").style.display="none"; $("#ng-parsemsg").style.display="none";
   $("#ngmask").style.display="flex";
 };
+$("#ng-parsebtn").onclick = async ()=>{
+  const btn=$("#ng-parsebtn"), m=$("#ng-parsemsg");
+  const u=$("#ng-parse").value.trim();
+  m.style.display="none";
+  if(!/store\.steampowered\.com\/app\/\d+/i.test(u)){
+    m.textContent="请粘贴有效的 Steam 商店链接(store.steampowered.com/app/…)。";
+    m.style.color="var(--danger)"; m.style.display="block"; return;
+  }
+  btn.disabled=true; btn.textContent="解析中…";
+  try{
+    const d=await api("steam-fetch",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({url:u}) });
+    const setIf=(id,val)=>{ const el=document.getElementById(id); if(el && val && !el.value) el.value=val; };
+    setIf("ng-ten",d.t_en); setIf("ng-tzh",d.t_zh); setIf("ng-tko",d.t_ko);
+    setIf("ng-den",d.d_en); setIf("ng-dzh",d.d_zh); setIf("ng-dko",d.d_ko);
+    setIf("ng-fen",d.full_en); setIf("ng-fzh",d.full_zh); setIf("ng-fko",d.full_ko);
+    setIf("ng-dev",d.developer); setIf("ng-cover",d.cover); setIf("ng-video",d.video);
+    const st=document.getElementById("ng-steam"); if(st) st.value=d.steam_url||u;
+    const sh=document.getElementById("ng-shots");
+    if(sh && !sh.value && (d.screenshots||[]).length) sh.value=d.screenshots.join("\n");
+    if(d.stage) $("#ng-stage").value=d.stage;
+    (d.genres||[]).forEach(g=>{ if(!ngSel.genres.includes(g)) ngSel.genres.push(g); });
+    (d.platforms||[]).forEach(pf=>{ if(!ngSel.platforms.includes(pf)) ngSel.platforms.push(pf); });
+    ngChips("ng-genres",NG_GENRES,"genres",GENRE_ZH);
+    ngChips("ng-platforms",NG_PLATFORMS,"platforms",PLATFORM_ZH);
+    m.textContent="已填充。请检查各字段(尤其品类、阶段、寻求),补齐联系邮箱后创建。";
+    m.style.color="var(--accent)"; m.style.display="block";
+  }catch(e){
+    m.textContent = e==="steam_invalid" ? "链接格式不对" : e==="steam_fetch_failed" ? "从 Steam 获取失败,请检查链接或稍后再试" : "解析失败:"+e;
+    m.style.color="var(--danger)"; m.style.display="block";
+  }finally{ btn.disabled=false; btn.textContent="一键填充"; }
+};
+
 $("#ng-cancel").onclick=()=>{ $("#ngmask").style.display="none"; };
 $("#ngmask").addEventListener("click",(e)=>{ if(e.target.id==="ngmask") e.target.style.display="none"; });
 $("#ng-submit").onclick=async ()=>{
