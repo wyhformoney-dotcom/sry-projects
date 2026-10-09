@@ -128,6 +128,8 @@
   .locked a{ color:var(--accent); }
   #form{ display:none; }
 </style>
+<link rel="stylesheet" href="/assets/description.css">
+<script src="/assets/description.js"></script>
 
 <nav class="nav">
   <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
@@ -189,13 +191,21 @@
         <input type="text" id="t-zh" maxlength="120">
         <input type="text" id="t-ko" maxlength="120">
       </div></div>
+    <div class="f"><label for="content-language" id="content-language-label"></label>
+      <select id="content-language" style="padding:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:7px"><option value="en">English</option><option value="zh">中文</option><option value="ko">한국어</option></select>
+      <p class="sub cjk-swap" id="translation-hint"></p>
+    </div>
     <div class="f"><label><span id="g2"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g2n"></p>
       <input type="text" id="d-en" maxlength="300">
       <div class="cnt"><span id="d-cnt">0</span>/300</div></div>
     <div class="f"><label><span id="g3"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g3n"></p>
+      <div class="description-tools" id="description-tools">
+        <button type="button" data-format="heading"></button><button type="button" data-format="bold"></button><button type="button" data-format="list"></button><button type="button" data-format="quote"></button><button type="button" id="description-preview-toggle" aria-expanded="false"></button>
+      </div>
       <textarea id="full-en" maxlength="2000"></textarea>
+      <div id="description-preview" class="description-preview game-description" hidden></div>
       <div class="cnt"><span id="full-cnt">0</span>/2000</div></div>
 
     <div class="sec"><span class="num">03</span><span class="st" id="s2"></span><span class="rule"></span></div>
@@ -276,7 +286,7 @@ const I18N = {
     gateSend:"Send Code", gateVerify:"Verify & Continue", gateResend:"Resend Code", gateSending:"Sending…", gateVerifying:"Verifying…",
     gateSent:(e)=>`Code sent to ${e}. Check your inbox (and spam).`,
     gateHint:"Already have games submitted? This same email keeps them all together.",
-    g1:"Game Title", g1n:"English title is required. Chinese / Korean are optional — leave blank and our team will localize them for you.",
+    g1:"Game Title", g1n:"Fill in a title in any language. Missing English, Chinese and Korean titles will be generated for review.",
     ph_t_en:"Game title (English)", ph_t_zh:"Chinese title (optional)", ph_t_ko:"Korean title (optional)",
     g2:"One-line Pitch", g2n:"Shown on your game card in the library.",
     ph_d:"e.g. A hand-drawn narrative puzzle game about restoring forgotten bronze-age myths.",
@@ -296,7 +306,7 @@ const I18N = {
     submit:"Submit for Review", submitting:"Submitting…",
     ok:"Submitted! We'll review it and get back to you soon.",
     back:"← Back to My Account", backHome:"← Back to Home", multi:"(multi-select)",
-    errors:{ title_required:"Please enter the English title.", pitch_required:"Please write the one-line pitch.",
+    errors:{ title_required:"Please enter a game title in at least one language.", pitch_required:"Please write the one-line pitch.",
       desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
       genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
       market_required:"Please pick a target market.", needs_required:"Please pick what you are looking for.",
@@ -317,7 +327,7 @@ const I18N = {
     gateSend:"发送验证码", gateVerify:"验证并继续", gateResend:"重新发送", gateSending:"发送中…", gateVerifying:"验证中…",
     gateSent:(e)=>`验证码已发送至 ${e},请查收(注意垃圾邮件)。`,
     gateHint:"以前提交过游戏?用同一个邮箱,所有游戏都会归到一起。",
-    g1:"游戏名称", g1n:"中文名必填;英文名、韩文名选填,留空我们帮你本地化。",
+    g1:"游戏名称", g1n:"至少填写一种语言的名称，缺失的中、英、韩名称会自动生成，供后台审核。",
     ph_t_en:"英文名(选填)", ph_t_zh:"游戏名称(中文)", ph_t_ko:"韩文名(选填)",
     g2:"一句话简介", g2n:"显示在项目库的游戏卡片上。",
     ph_d:"例:一款手绘风叙事解谜游戏,修复被遗忘的青铜时代神话。",
@@ -337,7 +347,7 @@ const I18N = {
     submit:"提交审核", submitting:"提交中…",
     ok:"已提交!我们会尽快审核并回复你。",
     back:"← 返回账号中心", backHome:"← 返回首页", multi:"(可多选)",
-    errors:{ title_required:"请填写中文名称。", pitch_required:"请填写一句话简介。",
+    errors:{ title_required:"请至少填写一种语言的游戏名称。", pitch_required:"请填写一句话简介。",
       desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
       genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
       market_required:"请选择目标市场。", needs_required:"请选择你在寻找什么。",
@@ -358,7 +368,7 @@ const I18N = {
     gateSend:"코드 보내기", gateVerify:"확인 후 계속", gateResend:"코드 재전송", gateSending:"전송 중…", gateVerifying:"확인 중…",
     gateSent:(e)=>`${e}(으)로 코드를 보냈습니다. 받은편지함(스팸함)을 확인하세요.`,
     gateHint:"이전에 게임을 제출하셨나요? 같은 이메일을 쓰면 모두 함께 관리됩니다.",
-    g1:"게임 이름", g1n:"한글명은 필수입니다. 영문·중문명은 선택이며 비워두면 현지화해 드립니다.",
+    g1:"게임 이름", g1n:"한 언어로 이름을 입력하세요. 비어 있는 영어·중국어·한국어 이름은 자동 생성 후 검토됩니다.",
     ph_t_en:"영문명(선택)", ph_t_zh:"중문명(선택)", ph_t_ko:"게임 이름(한글)",
     g2:"한 줄 소개", g2n:"라이브러리의 게임 카드에 표시됩니다.",
     ph_d:"예: 잊혀진 청동기 신화를 복원하는 손그림 내러티브 퍼즐 게임.",
@@ -378,7 +388,7 @@ const I18N = {
     submit:"심사 제출", submitting:"제출 중…",
     ok:"제출되었습니다! 곧 심사 후 연락드리겠습니다.",
     back:"← 내 계정으로", backHome:"← 홈으로", multi:"(복수 선택 가능)",
-    errors:{ title_required:"한글 이름을 입력하세요.", pitch_required:"한 줄 소개를 입력하세요.",
+    errors:{ title_required:"한 언어로 게임 이름을 입력하세요.", pitch_required:"한 줄 소개를 입력하세요.",
       desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
       genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
       market_required:"목표 시장을 선택하세요.", needs_required:"찾고 있는 것을 선택하세요.",
@@ -404,6 +414,42 @@ let gateCodeSent=false, gateVerified=false, gateCooldown=0, gateTimer=null;
 let backMode="home";
 let studioLogo="preset:solo";
 let steamParsing=false;
+let steamTranslations = {};
+const EDITOR_TEXT = {
+ en:{source:"Language of your description",hint:"Write in one language. Missing English, Chinese and Korean versions will be generated when translation is available, then reviewed before publication. Long translations may be condensed to fit the length limit.",heading:"Heading",bold:"Bold",list:"List",quote:"Quote",preview:"Preview",hide:"Hide preview",empty:"Your description preview will appear here.",warning:" Your original text was saved; translation is incomplete and the reviewer can retry."},
+ zh:{source:"简介与正文的原文语言",hint:"只需填写一种语言，系统会在翻译服务可用时补全中、英、韩三语，由后台审核后上架。较长正文的译文会精简以符合长度限制。",heading:"标题",bold:"粗体",list:"列表",quote:"引用",preview:"预览",hide:"收起预览",empty:"在这里预览你的游戏介绍。",warning:" 原文已保存；翻译暂未完成，审核员可以稍后补全。"},
+ ko:{source:"소개 원문 언어",hint:"한 언어로 작성하면 번역 서비스가 제공될 때 영어·중국어·한국어 버전을 생성하고 게시 전에 검토합니다. 긴 번역은 글자 수 제한에 맞춰 요약될 수 있습니다.",heading:"제목",bold:"굵게",list:"목록",quote:"인용",preview:"미리보기",hide:"미리보기 닫기",empty:"게임 소개 미리보기가 여기에 표시됩니다.",warning:" 원문은 저장되었지만 번역이 미완료입니다. 검토자가 다시 시도할 수 있습니다."}
+};
+$("#content-language").value=["en","zh","ko"].includes(lang)?lang:"en";
+function renderDescriptionPreview(){
+ const preview=$("#description-preview");preview.innerHTML=SryDescription.render($("#full-en").value);
+ if(!preview.innerHTML)preview.textContent=EDITOR_TEXT[lang].empty;
+}
+$("#full-en").addEventListener("input",renderDescriptionPreview);
+$("#description-preview-toggle").onclick=()=>{
+ const preview=$("#description-preview");preview.hidden=!preview.hidden;
+ $("#description-preview-toggle").setAttribute("aria-expanded",String(!preview.hidden));
+ $("#description-preview-toggle").textContent=EDITOR_TEXT[lang][preview.hidden?"preview":"hide"];renderDescriptionPreview();
+};
+$("#description-tools").addEventListener("click",e=>{
+ const format=e.target.dataset.format;if(!format)return;
+ const area=$("#full-en"),start=area.selectionStart,end=area.selectionEnd,selected=area.value.slice(start,end)||EDITOR_TEXT[lang][format];
+ const text=format==="bold"?"**"+selected+"**":selected.split("\n").map(line=>({heading:"## ",list:"- ",quote:"> "}[format])+line).join("\n");
+ const at=area.value.lastIndexOf("\n",start-1)+1;
+ const from=format==="bold"?start:at;
+ const replacement=format==="bold"?text:area.value.slice(at,start)+text;
+ if(area.value.length-(end-from)+replacement.length>area.maxLength)return;
+ area.setRangeText(replacement,from,end,"select");area.focus();area.dispatchEvent(new Event("input",{bubbles:true}));
+});
+function submittedTranslations(){
+ const result={};
+ for(const base of ["d","full"]){
+  const text=$(base==="d"?"#d-en":"#full-en").value;
+  if($("#content-language").value==="en" && text===steamTranslations[base+"_en"])
+   for(const L of ["zh","ko"])result[base+"_"+L]=steamTranslations[base+"_"+L]||"";
+ }
+ return result;
+}
 
 function T(){ return I18N[lang]; }
 function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||String(key); }
@@ -497,6 +543,11 @@ $("#studio-logofile") && ($("#studio-logofile").onchange = async ()=>{
 });
 
 function renderText(){
+  const ed=EDITOR_TEXT[lang];
+  $("#content-language-label").textContent=ed.source;$("#translation-hint").textContent=ed.hint;
+  document.querySelectorAll("[data-format]").forEach(b=>b.textContent=ed[b.dataset.format]);
+  $("#description-preview-toggle").textContent=ed[$("#description-preview").hidden?"preview":"hide"];
+  renderDescriptionPreview();
   document.body.setAttribute("lang",lang);
   document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on",b.dataset.l===lang));
   const t=T();
@@ -538,8 +589,7 @@ const isUrl=(v)=>v===""||/^https?:\/\/\S+$/i.test(v);
 $("#submit").onclick = async ()=>{
   const t=T(); clearMsg();
   if(!$("#studio").value.trim()) return err("studio_required");
-  const primary = lang==="zh" ? "#t-zh" : lang==="ko" ? "#t-ko" : "#t-en";
-  if(!$(primary).value.trim()) return err("title_required");
+  if(!["en","zh","ko"].some(L=>$("#t-"+L).value.trim())) return err("title_required");
   if(!$("#d-en").value.trim()) return err("pitch_required");
   if(!$("#full-en").value.trim()) return err("desc_required");
   if(!selStage.length) return err("stage_required");
@@ -552,17 +602,20 @@ $("#submit").onclick = async ()=>{
   if(!shotUrls.length) return err("shots_required");
   $("#submit").disabled=true; $("#submit").textContent=t.submitting;
   try{
-    await api("/api/games-submit/create",{ method:"POST", headers:{"content-type":"application/json"},
+    const result=await api("/api/games-submit/create",{ method:"POST", headers:{"content-type":"application/json"},
       body:JSON.stringify({
         studio_name:$("#studio").value, studio_logo:studioLogo, deep_coop:$("#deep-coop").checked,
         t_en:$("#t-en").value, t_zh:$("#t-zh").value, t_ko:$("#t-ko").value,
-        d_en:$("#d-en").value, full_en:$("#full-en").value,
+        source_language:$("#content-language").value,
+        d_source:$("#d-en").value, full_source:$("#full-en").value,
+        ...submittedTranslations(),
         stage:selStage[0], genres:selGenres, platforms:selPlatforms,
         region:selMarket[0], needs:selNeeds,
         steam_url:$("#steam").value.trim(), video:$("#video").value.trim(),
         cover:coverUrl, screenshots:shotUrls
       })});
     okmsg();
+    if(result.translation_status!=="complete") $("#msg").textContent+=EDITOR_TEXT[lang].warning;
     window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
   }catch(e){ err(e); }
   finally{ $("#submit").disabled=false; $("#submit").textContent=t.submit; }
@@ -575,12 +628,14 @@ $("#steambtn").onclick = async ()=>{
   steamParsing=true; $("#steambtn").disabled=true; $("#steambtn").textContent=t.parsing;
   try{
     const d=await api("/api/games-submit/steam-fetch",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({url:u}) });
+    steamTranslations=d;
+    if(!$("#d-en").value && !$("#full-en").value) $("#content-language").value="en";
     // 文本:仅填空字段,不覆盖已填内容
     if(d.t_en && !$("#t-en").value) $("#t-en").value=d.t_en;
     if(d.t_zh && !$("#t-zh").value) $("#t-zh").value=d.t_zh;
     if(d.t_ko && !$("#t-ko").value) $("#t-ko").value=d.t_ko;
-    if(d.d_en && !$("#d-en").value){ $("#d-en").value=d.d_en; $("#d-cnt").textContent=d.d_en.length; }
-    if(d.full_en && !$("#full-en").value){ $("#full-en").value=d.full_en; $("#full-cnt").textContent=d.full_en.length; }
+    if($("#content-language").value==="en" && d.d_en && !$("#d-en").value){ $("#d-en").value=d.d_en; $("#d-cnt").textContent=d.d_en.length; }
+    if($("#content-language").value==="en" && d.full_en && !$("#full-en").value){ $("#full-en").value=d.full_en; $("#full-cnt").textContent=d.full_en.length; }
     if(d.studio_name && !$("#studio").value) $("#studio").value=d.studio_name;
     if(d.steam_url) $("#steam").value=d.steam_url;
     if(d.video && !$("#video").value) $("#video").value=d.video;

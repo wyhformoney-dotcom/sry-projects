@@ -142,6 +142,8 @@
   .feat-pill{ display:inline-block; margin-left:10px; background:var(--accent); color:var(--bg);
     font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; padding:3px 9px; border-radius:11px; vertical-align:1px; }
 </style>
+<link rel="stylesheet" href="/assets/description.css">
+<script src="/assets/description.js"></script>
 
 <nav class="nav">
   <div class="brand">
@@ -340,14 +342,7 @@ function videoEmbed(u){ if(!u) return null;
   let m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]+)/); if(m) return {type:"iframe",src:`https://www.youtube.com/embed/${m[1]}?autoplay=1`};
   m=u.match(/bilibili\.com\/video\/(BV[\w]+)/); if(m) return {type:"iframe",src:`https://player.bilibili.com/player.html?bvid=${m[1]}&autoplay=1`};
   if(/\.(mp4|webm|mov)(\?.*)?$/i.test(u)) return {type:"video",src:u}; return {type:"iframe",src:u}; }
-function mdToHtml(t){ if(!t) return ""; let o="";
-  for(const line of t.split(/\r?\n/)){
-    const im=line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/); if(im){o+=`<img class="md-img" src="${im[2]}">`;continue;}
-    if(line.startsWith("## ")){o+=`<div class="md-h2">${esc(line.slice(3))}</div>`;continue;}
-    if(line.startsWith("### ")){o+=`<div class="md-h3">${esc(line.slice(4))}</div>`;continue;}
-    if(line.trim()===""){o+=`<div class="md-sp"></div>`;continue;}
-    o+=`<div class="md-p">${esc(line).replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")}</div>`;
-  } return o; }
+const mdToHtml = t => SryDescription.render(t);
 function buildMedia(g){ const a=[]; const ve=videoEmbed(g.video);
   if(ve) a.push({kind:"video",embed:ve,thumb:g.cover||(g.screenshots&&g.screenshots[0])||""});
   (g.screenshots||[]).forEach(s=>{ if(s&&s.trim()) a.push({kind:"image",src:s.trim()}); });
@@ -399,7 +394,7 @@ function render(){ if(!GAME){ renderNotFound(); return; }
 
     ${g.stage?`<div class="section-h">${t.stage}</div>${renderTracker(g)}`:''}
 
-    ${full?`<div class="section-h">${t.overview}</div><div class="overview cjk-swap">${full}</div>`:''}
+    ${full?`<div class="section-h">${t.overview}</div><div class="overview game-description cjk-swap">${full}</div>`:''}
 
     ${hasStudio?`<div class="section-h">${t.studio}</div>
     <div class="studio">

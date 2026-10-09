@@ -1,3 +1,5 @@
+import { steamDescription as aStrip } from "../../lib/steam-description.js";
+import { completeLanguages } from "../../lib/translate.js";
 // Cloudflare Pages Function —— 审核后台(仅管理员)
 //   GET  /api/admin/partners?status=pending|verified|rejected|all → 合作方账号列表(含完整资料)
 //   POST /api/admin/review { id, action: "approve"|"reject", note? } → 通过/驳回
@@ -515,13 +517,33 @@ async function handleGameCreate(env, request) {
   return json({ ok: true, id: res.meta.last_row_id, ownerCreated: !!ownerId });
 }
 
+/* Generate drafts only; save/review remain explicit admin actions. */
+async function handleGameTranslate(env, request) {
+  const b = await request.json().catch(() => ({}));
+  const id = Number(b.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return bad("invalid_id");
+  const game = await env.DB.prepare("SELECT * FROM games WHERE id = ?").bind(id).first();
+  if (!game) return bad("game_not_found", 404);
+  const original = {};
+  for (const base of ["t", "d", "full"]) for (const L of ["en", "zh", "ko"])
+    original[`${base}_${L}`] = String(b.content?.[`${base}_${L}`] ?? game[`${base}_${L}`] ?? "").trim().slice(0, base === "t" ? 120 : base === "d" ? 300 : 2000);
+  if (!["en", "zh", "ko"].some(L => original[`full_${L}`])) return bad("desc_required");
+  const result = await completeLanguages(env, original);
+  if (result.status !== "complete") return bad(`translation_${result.status}`, 503);
+  return json({ ok: true, content: result.content });
+}
+
 /* ---------- 删除 ---------- */
 async function handleGameDelete(env, request) {
   const { id } = await request.json().catch(() => ({}));
-  const gid = parseInt(id, 10);
-  if (!gid) return bad("invalid_id");
-  await env.DB.prepare("DELETE FROM favorites WHERE game_id = ?").bind(gid).run().catch(() => {});
-  await env.DB.prepare("DELETE FROM games WHERE id = ?").bind(gid).run();
+  const gid = Number(id);
+  if (!Number.isSafeInteger(gid) || gid <= 0) return bad("invalid_id");
+  const game = await env.DB.prepare("SELECT id FROM games WHERE id = ?").bind(gid).first();
+  if (!game) return bad("game_not_found", 404);
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM favorites WHERE game_id = ?").bind(gid),
+    env.DB.prepare("DELETE FROM games WHERE id = ?").bind(gid)
+  ]);
   return json({ ok: true });
 }
 
@@ -547,11 +569,7 @@ const A_ASSET_HOST = "https://assets.srygamehub.com";
 const A_GENRE_MAP = { "Action":"Action", "Adventure":"Adventure", "RPG":"RPG", "Strategy":"Strategy",
   "Simulation":"Simulation", "Massively Multiplayer":"Multiplayer" };
 
-const aStrip = (h) => String(h || "")
-  .replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<li[^>]*>/gi, "\n· ")
-  .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
-  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-  .replace(/\n{3,}/g, "\n\n").trim();
+
 
 async function aSteamApp(appid, l) {
   const r = await fetch(`https://store.steampowered.com/api/appdetails?appids=${appid}&l=${l}`, {
@@ -637,6 +655,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
     if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);
     if (method === "POST" && path === "feature-set") return await handleFeatureSet(env, request);
+    if (method === "POST" && path === "game-translate") return await handleGameTranslate(env, request);
     if (method === "POST" && path === "game-i18n") return await handleGameI18n(env, request);
     if (method === "POST" && path === "games-order") return await handleGamesOrder(env, request);
     if (method === "POST" && path === "contact-set") return await handleContactSet(env, request);

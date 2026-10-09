@@ -1,0 +1,21 @@
+.game-description { font-family:var(--sans, sans-serif); font-size:16px; line-height:1.85; color:var(--body, #c5c7bd); max-width:72ch; overflow-wrap:anywhere; }
+.game-description > :first-child { margin-top:0; }
+.game-description > :last-child { margin-bottom:0; }
+.game-description p { margin:0 0 1.25em; }
+.game-description h2 { color:var(--ink, #fff); font-size:1.45em; line-height:1.4; margin:1.9em 0 .75em; letter-spacing:-.02em; }
+.game-description h3 { color:var(--ink, #fff); font-size:1.15em; line-height:1.5; margin:1.5em 0 .65em; }
+.game-description ul,.game-description ol { padding-left:1.5em; margin:0 0 1.4em; }
+.game-description li { padding-left:.25em; margin:.4em 0; }
+.game-description li::marker { color:var(--accent, #c6f24e); }
+.game-description strong { color:var(--ink, #fff); }
+.game-description a { color:var(--accent, #c6f24e); text-decoration:underline; text-underline-offset:3px; }
+.game-description blockquote { margin:1.3em 0; border-left:3px solid var(--accent, #c6f24e); padding:.8em 1.1em; background:rgba(198,242,78,.04); border-radius:0 8px 8px 0; }
+.game-description figure { margin:1.8em 0; }
+.game-description img { display:block; max-width:100%; height:auto; margin:auto; border-radius:10px; }
+.game-description figcaption { text-align:center; font-size:.8em; color:var(--ink-dim, #999); margin-top:.6em; }
+.game-description code { font-size:.9em; background:rgba(255,255,255,.07); padding:.15em .35em; border-radius:4px; }
+.game-description hr { border:0; border-top:1px solid var(--line, #333); margin:2em 0; }
+.description-tools { display:flex; gap:6px; flex-wrap:wrap; margin:10px 0; }
+.description-tools button { border:1px solid var(--line); border-radius:6px; background:var(--panel); color:var(--ink); padding:7px 11px; cursor:pointer; font:inherit; font-size:12px; }
+.description-preview { border:1px solid var(--line); border-radius:10px; padding:24px; margin:12px 0; background:var(--panel); }
+@media(max-width:600px) { .game-description { font-size:15px; line-height:1.8; } .description-preview { padding:16px; } }

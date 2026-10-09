@@ -1,3 +1,5 @@
+import { steamDescription as stripHtml } from "../../lib/steam-description.js";
+import { completeLanguages } from "../../lib/translate.js";
 // Cloudflare Pages Function —— 游戏提交(开发者)
 //   GET  /api/games-submit/mine    → 我提交的游戏及审核状态
 //   POST /api/games-submit/create  → 提交新游戏(入库为待审核,不上架)
@@ -131,12 +133,6 @@ async function handleVerify(env, request) {
     { "set-cookie": `sry_session=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_DAYS * 86400}` });
 }
 
-const stripHtml = (h) => String(h || "")
-  .replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<li[^>]*>/gi, "\n· ")
-  .replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
-  .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'")
-  .replace(/\n{3,}/g, "\n\n").trim();
-
 const STEAM_GENRE_MAP = { "Action":"Action", "Adventure":"Adventure", "RPG":"RPG", "Strategy":"Strategy",
   "Simulation":"Simulation", "Massively Multiplayer":"Multiplayer" };
 
@@ -196,8 +192,10 @@ async function handleSteamFetch(env, s, request) {
   return json({
     ok: true,
     t_en, t_zh: zhName, t_ko: koName,
-    d_en: stripHtml(en.short_description).slice(0, 300),
-    full_en: stripHtml(en.about_the_game || en.detailed_description).slice(0, 2000),
+    ...Object.fromEntries([["en", en], ["zh", zh], ["ko", ko]].flatMap(([L, data]) => [
+      [`d_${L}`, stripHtml(data?.short_description).slice(0, 300)],
+      [`full_${L}`, stripHtml(data?.about_the_game || data?.detailed_description).slice(0, 2000)]
+    ])),
     cover, screenshots: shots.filter(Boolean),
     video,
     genres,
@@ -230,8 +228,14 @@ async function handleCreate(env, s, request) {
   const b = await request.json().catch(() => ({}));
 
   const t_en = S(b.t_en, 120), t_zh = S(b.t_zh, 120), t_ko = S(b.t_ko, 120);
-  const d_en = S(b.d_en, 300);
-  const full_en = S(b.full_en, 2000);
+  const sourceLanguage = ["en", "zh", "ko"].includes(b.source_language) ? b.source_language : "en";
+  const original = { t_en, t_zh, t_ko, source_language: sourceLanguage };
+  for (const L of ["en", "zh", "ko"]) {
+    original[`d_${L}`] = S(b[`d_${L}`], 300);
+    original[`full_${L}`] = S(b[`full_${L}`], 2000);
+  }
+  if (b.d_source !== undefined) original[`d_${sourceLanguage}`] = S(b.d_source, 300);
+  if (b.full_source !== undefined) original[`full_${sourceLanguage}`] = S(b.full_source, 2000);
   const stage = S(b.stage, 30);
   const genres = arrOf(b.genres, GENRES, 20);
   const platforms = arrOf(b.platforms, PLATFORMS, 3);
@@ -245,8 +249,8 @@ async function handleCreate(env, s, request) {
     ? b.screenshots.map((x) => S(x, 500)).filter(Boolean).slice(0, 5) : [];
 
   if (!t_en && !t_zh && !t_ko) return bad("title_required");
-  if (!d_en) return bad("pitch_required");
-  if (!full_en) return bad("desc_required");
+  if (!original[`d_${sourceLanguage}`]) return bad("pitch_required");
+  if (!original[`full_${sourceLanguage}`]) return bad("desc_required");
   if (!inSet(stage, STAGES)) return bad("stage_required");
   if (!genres) return bad("genres_required");
   if (!platforms) return bad("platforms_required");
@@ -255,6 +259,9 @@ async function handleCreate(env, s, request) {
   if (!isUrl(steam_url) || !isUrl(video)) return bad("url_invalid");
   if (!cover) return bad("cover_required");
   if (!screenshots.length) return bad("shots_required");
+
+  const translation = await completeLanguages(env, original);
+  const content = translation.content;
 
   // 开发商展示名取自工作室信息
   const studioInput = S(b.studio_name, 120);
@@ -269,17 +276,17 @@ async function handleCreate(env, s, request) {
   const developer = studioInput;
 
   await env.DB.prepare(
-    `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, full_en, developer, studio_logo, stage,
+    `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko, developer, studio_logo, stage,
                         genres, needs, platforms, region, cover, screenshots, video, steam_url,
                         claimed_by, deep_coop, visible, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
   ).bind(
-    slugify(t_en || t_zh || t_ko), t_en, t_zh, t_ko, d_en, full_en, developer, studioLogo || "preset:solo", stage,
+    slugify(t_en || t_zh || t_ko), content.t_en, content.t_zh, content.t_ko, content.d_en, content.d_zh, content.d_ko, content.full_en, content.full_zh, content.full_ko, developer, studioLogo || "preset:solo", stage,
     JSON.stringify(genres), JSON.stringify(needs), JSON.stringify(platforms), region,
     cover, JSON.stringify(screenshots), video, steam_url, s.aid, deepCoop
   ).run();
 
-  return json({ ok: true });
+  return json({ ok: true, translation_status: translation.status });
 }
 
 async function handleGameDeleteMine(env, s, request) {

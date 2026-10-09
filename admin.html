@@ -120,6 +120,8 @@
   .ngsteam-row{ display:flex; gap:9px; }
   .ngsteam-row input{ flex:1; }
 </style>
+<link rel="stylesheet" href="/assets/description.css">
+<script src="/assets/description.js"></script>
 
 <nav class="nav">
   <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB <span class="adm">ADMIN</span></a>
@@ -342,8 +344,8 @@ function rowHtml(r){
         </div>` : ""}
       </div>`}
       <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
-        <button class="abtn no" onclick="deletePartner(${r.id}, ${JSON.stringify(esc(r.name_zh||r.name_en||r.email||""))}, 'profile')">清空资料(账号保留)</button>
-        <button class="abtn no" onclick="deletePartner(${r.id}, ${JSON.stringify(esc(r.name_zh||r.name_en||r.email||""))}, 'account')">彻底删除账号</button>
+        <button class="abtn no" data-name="${esc(r.name_zh||r.name_en||r.email||"")}" onclick="deletePartner(${r.id}, this.dataset.name, 'profile')">清空资料(账号保留)</button>
+        <button class="abtn no" data-name="${esc(r.name_zh||r.name_en||r.email||"")}" onclick="deletePartner(${r.id}, this.dataset.name, 'account')">彻底删除账号</button>
       </div>
       <div class="amsg" id="amsg-${r.id}"></div>
     </div>
@@ -446,7 +448,7 @@ function gameRowHtml(r){
         ${kvHtml("Steam 页面", linkHtml(r.steam_url))}
         ${kvHtml("预告片", linkHtml(r.video))}
         ${kvHtml("一句话简介", esc(r.d_en), true)}
-        ${kvHtml("完整介绍(原文)", esc(r.full_en||r.full_zh||r.full_ko), true)}
+        ${kvHtml("完整介绍(原文)", `<div class="game-description">${SryDescription.render(r.full_en||r.full_zh||r.full_ko)}</div>`, true)}
         <div class="kv full"><div class="k">三语内容(缺哪种就补哪种;网站按界面语言取,留空则回退到有内容的语言)</div>
           <div class="v" style="display:grid;gap:14px">
             ${["en","zh","ko"].map(L=>`
@@ -457,6 +459,7 @@ function gameRowHtml(r){
                 <textarea id="f${L}-${r.id}" placeholder="完整介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:70px;font-family:inherit;margin-bottom:7px">${esc(r["full_"+L]||"")}</textarea>
                 <textarea id="s${L}-${r.id}" placeholder="团队 / 工作室介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:56px;font-family:inherit">${esc(r["studio_"+L]||"")}</textarea>
               </div>`).join("")}
+            <button class="abtn" style="padding:8px 16px;width:fit-content" onclick="translateGame(${r.id},this)">自动补全缺失三语（保留已填内容）</button>
             <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveGameI18n(${r.id},this)">保存三语内容</button>
           </div></div>
         ${kvHtml("封面", r.cover?`<img src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
@@ -494,7 +497,7 @@ function gameRowHtml(r){
         </div>` : ""}
       </div>
       <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
-        <button class="abtn no" onclick="deleteGame(${r.id}, ${JSON.stringify(esc(name))}, this)">🗑 删除这款游戏</button>
+        <button class="abtn no" data-name="${esc(name)}" onclick="deleteGame(${r.id}, this.dataset.name, this)">🗑 删除这款游戏</button>
         <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)">删除后不可恢复;开发者提交的重复申请可以从这里清理。</span>
       </div>
       <div class="amsg" id="amsg-${r.id}"></div>
@@ -612,6 +615,24 @@ async function saveContact(type, id, btn){
     btn.textContent="已保存 ✓"; setTimeout(()=>{ btn.textContent=old; btn.disabled=false; },1300);
   }catch(e){ btn.textContent = e==="invalid_email" ? "邮箱格式不对" : "失败:"+e; btn.disabled=false;
     setTimeout(()=>{ btn.textContent=old; },1800); }
+}
+
+async function translateGame(id, btn){
+  btn.disabled=true; btn.textContent="正在生成翻译…";
+  try {
+    const content={};
+    for(const base of ["t","d","full"]) for(const L of ["en","zh","ko"]){
+      const prefix=base==="full"?"f":base;
+      content[base+"_"+L]=document.getElementById(prefix+L+"-"+id).value;
+    }
+    const d=await api("game-translate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id,content})});
+    for(const [key,value] of Object.entries(d.content)){
+      const [base,L]=key.split("_"); const el=document.getElementById((base==="full"?"f":base)+L+"-"+id);
+      if(el && !el.value.trim()) el.value=value;
+    }
+    btn.textContent="已补全，请审核后保存三语内容";
+  }catch(e){btn.textContent=e==="translation_unconfigured"?"请先配置翻译服务": "翻译失败，请重试";}
+  finally{btn.disabled=false;}
 }
 
 async function saveGameI18n(id, btn){
