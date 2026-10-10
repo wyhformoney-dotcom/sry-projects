@@ -218,7 +218,11 @@
       <button class="tab" data-s="all">全部</button>
       <button class="tab" data-s="feature" id="tab-feature" style="display:none">★ 精选申请<span class="n" id="n-feature"></span></button>
     </div>
-    <div id="list"></div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+      <span id="load-status" role="status" style="font-size:12px;color:var(--ink-dim)"></span>
+      <button class="abtn" type="button" onclick="load({force:true})" style="margin-left:auto">刷新数据</button>
+    </div>
+    <div id="list" aria-busy="false"></div>
   </div>
 </div>
 
@@ -245,11 +249,19 @@ let acctRole = "all", acctQ = "";
 const ROLE_ZH = { developer:"开发者", partner:"合作方" };
 const ASTATUS_ZH = { pending:"待审核", verified:"已激活", rejected:"已驳回", suspended:"已停用" };
 
+const listCache=new Map(), gameDetailCache=new Map();
+let loadController=null, loadSequence=0, cacheEpoch=0;
+const CACHE_TTL=20000;
+function invalidateData(){ listCache.clear();gameDetailCache.clear();cacheEpoch++; }
+
 async function api(path, opts){
-  const res = await fetch("/api/admin/"+path, opts);
+  const timeout=AbortSignal.timeout(opts?.method==="POST"?90000:30000);
+  const signal=opts?.signal?AbortSignal.any([opts.signal,timeout]):timeout;
+  const res = await fetch("/api/admin/"+path, {...opts,signal});
   let data=null; try{ data=await res.json(); }catch{}
   if(!data) throw "network";
   if(!data.ok) throw (data.error||"server").split(":")[0].trim();
+  if(opts?.method && opts.method!=="GET") invalidateData();
   return data;
 }
 
@@ -270,7 +282,7 @@ function proofHtml(r){
   }
   return `<div class="proofbox">${
     r.proof_image
-      ? `<img src="${esc(r.proof_image)}" onclick="showLightbox(this.src)"><div class="tip">${esc(PROOF_ZH[r.proof_type]||r.proof_type||"")} · 点击放大</div>`
+      ? `<img loading="lazy" decoding="async" src="${esc(r.proof_image)}" onclick="showLightbox(this.src)"><div class="tip">${esc(PROOF_ZH[r.proof_type]||r.proof_type||"")} · 点击放大</div>`
       : `<div style="color:var(--danger);font-size:12.5px">未上传认证材料</div>`
   }</div>`;
 }
@@ -284,7 +296,7 @@ function rowHtml(r){
   return `
   <div class="row" data-id="${r.id}">
     <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
-      <div class="avatar">${r.logo?`<img src="${esc(r.logo)}">`:"▢"}</div>
+      <div class="avatar">${r.logo?`<img loading="lazy" decoding="async" src="${esc(r.logo)}">`:"▢"}</div>
       <div class="rmain">
         <div class="rname"><span class="flag">${flagOf(r.region)}</span>${esc(name)}${zhko?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(zhko)}</span>`:""}</div>
         <div class="rsub">${esc(r.login_email)} · ${(r.kinds||[]).map(k=>KIND_ZH[k]||k).join("+")||"—"} · 注册 ${fmtTime(r.created_at)}</div>
@@ -344,8 +356,8 @@ function rowHtml(r){
         </div>` : ""}
       </div>`}
       <div class="acts" style="border-top:1px solid var(--line-soft);margin-top:12px;padding-top:12px">
-        <button class="abtn no" data-name="${esc(r.name_zh||r.name_en||r.email||"")}" onclick="deletePartner(${r.id}, this.dataset.name, 'profile')">清空资料(账号保留)</button>
-        <button class="abtn no" data-name="${esc(r.name_zh||r.name_en||r.email||"")}" onclick="deletePartner(${r.id}, this.dataset.name, 'account')">彻底删除账号</button>
+        <button class="abtn no" data-name="${esc(r.name_zh||r.name_en||r.email||"")}" onclick="deletePartner(${r.id}, this.dataset.name, 'profile', this)">清空资料(账号保留)</button>
+        <button class="abtn no" data-name="${esc(r.name_zh||r.name_en||r.email||"")}" onclick="deletePartner(${r.id}, this.dataset.name, 'account', this)">彻底删除账号</button>
       </div>
       <div class="amsg" id="amsg-${r.id}"></div>
     </div>
@@ -370,13 +382,13 @@ async function review(id, action, btn){
   msg.className="amsg";
   const note = action==="reject" ? (document.getElementById("rejnote-"+id)?.value||"").trim() : "";
   if(action==="reject" && !note){ msg.className="amsg err"; msg.textContent="请填写驳回原因。"; return; }
-  btn.disabled=true;
+  const old=btn.textContent;btn.disabled=true;btn.textContent="提交审核结果中…";
   try{
     await api(curMode==="games" ? "review-game" : "review",{ method:"POST", headers:{"content-type":"application/json"},
       body:JSON.stringify({ id, action, note }) });
-    await load();
+    await load({force:true});
   }catch(e){
-    msg.className="amsg err"; msg.textContent="操作失败:"+e; btn.disabled=false;
+    msg.className="amsg err"; msg.textContent="操作失败:"+e; btn.disabled=false;btn.textContent=old;
   }
 }
 
@@ -406,26 +418,24 @@ function acctRowHtml(r){
 }
 
 async function acctAction(id, action, btn){
-  btn.disabled=true;
+  const old=btn.textContent;btn.disabled=true;btn.textContent="更新账号中…";
   try{
     await api("account-status",{ method:"POST", headers:{"content-type":"application/json"},
       body:JSON.stringify({ id, action }) });
-    await load();
+    await load({force:true});
   }catch(e){
     const m=document.getElementById("amsg-a"+id); if(m){ m.textContent="失败:"+e; m.style.color="var(--danger)"; }
-    btn.disabled=false;
+    btn.disabled=false;btn.textContent=old;
   }
 }
 
 function gameRowHtml(r){
-  const name = r.t_en || r.t_zh || r.t_ko || "(未填名称)";
-  const isFeishu = !!r.feishu_id;
-  const shots = (r.screenshots||[]).map(u=>`<img src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
+  const name=r.t_en||r.t_zh||r.t_ko||"(未填名称)", isFeishu=!!r.feishu_id;
   return `
   <div class="row" data-id="${r.id}" data-game="1">
-    <div class="rhead" onclick="this.parentElement.classList.toggle('open')">
+    <div class="rhead" onclick="toggleGameDetail(${r.id},this)">
       <span class="draghandle" draggable="true" title="拖拽调整展示顺序">⣿</span>
-      <div class="avatar" style="width:64px">${r.cover?`<img src="${esc(r.cover)}">`:"▢"}</div>
+      <div class="avatar" style="width:64px">${r.cover?`<img loading="lazy" decoding="async" src="${esc(r.cover)}">`:"▢"}</div>
       <div class="rmain">
         <div class="rname">${esc(name)}${r.t_zh&&r.t_en?` <span style="color:var(--ink-dim);font-weight:400;font-size:12.5px">${esc(r.t_zh)}</span>`:""}</div>
         <div class="rsub">${isFeishu ? "来源:飞书" : esc(r.studio_name||"")+" · "+esc(r.login_email||"")} · ${esc(STAGE_ZH[r.stage]||r.stage||"")}${isFeishu?(r.visible?" · 已上架":" · 未上架(是否上架=否)"):" · 提交 "+fmtTime(r.created_at)}</div>
@@ -433,8 +443,13 @@ function gameRowHtml(r){
       <span class="pill ${r.status==="approved"?"verified":r.status}">${GSTATUS_ZH[r.status]||r.status}</span>
       <span class="arrow">▾</span>
     </div>
-    <div class="detail">
-      <div class="grid">
+    <div class="detail"></div>
+  </div>`;
+}
+function gameDetailHtml(r){
+  const name=r.t_en||r.t_zh||r.t_ko||"(未填名称)", isFeishu=!!r.feishu_id;
+  const shots=(r.screenshots||[]).map(u=>`<img loading="lazy" decoding="async" src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
+  return `      <div class="grid">
         <div class="kv full"><div class="k">开发者联系方式(可直接修改;已归户的会同步写入该开发者账号)</div>
           <div class="v" style="display:grid;gap:9px">
             <input id="gc-${r.id}" value="${esc(r.dev_contact||r.legacy_contact||"")}" placeholder="dev@studio.com" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--ink);font-size:13px;padding:9px 11px;font-family:var(--mono);outline:none">
@@ -462,7 +477,7 @@ function gameRowHtml(r){
             <button class="abtn" style="padding:8px 16px;width:fit-content" onclick="translateGame(${r.id},this)">自动补全缺失三语（保留已填内容）</button>
             <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveGameI18n(${r.id},this)">保存三语内容</button>
           </div></div>
-        ${kvHtml("封面", r.cover?`<img src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
+        ${kvHtml("封面", r.cover?`<img loading="lazy" decoding="async" src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
         ${kvHtml("截图", shots||"—", true)}
         ${r.review_note ? kvHtml("上次审核备注", esc(r.review_note), true) : ""}
       </div>
@@ -501,11 +516,28 @@ function gameRowHtml(r){
         <span style="font-family:var(--mono);font-size:10.5px;color:var(--ink-faint)">删除后不可恢复;开发者提交的重复申请可以从这里清理。</span>
       </div>
       <div class="amsg" id="amsg-${r.id}"></div>
-    </div>
-  </div>`;
+`;
+}
+async function toggleGameDetail(id,head){
+  const row=head.closest(".row"),detail=row.querySelector(".detail");
+  row.classList.toggle("open");
+  if(!row.classList.contains("open")||row.dataset.loaded||row.dataset.loading)return;
+  const cached=gameDetailCache.get(id);
+  if(cached && Date.now()-cached.time<CACHE_TTL){detail.innerHTML=gameDetailHtml(cached.row);row.dataset.loaded="1";return;}
+  row.dataset.loading="1";detail.textContent="正在加载这款游戏的详情…";
+  const epoch=cacheEpoch;
+  try{
+    const d=await api("game?id="+id,{method:"GET"});
+    if(!row.isConnected)return;
+    if(epoch!==cacheEpoch){detail.textContent="数据已更新，请收起后重新展开。";return;}
+    gameDetailCache.set(id,{row:d.row,time:Date.now()});
+    detail.innerHTML=gameDetailHtml(d.row);row.dataset.loaded="1";
+  }catch(e){
+    if(row.isConnected){detail.textContent="详情加载失败，请重试。 ";const retry=document.createElement("button");retry.className="abtn";retry.textContent="重试";retry.onclick=()=>{row.classList.remove("open");toggleGameDetail(id,head);};detail.append(retry);}
+  }finally{delete row.dataset.loading;}
 }
 
-function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("open"); }
+function toggleFeatReject(id){ const b=document.getElementById("frej-"+id); if(b) b.classList.toggle("on"); }
 /* ---------- 新增游戏 ---------- */
 const NG_GENRES=["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer"];
 const NG_PLATFORMS=["PC","Console","Mobile"];
@@ -586,7 +618,7 @@ $("#ng-submit").onclick=async ()=>{
       })});
     m.textContent = d.ownerCreated ? "已创建并上架,已挂到该邮箱的开发者账号下 ✓" : "已创建并上架 ✓(未填邮箱,暂未挂账号)";
     m.style.color="var(--accent)"; m.style.display="block";
-    setTimeout(()=>{ $("#ngmask").style.display="none"; load(); }, 1200);
+    setTimeout(()=>{ $("#ngmask").style.display="none"; load({force:true}); }, 1200);
   }catch(e){ m.textContent = e==="invalid_email" ? "邮箱格式不对" : "创建失败:"+e; m.style.color="var(--danger)"; m.style.display="block"; }
   finally{ $("#ng-submit").disabled=false; $("#ng-submit").textContent="创建并上架"; }
 };
@@ -595,14 +627,16 @@ $("#ng-submit").onclick=async ()=>{
 async function deleteGame(id, name, btn){
   if(!confirm(`确定删除《${name}》?此操作不可恢复。`)) return;
   btn.disabled=true; btn.textContent="删除中…";
-  try{ await api("game-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id}) }); await load(); }
+  try{ await api("game-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id}) }); await load({force:true}); }
   catch(e){ btn.textContent="删除失败:"+e; btn.disabled=false; }
 }
-async function deletePartner(id, name, mode){
+async function deletePartner(id, name, mode, btn){
   const tip = mode==="account" ? `确定彻底删除合作方账号「${name}」?账号、资料、解锁记录都会删除,不可恢复。` : `确定清空「${name}」的资料?账号保留,状态回到待审核,对方可重新填写。`;
   if(!confirm(tip)) return;
-  try{ await api("partner-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id, mode}) }); await load(); }
+  const old=btn.textContent;btn.disabled=true;btn.textContent="删除中…";
+  try{ await api("partner-delete",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({id, mode}) }); await load({force:true}); }
   catch(e){ alert("删除失败:"+e); }
+  finally{if(btn.isConnected){btn.disabled=false;btn.textContent=old;}}
 }
 
 async function saveContact(type, id, btn){
@@ -686,42 +720,61 @@ $("#ordersave").onclick = async ()=>{
   }catch(e){ $("#ordermsg").textContent="保存失败:"+e; $("#ordermsg").style.color="var(--danger)"; }
   finally{ btn.disabled=false; }
 };
-$("#ordercancel").onclick = ()=>{ orderDirty=false; $("#ordermsg").textContent=""; load(); };
+$("#ordercancel").onclick = ()=>{ orderDirty=false; $("#ordermsg").textContent=""; load({force:true}); };
 
 async function featureSet(id, action, btn){
-  btn.disabled=true;
+  const old=btn.textContent;btn.disabled=true;btn.textContent="更新精选状态中…";
   const note = action==="reject" ? (document.getElementById("frejnote-"+id)||{}).value : "";
-  if(action==="reject" && !String(note||"").trim()){ btn.disabled=false; alert("请填写驳回原因"); return; }
+  if(action==="reject" && !String(note||"").trim()){ btn.disabled=false;btn.textContent=old; alert("请填写驳回原因"); return; }
   try{
     await api("feature-set",{ method:"POST", headers:{"content-type":"application/json"},
       body:JSON.stringify({ id, action, note }) });
-    await load();
+    await load({force:true});
   }catch(e){
     const m=document.getElementById("amsg-"+id); if(m){ m.textContent="失败:"+e; m.style.color="var(--danger)"; }
-    btn.disabled=false;
+    btn.disabled=false;btn.textContent=old;
   }
 }
 
-async function load(){
-  if(curMode==="accounts"){
-    const d = await api("accounts?role="+acctRole+"&q="+encodeURIComponent(acctQ), { method:"GET" });
-    $("#ar-all").textContent = "全部" + ((d.counts.developer||0)+(d.counts.partner||0) ? `(${(d.counts.developer||0)+(d.counts.partner||0)})` : "");
-    $("#ar-dev").textContent = "开发者" + (d.counts.developer?`(${d.counts.developer})`:"");
-    $("#ar-par").textContent = "合作方" + (d.counts.partner?`(${d.counts.partner})`:"");
-    $("#list").innerHTML = d.rows.length ? d.rows.map(acctRowHtml).join("") : `<div class="empty">没有匹配的账号</div>`;
-    return;
+function renderList(d,state){
+  if(state.mode==="accounts"){
+    $("#ar-all").textContent="全部"+(((d.counts.developer||0)+(d.counts.partner||0))?`(${(d.counts.developer||0)+(d.counts.partner||0)})`:"");
+    $("#ar-dev").textContent="开发者"+(d.counts.developer?`(${d.counts.developer})`:"");
+    $("#ar-par").textContent="合作方"+(d.counts.partner?`(${d.counts.partner})`:"");
+    $("#list").innerHTML=d.rows.length?d.rows.map(acctRowHtml).join(""):`<div class="empty">没有匹配的账号</div>`;return;
   }
-  const ep = curMode==="games" ? "games" : "partners";
-  const st = (curMode==="games" && curTab==="verified") ? "approved" : curTab;
-  const d = await api(ep+"?status="+st, { method:"GET" });
-  const c = d.counts||{};
-  $("#n-pending").textContent = c.pending?`(${c.pending})`:"";
-  $("#n-feature").textContent = c.feature?`(${c.feature})`:"";
-  $("#n-verified").textContent = (curMode==="games" ? (c.approved?`(${c.approved})`:"") : (c.verified?`(${c.verified})`:""));
-  $("#n-rejected").textContent = c.rejected?`(${c.rejected})`:"";
-  $("#list").innerHTML = d.rows.length
-    ? d.rows.map(curMode==="games" ? gameRowHtml : rowHtml).join("")
-    : `<div class="empty">这个状态下没有${curMode==="games"?"游戏":"账号"}</div>`;
+  const c=d.counts||{};
+  $("#n-pending").textContent=c.pending?`(${c.pending})`:"";
+  $("#n-feature").textContent=c.feature?`(${c.feature})`:"";
+  const passed=state.mode==="games"?c.approved:c.verified;
+  $("#n-verified").textContent=passed?`(${passed})`:"";
+  $("#n-rejected").textContent=c.rejected?`(${c.rejected})`:"";
+  $("#list").innerHTML=d.rows.length?d.rows.map(state.mode==="games"?gameRowHtml:rowHtml).join(""):`<div class="empty">这个状态下没有${state.mode==="games"?"游戏":"账号"}</div>`;
+}
+async function load({force=false}={}){
+  const seq=++loadSequence;loadController?.abort();loadController=new AbortController();
+  const now=Date.now();
+  for(const cache of [listCache,gameDetailCache]) for(const [key,value] of cache) if(now-value.time>=CACHE_TTL)cache.delete(key);
+  const state={mode:curMode,tab:curTab,role:acctRole,q:acctQ};
+  const path=state.mode==="accounts"?"accounts?role="+state.role+"&q="+encodeURIComponent(state.q)
+    :(state.mode==="games"?"games?summary=1&status=":"partners?status=")+(state.mode==="games"&&state.tab==="verified"?"approved":state.tab);
+  if(force)invalidateData();
+  const cached=listCache.get(path),status=$("#load-status"),list=$("#list");
+  $("#main").style.display="block";$("#locked").style.display="none";
+  if(cached){renderList(cached.data,state);if(Date.now()-cached.time<CACHE_TTL){status.textContent="已加载";list.setAttribute("aria-busy","false");return;}}
+  else list.innerHTML='<div class="empty">正在加载数据…</div>';
+  status.textContent=cached?"正在更新数据…":"正在加载数据…";list.setAttribute("aria-busy","true");
+  const epoch=cacheEpoch;
+  try{
+    const d=await api(path,{method:"GET",signal:loadController.signal});
+    if(seq!==loadSequence)return;
+    if(epoch!==cacheEpoch){return load({force:true});}
+    listCache.set(path,{data:d,time:Date.now()});renderList(d,state);status.textContent=`已加载 ${d.rows.length} 条`;
+  }catch(e){
+    if(seq!==loadSequence||e.name==="AbortError")return;
+    if(e==="not_logged_in"||e==="forbidden"){$("#main").style.display="none";$("#locked").style.display="block";}
+    else {status.textContent="加载失败，请点击刷新数据重试。";if(!cached)list.textContent="暂时无法获取数据。";}
+  }finally{if(seq===loadSequence)list.setAttribute("aria-busy","false");}
 }
 
 $("#modes").addEventListener("click",(e)=>{
@@ -793,17 +846,10 @@ $("#syncbtn").onclick = async ()=>{
   try{
     const d = await api("import-feishu",{ method:"POST" });
     m.textContent = `完成:同步 ${d.imported} 条(飞书共 ${d.total} 行)。飞书里改动后再点即可刷新。`;
-    await load();
+    await load({force:true});
   }catch(e){ m.textContent = "同步失败:"+e; }
   finally{ b.disabled=false; }
 };
 
-(async ()=>{
-  try{
-    await load();
-    $("#main").style.display="block";
-  }catch(e){
-    $("#locked").style.display="block";
-  }
-})();
+load();
 </script>

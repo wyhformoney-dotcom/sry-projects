@@ -9,7 +9,8 @@ await page.route('**/api/**',async route=>{
  const u=new URL(route.request().url());let data={ok:true};
  if(u.pathname==='/api/auth/me')data={ok:true,loggedIn:true,needsRole:false,role:'developer',status:'verified',email:'test@example.com',isAdmin:true};
  else if(u.pathname==='/api/games')data=rows;
- else if(u.pathname==='/api/admin/games')data={ok:true,rows,counts:{pending:rows.length}};
+ else if(u.pathname==='/api/admin/games')data={ok:true,rows:rows.map(({full_en,screenshots,...summary})=>summary),counts:{pending:rows.length}};
+ else if(u.pathname==='/api/admin/game')data={ok:true,row:rows.find(r=>r.id===Number(u.searchParams.get('id')))};
  else if(u.pathname==='/api/games-submit/create'){submitted=route.request().postDataJSON();data={ok:true,translation_status:'complete'};}
  else if(u.pathname==='/api/admin/partners')data={ok:true,rows:[],counts:{}};
  else if(u.pathname==='/api/admin/game-delete'){deleted=route.request().postDataJSON().id;rows=rows.filter(r=>r.id!==deleted);}

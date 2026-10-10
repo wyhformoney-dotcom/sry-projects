@@ -10,7 +10,7 @@ const COOKIE = "sry_session";
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
-    status, headers: { "content-type": "application/json; charset=utf-8" },
+    status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store" },
   });
 const bad = (error, status = 400) => json({ ok: false, error }, status);
 
@@ -105,18 +105,7 @@ async function handleReview(env, request) {
   return json({ ok: true });
 }
 
-async function handleGamesList(env, request) {
-  const url = new URL(request.url);
-  const status = url.searchParams.get("status") || "pending";
-  const where = ["1=1"];
-  const binds = [];
-  if (status === "feature") {
-    where.push("g.feature_state = 'pending'");
-  } else if (["pending", "approved", "rejected"].includes(status)) {
-    where.push("g.status = ?"); binds.push(status);
-  }
-  const { results } = await env.DB.prepare(
-    `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featured, g.feature_state, g.feature_note,
+const GAME_DETAIL_SELECT = `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featured, g.feature_state, g.feature_note,
             g.deep_coop, g.demo_url, g.demo_note, g.t_en, g.t_zh, g.t_ko, g.d_en, g.d_zh, g.d_ko,
             g.full_en, g.full_zh, g.full_ko, g.studio_en, g.studio_zh, g.studio_ko, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
@@ -126,25 +115,46 @@ async function handleGamesList(env, request) {
      FROM games g
      LEFT JOIN accounts a ON a.id = g.claimed_by
      LEFT JOIN developer_profiles dp ON dp.account_id = g.claimed_by
-     WHERE ${where.join(" AND ")}
-     ORDER BY g.featured DESC, g.sort ASC, g.id DESC LIMIT 200`
-  ).bind(...binds).all();
-
-  const rows = (results || []).map((r) => {
-    for (const k of ["genres", "needs", "platforms", "screenshots"]) {
-      try { r[k] = JSON.parse(r[k] || "[]"); } catch { r[k] = []; }
-    }
-    return r;
-  });
-
-  const { results: cnt } = await env.DB.prepare(
-    "SELECT status, COUNT(*) AS c FROM games GROUP BY status"
-  ).all();
-  const counts = {};
-  (cnt || []).forEach((x) => { counts[x.status] = x.c; });
-  const fc = await env.DB.prepare("SELECT COUNT(*) AS c FROM games WHERE feature_state='pending'").first();
-  counts.feature = (fc && fc.c) || 0;
-  return json({ ok: true, rows, counts });
+`;
+const GAME_SUMMARY_SELECT = `SELECT g.id, g.t_en, g.t_zh, g.t_ko, g.feishu_id,
+  g.visible, g.featured, g.feature_state, g.status, g.stage, g.cover, g.created_at,
+  a.email AS login_email, dp.studio_name
+  FROM games g LEFT JOIN accounts a ON a.id=g.claimed_by
+  LEFT JOIN developer_profiles dp ON dp.account_id=g.claimed_by`;
+function parseGameArrays(row) {
+  for (const key of ["genres", "needs", "platforms", "screenshots"]) {
+    if (!(key in row)) continue;
+    try { const value=JSON.parse(row[key] || "[]"); row[key]=Array.isArray(value)?value:[]; }
+    catch { row[key]=[]; }
+  }
+  return row;
+}
+async function handleGameDetail(env, request) {
+  const id=Number(new URL(request.url).searchParams.get("id"));
+  if (!Number.isSafeInteger(id) || id<=0) return bad("invalid_id");
+  const row=await env.DB.prepare(GAME_DETAIL_SELECT+" WHERE g.id = ?").bind(id).first();
+  if (!row) return bad("game_not_found",404);
+  return json({ok:true,row:parseGameArrays(row)});
+}
+async function handleGamesList(env, request) {
+  const url = new URL(request.url);
+  const status = url.searchParams.get("status") || "pending";
+  const summary=url.searchParams.get("summary")==="1";
+  const where = ["1=1"], binds = [];
+  if (status === "feature") where.push("g.feature_state = 'pending'");
+  else if (["pending", "approved", "rejected"].includes(status)) {
+    where.push("g.status = ?"); binds.push(status);
+  }
+  const [games,statuses,features]=await env.DB.batch([
+    env.DB.prepare((summary?GAME_SUMMARY_SELECT:GAME_DETAIL_SELECT)+
+      ` WHERE ${where.join(" AND ")} ORDER BY g.featured DESC, g.sort ASC, g.id DESC LIMIT 200`).bind(...binds),
+    env.DB.prepare("SELECT status, COUNT(*) AS c FROM games GROUP BY status"),
+    env.DB.prepare("SELECT COUNT(*) AS c FROM games WHERE feature_state='pending'")
+  ]);
+  const counts={};
+  for (const row of statuses.results || []) counts[row.status]=row.c;
+  counts.feature=features.results?.[0]?.c || 0;
+  return json({ok:true,rows:(games.results||[]).map(parseGameArrays),counts});
 }
 
 async function handleReviewGame(env, request) {
@@ -651,6 +661,7 @@ export async function onRequest(context) {
     if (method === "GET" && path === "partners") return await handleList(env, request);
     if (method === "POST" && path === "review") return await handleReview(env, request);
     if (method === "POST" && path === "intro") return await handleIntroSave(env, request);
+    if (method === "GET" && path === "game") return await handleGameDetail(env, request);
     if (method === "GET" && path === "games") return await handleGamesList(env, request);
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
     if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);

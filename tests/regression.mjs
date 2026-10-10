@@ -107,3 +107,21 @@ test('submission and deletion work against real local D1, preserving the other g
   const missing=await admin({env,request:request('game-delete',{id:1}),params:{path:['game-delete']}});assert.equal(missing.status,404);
  }finally{await mf.dispose();}
 });
+
+test('admin summary omits heavy fields and authenticated detail returns only the selected game',async()=>{
+ const mf=new Miniflare(convertV4MiniflareOptions({name:'test',modules:true,script:'export default {fetch(){return new Response("test")}}',d1Databases:{DB:'summary-regression'},compatibilityDate:'2026-10-08'}));
+ try {
+  const DB=await mf.getD1Database('DB');await DB.exec(await readFile(new URL('./fixtures/schema.sql',import.meta.url),'utf8'));
+  await DB.exec("INSERT INTO accounts(id,email,role,status) VALUES(1,'admin@example.com','developer','verified'); INSERT INTO developer_profiles(account_id,studio_name) VALUES(1,'Studio'); INSERT INTO games(id,slug,t_en,full_en,screenshots,genres,claimed_by,status,feature_state) VALUES(1,'first','First','A detailed description','[\"https://example.com/a.jpg\"]','[\"Adventure\"]',1,'approved','pending'); INSERT INTO games(id,slug,t_en,status) VALUES(2,'second','Second','pending');");
+  const secret='test-only',body=Buffer.from(JSON.stringify({aid:1,email:'admin@example.com',exp:Date.now()+60000})).toString('base64url');
+  const cookie='sry_session='+body+'.'+createHmac('sha256',secret).update(body).digest('hex');
+  const env={DB,SESSION_SECRET:secret,ADMIN_EMAILS:'admin@example.com'};
+  const call=(path,query,authenticated=true)=>admin({env,params:{path:[path]},request:new Request('https://test.example/'+path+query,{headers:authenticated?{cookie}:{}})});
+  const response=await call('games','?summary=1&status=approved');assert.equal(response.status,200);const data=await response.json();
+  assert.equal(data.rows.length,1);assert.equal(data.rows[0].id,1);assert.equal(data.rows[0].studio_name,'Studio');
+  assert.equal('full_en' in data.rows[0],false);assert.equal('screenshots' in data.rows[0],false);assert.equal(data.counts.pending,1);assert.equal(data.counts.approved,1);assert.equal(data.counts.feature,1);
+  const detail=await call('game','?id=1');assert.equal(detail.status,200);const full=await detail.json();assert.equal(full.row.id,1);assert.equal(full.row.full_en,'A detailed description');assert.deepEqual(full.row.screenshots,['https://example.com/a.jpg']);
+  assert.equal((await call('game','?id=1',false)).status,401);assert.equal((await call('game','?id=100')).status,404);assert.equal((await call('game','?id=1x')).status,400);
+  const legacy=await call('games','?status=approved');assert.equal((await legacy.json()).rows[0].full_en,'A detailed description');
+ }finally{await mf.dispose();}
+});

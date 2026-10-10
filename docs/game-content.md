@@ -62,11 +62,11 @@ NODE_PATH=/workspace/.setup-tools/node_modules node tests/browser.cjs
 
 测试工具安装在仓库外的 `/workspace/.setup-tools`。缺少时安装 Wrangler 4.149.0（包含 Miniflare）和 Playwright；浏览器可用 `CHROMIUM_PATH` 指定。Pages Functions 已用 Wrangler 编译验证。
 
-当前改动为本地待审阅版本，未推送或部署。沿用 GitHub `main` → Cloudflare Pages 的现有发布流程；新部署后检查三语提交、详情页排版、管理员删除，并保留原有 DB/R2、会话和邮件密钥绑定。
+三语提交、描述排版和删除修复已通过 GitHub `main` → Cloudflare Pages 发布（提交 `36ebbc6`）。保留原有 DB/R2、会话和邮件密钥绑定。
 
 
 ### DeepSeek 实测（2026-10-09）
 
 Codex 和 Pages 的 `TRANSLATION_PROVIDER=deepseek`、密钥绑定均已确认；不读取或输出密钥值。默认 `deepseek-chat` 的真实调用成功：短样本 489 tokens，约 1.7 秒；1789 字符中文正文在精简规则调整后用量 1867 tokens，约 3 秒，英文正文 680 字符、韩文正文 369 字符，原文保持不变。最初较长样本的直译超过 2000 字符限制，校验正确拒绝；现在要求合并重复章节、保留独特事实并将译文控制到较小预算。即使模型不遵守预算，服务仍会保留原文并返回未完成状态。
 
-这验证了开发环境里的真实服务调用；代码仍未推送、未部署，不代表线上自动翻译功能已启用。费用按 DeepSeek 当期输入、输出与缓存价格计费。本次余额接口没有显示扣费差额，不能据此认定免费，也不能据此给出精确单次费用。
+这验证了开发环境里的真实服务调用；随后代码已发布到生产，生产翻译配置已核对。费用按 DeepSeek 当期输入、输出与缓存价格计费。本次余额接口没有显示扣费差额，不能据此认定免费，也不能据此给出精确单次费用。
