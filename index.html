@@ -106,7 +106,7 @@
   .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; min-width:0; overflow:hidden; display:flex; flex-direction:column; }
   .card:hover{ border-color:var(--accent); transform:translateY(-2px); }
   .cover{ position:relative; aspect-ratio:460/215; overflow:hidden; background:#1a1a1a; }
-  .cover img{ width:100%; height:100%; object-fit:contain; }
+  .cover img{ width:100%; height:100%; object-fit:cover; object-position:center; }
   .cover .fallback{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
   .stage-badge{ position:absolute; top:0; left:0; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:4px 11px; font-weight:700; }
   .region-badge{ position:absolute; top:0; right:0; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.08em; background:rgba(12,13,10,.7); color:var(--ink); padding:4px 10px; border-left:1px solid var(--line); border-bottom:1px solid var(--line); }
@@ -133,7 +133,7 @@
   .modal{ position:fixed; inset:0; z-index:900; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
   .modal.open{ display:flex; }
   .modal-card{ position:relative; max-width:560px; width:100%; background:var(--panel); border:1px solid var(--line); }
-  .modal-card img{ width:100%; aspect-ratio:460/215; object-fit:contain; }
+  .modal-card img{ width:100%; aspect-ratio:460/215; object-fit:cover; object-position:center; }
   .modal-body{ padding:22px 24px 26px; }
   .modal-body h2{ font-family:var(--sans); font-weight:900; font-size:25px; color:#fff; margin-bottom:10px; }
   .modal-body p{ font-family:var(--mono); font-size:12.5px; color:var(--ink-dim); line-height:1.7; }

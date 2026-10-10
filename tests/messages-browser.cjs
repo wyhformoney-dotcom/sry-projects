@@ -28,7 +28,7 @@ const games=Array.from({length:37},(_,i)=>({id:i+1,t_en:'Game '+(i+1),t_zh:'游�
    await route.fulfill({status,json:data});
   });
   await page.goto(base+'/index.html');await page.waitForFunction(()=>document.querySelectorAll('#grid .card').length===18);
-  const style=await page.locator('.cover img').first().evaluate(img=>({fit:getComputedStyle(img).objectFit,ratio:img.parentElement.clientWidth/img.parentElement.clientHeight}));assert.equal(style.fit,'contain');assert.ok(Math.abs(style.ratio-460/215)<.02);
+  const style=await page.locator('.cover img').first().evaluate(img=>({fit:getComputedStyle(img).objectFit,position:getComputedStyle(img).objectPosition,ratio:img.parentElement.clientWidth/img.parentElement.clientHeight}));assert.equal(style.fit,'cover');assert.equal(style.position,'50% 50%');assert.ok(Math.abs(style.ratio-460/215)<.02);
   await page.locator('.cover img').first().hover();assert.equal(await page.locator('.cover img').first().evaluate(img=>getComputedStyle(img).transform),'none');
   await page.locator('[data-pg="3"]').first().click();assert.equal(await page.locator('#grid .card').count(),1);
   await page.setViewportSize({width:375,height:820});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.setViewportSize({width:1200,height:900});
@@ -44,6 +44,6 @@ const games=Array.from({length:37},(_,i)=>({id:i+1,t_en:'Game '+(i+1),t_zh:'游�
   await page.locator('#lang [data-l="ko"]').click();assert.match(await page.locator('#developer-inbox h2').textContent(),/메시지함/);
   await page.setViewportSize({width:375,height:820});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
   role='partner';await page.goto(base+'/account.html');await page.locator('#main').waitFor({state:'visible'});assert.equal(await page.locator('#developer-inbox').isVisible(),false);assert.match(await page.locator('#contacts-quota').textContent(),/10\/10/);
-  assert.deepEqual(errors,[]);console.log('PASS: 18-card pagination, uncropped Steam covers, quota-gated composer, sending feedback, private safe inbox, unread updates and mobile/three-language integration');
+  assert.deepEqual(errors,[]);console.log('PASS: 18-card pagination, centered filled covers, quota-gated composer, sending feedback, private safe inbox, unread updates and mobile/three-language integration');
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
