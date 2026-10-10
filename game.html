@@ -444,10 +444,15 @@ $("#lang").addEventListener("click",e=>{const b=e.target.closest("button");if(!b
   renderLoading();
   const id=(new URLSearchParams(location.search).get("id")||"").toLowerCase();
   try{
-    const res=await fetch("/api/games");
+    const res=await fetch("/api/games",{cache:"no-cache"});
     const data=await res.json();
     if(!Array.isArray(data)) throw new Error("bad payload");
-    GAME = data.find(g=>slugify(g.t_en)===id) || data.find(g=>slugify(g.t_zh)===id) || null;
+    GAME = data.find(g=>String(g.id)===id || (g.slug && g.slug.toLowerCase()===id))
+      || data.find(g=>[g.t_en,g.t_zh,g.t_ko].some(title=>title && slugify(title)===id)) || null;
+    if(!GAME && id){
+      const legacy=data.filter(g=>g.slug && g.slug.replace(/-[a-f0-9]{6}$/i,"").toLowerCase()===id);
+      if(legacy.length===1) GAME=legacy[0];
+    }
   }catch(err){ GAME=null; }
   media = GAME?buildMedia(GAME):[];
   setTimeout(paintFav,0);

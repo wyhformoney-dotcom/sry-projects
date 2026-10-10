@@ -25,7 +25,17 @@
 
 密钥创建入口：[DeepSeek](https://platform.deepseek.com/) · [Kimi / Moonshot](https://platform.moonshot.cn/) · [OpenAI](https://platform.openai.com/api-keys)。
 
-密钥缺失、服务超时、额度不足或返回格式无效时，申请保留原文并提示翻译未完成；后台可以重试。不会把原文复制三份冒充译文。真实模型质量与时延需要有凭据后验证。全文沿用 2000 字符限制，翻译会要求保持事实并精简到限制内，审核时应检查专有名词与事实。
+密钥缺失、服务超时、额度不足或返回格式无效时，申请保留原文并提示翻译未完成；后台可以重试。不会把原文复制三份冒充译文。真实模型质量与时延需要有凭据后验证。开发者提交与自动翻译正文采用 2000 字符限制，翻译会要求保持事实并精简到限制内，审核时应检查专有名词与事实。
+
+## 管理员编辑游戏
+
+审核后台 → 游戏审核 → 已上架 → 展开游戏 → **编辑游戏资料**。可修改三语游戏名、简介、项目概览、团队介绍，以及官方开发者署名、团队 Logo、阶段、市场、品类、平台、合作需求、封面和截图 URL、Steam 和预告片链接。概览支持 Markdown 和三语预览，管理员手工编辑最多 10000 字符，超限会报错，不截断保存。联系方式仍使用详情中的独立保存按钮。
+
+保存直接更新网站内容，保持该游戏原有审核状态、可见性、精选、排序、归属账号和联系资料。待审核、驳回及历史飞书导入的游戏也可编辑；修改资料与审核上架是独立操作。打开完整编辑器会带入当前详情中尚未保存的三语草稿，取消不写入数据库。
+
+`POST /api/admin/game-update` 接收 `{id, changes, expected}`，沿用管理员登录权限。只允许内容字段，检查标题、长度、图片及链接协议，只更新实际改动字段；期望值和原子 UPDATE 条件共同阻止同一字段的并发覆盖，冲突返回 409，编辑框保留草稿。行内“保存三语内容”也使用这个接口。旧 `game-i18n` 接口保留兼容，并使用相同长度和字段校验。
+
+主页和账号中心使用游戏的固定 `slug` 链接，详情页识别固定 slug、数字 ID 和旧标题链接。改名不修改数据库 slug；旧标题链接还可用唯一匹配的原 slug（去掉创建时的六位随机后缀）识别。公开游戏接口要求缓存重新验证，前端刷新时也主动重新获取，避免编辑后继续显示五分钟前的数据。不需要新增数据库字段或环境变量。
 
 ## 描述排版
 
@@ -47,10 +57,10 @@
 
 ```sh
 cd /workspace/sry-projects
-NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs
+NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs tests/admin-edit.mjs
 ```
 
-回归覆盖描述安全渲染、Steam 排版保留、翻译补全/失败恢复，以及真实本地 D1 上的提交和管理员删除。翻译服务在这些测试中使用模拟响应，不调用真实模型。
+回归覆盖描述安全渲染、Steam 排版保留、翻译补全/失败恢复，以及真实本地 D1 上的提交、管理员删除和内容修改。编辑检查包含管理员权限、原状态和归属保留、冲突、链接校验、仅韩文标题展示及旧接口长文本保存。翻译服务在这些测试中使用模拟响应，不调用真实模型。
 
 浏览器测试需要 Playwright、系统 Chromium 和一个静态服务器：
 
@@ -58,6 +68,7 @@ NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs
 python3 -m http.server 8811 --bind 127.0.0.1
 # 在另一终端运行；接口均由测试模拟，不访问生产：
 NODE_PATH=/workspace/.setup-tools/node_modules node tests/browser.cjs
+NODE_PATH=/workspace/.setup-tools/node_modules node tests/admin-edit-browser.cjs
 ```
 
 测试工具安装在仓库外的 `/workspace/.setup-tools`。缺少时安装 Wrangler 4.149.0（包含 Miniflare）和 Playwright；浏览器可用 `CHROMIUM_PATH` 指定。Pages Functions 已用 Wrangler 编译验证。

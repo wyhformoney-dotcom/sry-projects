@@ -286,7 +286,7 @@ const slugify=s=>(s||"").toLowerCase().trim().replace(/['’]/g,"").replace(/[^a
 
 function cardHTML(g,i,pos){
   const eager = pos<3;
-  return `<a class="card${g.featured?" feat":""}" data-i="${i}" href="game.html?id=${slugify(g.t_en||g.t_zh)}">
+  return `<a class="card${g.featured?" feat":""}" data-i="${i}" href="game.html?id=${encodeURIComponent(g.slug||slugify(g.t_en||g.t_zh||g.t_ko))}">
     <div class="cover">
       ${g.featured?`<span class="feat-badge">★ ${L18("featBadge")}</span>`:""}
       <span class="stage-badge">${L('stage',g.stage)}</span>
@@ -365,7 +365,7 @@ $("#pager").addEventListener("click",e=>{const b=e.target.closest(".pg");if(!b||
 
 async function loadGames(){
   try{
-    const res=await fetch('/api/games',{headers:{Accept:'application/json'}});
+    const res=await fetch('/api/games',{cache:'no-cache',headers:{Accept:'application/json'}});
     const data=await res.json();
     if(!Array.isArray(data)) throw new Error((data&&data.error)||'bad data');
     GAMES=data;

@@ -109,7 +109,7 @@ const GAME_DETAIL_SELECT = `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featu
             g.deep_coop, g.demo_url, g.demo_note, g.t_en, g.t_zh, g.t_ko, g.d_en, g.d_zh, g.d_ko,
             g.full_en, g.full_zh, g.full_ko, g.studio_en, g.studio_zh, g.studio_ko, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
-            g.video, g.steam_url, g.status, g.review_note, g.created_at,
+            g.developer, g.studio_logo, g.video, g.steam_url, g.status, g.review_note, g.created_at,
             g.contact AS legacy_contact, a.email AS login_email,
             dp.studio_name, dp.contact_email AS dev_contact
      FROM games g
@@ -408,19 +408,14 @@ async function handleFeatureSet(env, request) {
 
 async function handleGameI18n(env, request) {
   const b = await request.json().catch(() => ({}));
-  const gid = parseInt(b.id, 10);
-  if (!gid) return bad("invalid_id");
-  const T = (v, n) => String(v || "").trim().slice(0, n);
-  await env.DB.prepare(
-    `UPDATE games SET t_en=?, t_zh=?, t_ko=?, d_en=?, d_zh=?, d_ko=?,
-       full_en=?, full_zh=?, full_ko=?, studio_en=?, studio_zh=?, studio_ko=? WHERE id=?`
-  ).bind(
-    T(b.t_en,120), T(b.t_zh,120), T(b.t_ko,120),
-    T(b.d_en,300), T(b.d_zh,300), T(b.d_ko,300),
-    T(b.full_en,2000), T(b.full_zh,2000), T(b.full_ko,2000),
-    T(b.studio_en,1000), T(b.studio_zh,1000), T(b.studio_ko,1000), gid
-  ).run();
-  return json({ ok: true });
+  const id=Number(b.id);
+  if (!Number.isSafeInteger(id) || id<=0) return bad("invalid_id");
+  const game=await env.DB.prepare("SELECT * FROM games WHERE id=?").bind(id).first();
+  if (!game) return bad("game_not_found",404);
+  const keys=Object.keys(GAME_TEXT_LIMITS).filter(key=>/^(t|d|full|studio)_(en|zh|ko)$/.test(key));
+  const changes=Object.fromEntries(keys.map(key=>[key,String(b[key] ?? "")]));
+  const expected=Object.fromEntries(keys.map(key=>[key,gameFieldValue(game,key)]));
+  return handleGameUpdate(env,new Request(request.url,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id,changes,expected})}));
 }
 
 async function handleGamesOrder(env, request) {
@@ -471,6 +466,73 @@ async function handleContactSet(env, request) {
 /* ---------- 管理员新增游戏(按联系邮箱自动建号并挂载) ---------- */
 const A_STAGES = ["In Development","Demo","Playtest","Early Access","Released"];
 const A_MARKETS = ["Global","China","Overseas"];
+const GAME_TEXT_LIMITS = {
+  t_en:120, t_zh:120, t_ko:120, d_en:300, d_zh:300, d_ko:300,
+  full_en:10000, full_zh:10000, full_ko:10000,
+  studio_en:1000, studio_zh:1000, studio_ko:1000, developer:300,
+  studio_logo:2048, cover:2048, video:2048, steam_url:2048, stage:30, region:30,
+};
+const GAME_ARRAY_FIELDS = ["genres", "needs", "platforms", "screenshots"];
+function gameFieldValue(game, key) {
+  if (!GAME_ARRAY_FIELDS.includes(key)) return String(game[key] ?? "");
+  try { const value=JSON.parse(game[key] || "[]"); return Array.isArray(value)?value:[]; }
+  catch { return []; }
+}
+function gameMediaUrl(value, key) {
+  if (!value || (key==="studio_logo" && /^preset:(solo|team|studio)$/.test(value))) return value;
+  try {
+    const url=new URL(value);
+    if (!["https:","http:"].includes(url.protocol) || url.username || url.password || /[\u0000-\u001f\u007f]/.test(value)) return null;
+    return url.href;
+  } catch { return null; }
+}
+async function handleGameUpdate(env, request) {
+  const body=await request.json().catch(()=>null);
+  const id=Number(body?.id);
+  if (!Number.isSafeInteger(id) || id<=0) return bad("invalid_id");
+  const {changes,expected}=body;
+  const object=v=>v && typeof v==="object" && !Array.isArray(v);
+  if (!object(changes) || !object(expected)) return bad("invalid_changes");
+  const keys=Object.keys(changes);
+  if (!keys.length || keys.some(key=>!Object.hasOwn(GAME_TEXT_LIMITS,key) && !GAME_ARRAY_FIELDS.includes(key))) return bad("invalid_changes");
+  const game=await env.DB.prepare("SELECT * FROM games WHERE id=?").bind(id).first();
+  if (!game) return bad("game_not_found",404);
+  const values={};
+  for (const key of keys) {
+    if (!Object.hasOwn(expected,key)) return bad("expected_required");
+    if (JSON.stringify(expected[key])!==JSON.stringify(gameFieldValue(game,key))) return bad("edit_conflict",409);
+    if (GAME_ARRAY_FIELDS.includes(key)) {
+      const array=changes[key];
+      if (!Array.isArray(array) || array.length>20 || array.some(value=>typeof value!=="string" || !value.trim() || value.length>(key==="screenshots"?2048:100))) return bad("invalid_"+key);
+      const normalized=[...new Set(array.map(value=>value.trim()))];
+      if (key==="screenshots") {
+        for (let i=0;i<normalized.length;i++) {
+          const url=gameMediaUrl(normalized[i],key);
+          if (url===null) return bad("invalid_url");
+          normalized[i]=url;
+        }
+      }
+      values[key]=JSON.stringify(normalized);
+    } else {
+      if (typeof changes[key]!=="string") return bad("invalid_"+key);
+      let value=changes[key].trim();
+      if (value.length>GAME_TEXT_LIMITS[key]) return bad("field_too_long");
+      if (key==="stage" && value && !A_STAGES.includes(value)) return bad("invalid_stage");
+      if (key==="region" && value && !A_MARKETS.includes(value)) return bad("invalid_region");
+      if (["cover","studio_logo","video","steam_url"].includes(key)) {
+        value=gameMediaUrl(value,key);
+        if (value===null) return bad("invalid_url");
+      }
+      values[key]=value;
+    }
+  }
+  if (!["t_en","t_zh","t_ko"].some(key=>String(values[key] ?? game[key] ?? "").trim())) return bad("title_required");
+  // Compare the raw database values as well, so a concurrent save cannot be overwritten.
+  const result=await env.DB.prepare(`UPDATE games SET ${keys.map(key=>key+"=?").join(",")} WHERE id=? AND ${keys.map(key=>key+" IS ?").join(" AND ")}`)
+    .bind(...keys.map(key=>values[key]),id,...keys.map(key=>game[key] ?? null)).run();
+  if (!result.meta.changes) return bad("edit_conflict",409);
+  return json({ok:true,id,updated:Object.fromEntries(keys.map(key=>[key,GAME_ARRAY_FIELDS.includes(key)?JSON.parse(values[key]):values[key]]))});
+}
 const aSlug = (t) => {
   const base = String(t || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
   return (base || "game") + "-" + crypto.randomUUID().slice(0, 6);
@@ -671,6 +733,7 @@ export async function onRequest(context) {
     if (method === "POST" && path === "games-order") return await handleGamesOrder(env, request);
     if (method === "POST" && path === "contact-set") return await handleContactSet(env, request);
     if (method === "POST" && path === "game-create") return await handleGameCreate(env, request);
+    if (method === "POST" && path === "game-update") return await handleGameUpdate(env, request);
     if (method === "POST" && path === "steam-fetch") return await handleAdminSteamFetch(env, request);
     if (method === "POST" && path === "game-delete") return await handleGameDelete(env, request);
     if (method === "POST" && path === "partner-delete") return await handlePartnerDelete(env, request);

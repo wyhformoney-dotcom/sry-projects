@@ -19,7 +19,7 @@ export async function onRequestGet(context) {
               genres, needs, platforms, region, cover, screenshots,
               studio_logo, video, steam_url, sort
        FROM games
-       WHERE visible = 1 AND status = 'approved' AND (t_en != '' OR t_zh != '')
+       WHERE visible = 1 AND status = 'approved' AND (t_en != '' OR t_zh != '' OR t_ko != '')
        ORDER BY featured DESC, sort ASC, id DESC
        LIMIT 500`
     ).all();
@@ -53,7 +53,7 @@ export async function onRequestGet(context) {
     return new Response(JSON.stringify(games), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "public, max-age=300, s-maxage=300",
+        "Cache-Control": "no-cache",
         "Access-Control-Allow-Origin": "*",
       },
     });
