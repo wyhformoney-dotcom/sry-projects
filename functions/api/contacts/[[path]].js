@@ -3,17 +3,17 @@
 //   GET  /api/contacts/mine    → 我已解锁的列表 + 本月额度
 // 规则:
 //   - 合作方(已认证)解锁开发者;开发者解锁合作方(已认证)
-//   - 每自然月每账号最多解锁 MONTHLY_QUOTA 个"不同的人";重复查看同一人不扣额度
+//   - 合作方每自然月最多解锁 10 个不同开发者;开发者查看合作方沿用 5 个;重复查看同一人不扣额度
 //   - 解锁单位是账号(人),不是游戏:解锁某开发者后,其所有游戏的联系方式都可见
 // 依赖:env.DB、env.SESSION_SECRET
 
+import { quotaForRole, monthKey as ym, usedThisMonth } from '../../lib/contact-quota.js';
 const COOKIE = "sry_session";
-const MONTHLY_QUOTA = 5; // ← 想调整每月额度改这里
 const FALLBACK_EMAIL = "wangyanhui@sryinteractive.com";
 
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
-    status, headers: { "content-type": "application/json; charset=utf-8" },
+    status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store" },
   });
 const bad = (error, status = 400, extra = {}) => json({ ok: false, error, ...extra }, status);
 
@@ -41,15 +41,6 @@ async function readSession(env, request) {
   } catch { return null; }
 }
 
-const ym = () => new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-
-async function usedThisMonth(env, viewerId) {
-  const r = await env.DB.prepare(
-    "SELECT COUNT(*) AS c FROM contact_views WHERE viewer_id = ? AND ym = ?"
-  ).bind(viewerId, ym()).first();
-  return (r && r.c) || 0;
-}
-
 async function handleReveal(env, s, request) {
   const b = await request.json().catch(() => ({}));
   const type = String(b.type || "");
@@ -59,6 +50,8 @@ async function handleReveal(env, s, request) {
     "SELECT id, role, status FROM accounts WHERE id = ?"
   ).bind(s.aid).first();
   if (!viewer) return bad("not_logged_in", 401);
+  if (viewer.status === "suspended") return bad("account_suspended", 403);
+  const MONTHLY_QUOTA = quotaForRole(viewer.role);
 
   let targetId = 0, contact = "", name = "";
 
@@ -69,7 +62,7 @@ async function handleReveal(env, s, request) {
     const gid = parseInt(b.game_id, 10);
     if (!gid) return bad("invalid_id");
     const game = await env.DB.prepare(
-      "SELECT id, claimed_by, developer FROM games WHERE id = ? AND status = 'approved'"
+      "SELECT id, claimed_by, developer FROM games WHERE id = ? AND status = 'approved' AND visible = 1"
     ).bind(gid).first();
     if (!game) return bad("not_found", 404);
     targetId = game.claimed_by || 0;
@@ -136,7 +129,7 @@ async function handleReveal(env, s, request) {
 
   // 已解锁过 → 免费返回
   const existed = await env.DB.prepare(
-    "SELECT id FROM contact_views WHERE viewer_id = ? AND target_type = ? AND target_id = ?"
+    "SELECT id FROM contact_views WHERE viewer_id = ? AND target_type = ? AND target_id = ? AND ym != 'interest'"
   ).bind(viewer.id, type, targetId).first();
   const used = await usedThisMonth(env, viewer.id);
   if (existed) return json({ ok: true, contact, name, already: true, used, quota: MONTHLY_QUOTA });
@@ -144,28 +137,40 @@ async function handleReveal(env, s, request) {
   // 额度检查
   if (used >= MONTHLY_QUOTA) return bad("quota_exceeded", 429, { used, quota: MONTHLY_QUOTA });
 
-  await env.DB.prepare(
-    "INSERT INTO contact_views (viewer_id, target_type, target_id, ym) VALUES (?, ?, ?, ?)"
-  ).bind(viewer.id, type, targetId, ym()).run();
-
-  return json({ ok: true, contact, name, already: false, used: used + 1, quota: MONTHLY_QUOTA });
+  const inserted = await env.DB.prepare(
+    `INSERT INTO contact_views (viewer_id, target_type, target_id, ym)
+     SELECT ?, ?, ?, ? WHERE
+       (SELECT COUNT(*) FROM contact_views WHERE viewer_id = ? AND ym = ?) < ?
+       AND NOT EXISTS (SELECT 1 FROM contact_views WHERE viewer_id = ? AND target_type = ? AND target_id = ? AND ym != 'interest')`
+  ).bind(viewer.id, type, targetId, ym(), viewer.id, ym(), MONTHLY_QUOTA, viewer.id, type, targetId).run();
+  const currentUsed = await usedThisMonth(env, viewer.id);
+  if (!inserted.meta.changes) {
+    const unlocked = await env.DB.prepare("SELECT id FROM contact_views WHERE viewer_id = ? AND target_type = ? AND target_id = ? AND ym != 'interest'")
+      .bind(viewer.id, type, targetId).first();
+    if (!unlocked) return bad("quota_exceeded", 429, { used: currentUsed, quota: MONTHLY_QUOTA });
+    return json({ ok: true, contact, name, already: true, used: currentUsed, quota: MONTHLY_QUOTA });
+  }
+  return json({ ok: true, contact, name, already: false, used: currentUsed, quota: MONTHLY_QUOTA });
 }
 
 async function handleMine(env, s) {
   const viewer = await env.DB.prepare(
-    "SELECT id, role FROM accounts WHERE id = ?"
+    "SELECT id, role, status FROM accounts WHERE id = ?"
   ).bind(s.aid).first();
   if (!viewer) return bad("not_logged_in", 401);
+  if (viewer.status === "suspended") return bad("account_suspended", 403);
+  if (viewer.role === "partner" && viewer.status !== "verified") return bad("not_verified", 403);
+  const MONTHLY_QUOTA = quotaForRole(viewer.role);
 
   const { results } = await env.DB.prepare(
     `SELECT cv.target_type, cv.target_id, cv.viewed_at,
             dp.studio_name, dp.contact_email AS dev_contact, da.email AS dev_email,
-            pp.name_en, pp.name_zh, pp.contact_email AS par_contact
+            pp.name_en, pp.name_zh, CASE WHEN COALESCE(pp.contact_public,1)=1 THEN pp.contact_email ELSE '' END AS par_contact
      FROM contact_views cv
      LEFT JOIN developer_profiles dp ON cv.target_type = 'developer' AND dp.account_id = cv.target_id
      LEFT JOIN accounts da           ON cv.target_type = 'developer' AND da.id = cv.target_id
      LEFT JOIN partner_profiles pp   ON cv.target_type = 'partner'   AND pp.account_id = cv.target_id
-     WHERE cv.viewer_id = ?
+     WHERE cv.viewer_id = ? AND cv.ym != 'interest'
      ORDER BY cv.id DESC LIMIT 100`
   ).bind(viewer.id).all();
 

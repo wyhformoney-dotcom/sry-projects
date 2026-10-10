@@ -2,6 +2,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Account · SRY Game Hub</title>
+<link rel="stylesheet" href="/assets/messages.css">
+<script src="/assets/messages.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -104,7 +106,7 @@
   .fmodal .fmsg{ font-size:12px; margin-top:10px; display:none; }
   .gamegrid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-bottom:14px; }
   .gcard{ background:var(--panel); border:1px solid var(--line); border-radius:11px; overflow:hidden; display:flex; flex-direction:column; }
-  .gcard .gcover{ aspect-ratio:16/9; background:var(--panel2); object-fit:cover; width:100%; }
+  .gcard .gcover{ aspect-ratio:460/215; background:var(--panel2); object-fit:contain; width:100%; }
   .gcard .gbody{ padding:10px 11px; }
   .gcard .gname{ font-weight:700; font-size:12.5px; line-height:1.3; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .gcard .gpill{ display:inline-block; margin-top:6px; font-family:var(--mono); font-size:9px; padding:2px 7px; border-radius:10px; border:1px solid var(--line); color:var(--ink-dim); }
@@ -185,6 +187,8 @@
       <div class="cfoot" id="contacts-quota"></div>
     </div>
 
+    <section class="sry-inbox" id="developer-inbox" hidden></section>
+
     <div class="menu">
       <button class="mi" id="m-profile">
         <span class="ic">✎</span>
@@ -223,7 +227,7 @@ const I18N = {
     st:{ pending:"PENDING REVIEW", verified:"VERIFIED", rejected:"REJECTED", suspended:"SUSPENDED", active:"ACTIVE" },
     nmDev:"(studio name not set)", nmPar:"(company name not set)",
     noticePending:"Your profile is <b>under review</b>. We usually respond within 1–2 business days. Once verified, you can unlock developer contacts and reach out directly.",
-    noticeVerified:"Your account is <b>verified</b>. Your company card will appear in the Partners directory, and you can unlock developer contacts.",
+    noticeVerified:"Your account is <b>verified</b>. You can unlock 10 developer contacts per month. After using all 10, you can leave messages in developers’ inboxes.",
     noticeRejected:(why)=>`Your submission was <b>not approved</b>.${why?` Reason: <span class="why">${why}</span>`:""} Please update your profile and resubmit.`,
     noticeNoProfileDev:"Tip: complete your studio info so publishers can recognize you.",
     noticeNoGame:'Submit your first game — once it\'s approved, you can unlock publisher & investor contacts and reach out directly.',
@@ -249,7 +253,7 @@ const I18N = {
     st:{ pending:"待审核", verified:"已认证", rejected:"未通过", suspended:"已停用", active:"已激活" },
     nmDev:"(未填写工作室名称)", nmPar:"(未填写公司名称)",
     noticePending:"资料<b>审核中</b>,通常 1–2 个工作日内处理。通过认证后,你就能解锁开发者联系方式,直接对接项目。",
-    noticeVerified:"账号<b>已认证</b>。你的公司卡片将出现在 Partners 列表,并可解锁开发者联系方式。",
+    noticeVerified:"账号<b>已认证</b>。每月可查看 10 位开发者的联系方式；当月额度用完后，可以给开发者发送站内留言。",
     noticeRejected:(why)=>`提交<b>未通过</b>。${why?`原因:<span class="why">${why}</span>`:""} 请修改资料后重新提交。`,
     noticeNoProfileDev:"提示:完善工作室信息,让发行商更容易认识你。",
     noticeNoGame:"提交你的第一款游戏——审核通过后,你就能解锁发行商/投资方的联系方式,主动出击。",
@@ -275,7 +279,7 @@ const I18N = {
     st:{ pending:"심사 대기", verified:"인증 완료", rejected:"반려됨", suspended:"정지됨", active:"활성화됨" },
     nmDev:"(스튜디오 이름 미설정)", nmPar:"(회사명 미설정)",
     noticePending:"프로필이 <b>심사 중</b>입니다. 보통 1–2 영업일 내 처리됩니다. 인증되면 개발자 연락처를 해제하고 직접 연락할 수 있습니다.",
-    noticeVerified:"계정이 <b>인증되었습니다</b>. 회사 카드가 Partners 목록에 표시되며 개발자 연락처를 열람할 수 있습니다.",
+    noticeVerified:"계정이 <b>인증되었습니다</b>. 매월 개발자 연락처 10개를 조회할 수 있습니다. 모두 사용한 후 개발자에게 메시지를 남길 수 있습니다.",
     noticeRejected:(why)=>`제출이 <b>반려되었습니다</b>.${why?` 사유: <span class="why">${why}</span>`:""} 프로필을 수정 후 다시 제출해 주세요.`,
     noticeNoProfileDev:"팁: 스튜디오 정보를 작성하면 퍼블리셔가 알아보기 쉽습니다.",
     noticeNoGame:"첫 게임을 제출하세요. 승인되면 퍼블리셔·투자자 연락처를 해제하고 직접 연락할 수 있습니다.",
@@ -387,7 +391,7 @@ function render(){
 
   // 已解锁的联系人(开发者与已认证合作方都可能有)
   if(myContacts && (myContacts.rows.length || (isDev || status==="verified"))){
-    $("#contacts-section").style.display = myContacts.rows.length ? "block" : "none";
+    $("#contacts-section").style.display = "block";
     $("#contacts-t").textContent = t.myContacts;
     $("#contacts-list").innerHTML = myContacts.rows.map(c=>{
       const d = (c.viewed_at||"").slice(0,10);
@@ -406,6 +410,7 @@ function render(){
   $("#m-admin").style.display = isAdmin ? "flex" : "none";
   $("#m-admin-t").innerHTML = t.mAdmin + `<span class="sub">${t.mAdminSub}</span>`;
   $("#m-logout-t").textContent = t.mLogout;
+  SryMessages.initInbox("#developer-inbox",role);
 }
 
 async function deleteMyGame(id, name){

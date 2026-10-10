@@ -17,7 +17,7 @@ export async function onRequestGet(context) {
       `SELECT id, claimed_by, featured, slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko,
               studio_en, studio_zh, studio_ko, developer, stage,
               genres, needs, platforms, region, cover, screenshots,
-              studio_logo, video, contact, steam_url, sort
+              studio_logo, video, steam_url, sort
        FROM games
        WHERE visible = 1 AND status = 'approved' AND (t_en != '' OR t_zh != '')
        ORDER BY featured DESC, sort ASC, id DESC
@@ -43,7 +43,6 @@ export async function onRequestGet(context) {
       studio_en: r.studio_en || "", studio_zh: r.studio_zh || "", studio_ko: r.studio_ko || "",
       video: r.video || "",
       screenshots: parse(r.screenshots),
-      contact: r.contact || "",
       steam_url: r.steam_url || "",
       slug: r.slug || "",
       id: r.id,

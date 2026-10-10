@@ -1,6 +1,8 @@
 <!-- SRY Interactive — 游戏详情页（读取 /api/games 实时数据，按 ?id 显示对应游戏） -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="/assets/messages.css">
+<script src="/assets/messages.js"></script>
 <title>SRY Game Hub</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -173,6 +175,7 @@
   <div class="cn" id="cm-name"></div>
   <div class="cbox"><a id="cm-contact" href="#"></a><button class="copybtn" id="cm-copy">COPY</button></div>
   <div class="cq" id="cm-quota"></div>
+  <button type="button" class="sry-msg-button primary" id="cm-message" hidden></button>
   <button class="cclose" id="cm-close"></button>
 </div></div>
 <script>
@@ -241,11 +244,11 @@ async function initFav(){
 const FEAT_L={en:"FEATURED",zh:"精选",ko:"추천"};
 const CM_I18N = {
   en:{ title:"Developer Contact", already:"(previously unlocked — free)", fallback:"The developer hasn't provided contact details. To reach them, email us at wangyanhui@sryinteractive.com — this doesn't use your quota.", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
-       over:(u,q)=>`Monthly limit reached (${u}/${q}). Your quota resets on the 1st of next month.`, close:"CLOSE", copied:"COPIED ✓" },
+       over:(u,q)=>`Monthly limit reached (${u}/${q}). You can leave a message in the developer’s inbox. Your quota resets on the 1st of next month.`, message:"Leave a message", close:"CLOSE", copied:"COPIED ✓" },
   zh:{ title:"开发者联系方式", already:"(此前已解锁,不占额度)", fallback:"该开发者未留下联系方式。如需联系,请邮件 wangyanhui@sryinteractive.com,此操作不占用你的查看次数。", quota:(u,q)=>`本月已解锁 ${u}/${q} 个联系人,每月 1 日重置。`,
-       over:(u,q)=>`本月额度已用完(${u}/${q}),下月 1 日重置。`, close:"关闭", copied:"已复制 ✓" },
+       over:(u,q)=>`本月额度已用完(${u}/${q})，可给开发者发送站内留言。查看额度下月 1 日重置。`, message:"给开发者留言", close:"关闭", copied:"已复制 ✓" },
   ko:{ title:"개발자 연락처", already:"(이미 해제됨 — 무료)", fallback:"개발자가 연락처를 제공하지 않았습니다. 연락하려면 wangyanhui@sryinteractive.com 으로 메일 주세요. 조회 횟수가 차감되지 않습니다.", quota:(u,q)=>`이번 달 ${u}/${q}개 해제. 매월 1일 초기화.`,
-       over:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 다음 달 1일에 초기화됩니다.`, close:"닫기", copied:"복사됨 ✓" }
+       over:(u,q)=>`이번 달 한도를 모두 사용했습니다(${u}/${q}). 개발자에게 메시지를 남길 수 있습니다. 다음 달 1일에 초기화됩니다.`, message:"메시지 남기기", close:"닫기", copied:"복사됨 ✓" }
 };
 function cmShow({name, contact, already, used, quota, overLimit, fallback}){
   const M = CM_I18N[lang]||CM_I18N.en;
@@ -264,8 +267,12 @@ function cmShow({name, contact, already, used, quota, overLimit, fallback}){
     document.getElementById("cm-quota").textContent = fallback ? M.fallback : (M.quota(used, quota) + (already ? " " + M.already : ""));
   }
   document.getElementById("cm-close").textContent = M.close;
+  const message=document.getElementById("cm-message");
+  message.hidden=!(used>=quota && CURRENT_GAME?.has_owner);
+  message.textContent=M.message;
   document.getElementById("cmask").style.display="flex";
 }
+document.getElementById("cm-message").onclick=()=>{document.getElementById("cmask").style.display="none";SryMessages.compose(CURRENT_GAME);};
 document.getElementById("cm-close") && (document.getElementById("cm-close").onclick = ()=>{ document.getElementById("cmask").style.display="none"; });
 document.getElementById("cmask") && document.getElementById("cmask").addEventListener("click",(e)=>{ if(e.target.id==="cmask") e.target.style.display="none"; });
 document.getElementById("cm-copy") && (document.getElementById("cm-copy").onclick = async ()=>{

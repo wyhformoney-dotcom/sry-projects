@@ -100,13 +100,13 @@
   .grid{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; margin-top:26px; }
   @media(max-width:980px){ .grid{ grid-template-columns:repeat(2,minmax(0,1fr)); } .facet-label{ width:100%; } .facet{ flex-direction:column; gap:8px; } }
   @media(max-width:560px){ .grid{ grid-template-columns:1fr; } .wrap{ padding:34px 16px 80px; }
-    .nav-links{ display:none; } .nav{ gap:14px; padding:0 16px; } }
+    .nav-links{ display:none; } .nav{ flex-wrap:wrap; height:auto; min-height:62px; gap:10px; padding:10px 16px; }
+    .nav > .nav-spacer{ display:none; } .nav .brand{ flex:1; } }
 
   .card{ background:var(--panel); border:1px solid var(--line); transition:border-color .15s, transform .15s; min-width:0; overflow:hidden; display:flex; flex-direction:column; }
   .card:hover{ border-color:var(--accent); transform:translateY(-2px); }
-  .cover{ position:relative; aspect-ratio:16/9; overflow:hidden; background:#1a1a1a; }
-  .cover img{ width:100%; height:100%; object-fit:cover; transition:transform .5s cubic-bezier(.2,.7,.3,1); }
-  .card:hover .cover img{ transform:scale(1.05); }
+  .cover{ position:relative; aspect-ratio:460/215; overflow:hidden; background:#1a1a1a; }
+  .cover img{ width:100%; height:100%; object-fit:contain; }
   .cover .fallback{ position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center; text-align:center; padding:12px; font-family:var(--sans); font-weight:800; color:rgba(255,255,255,.85); }
   .stage-badge{ position:absolute; top:0; left:0; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; background:var(--accent); color:var(--accent-ink); padding:4px 11px; font-weight:700; }
   .region-badge{ position:absolute; top:0; right:0; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.08em; background:rgba(12,13,10,.7); color:var(--ink); padding:4px 10px; border-left:1px solid var(--line); border-bottom:1px solid var(--line); }
@@ -133,7 +133,7 @@
   .modal{ position:fixed; inset:0; z-index:900; display:none; align-items:center; justify-content:center; padding:24px; background:rgba(0,0,0,.72); backdrop-filter:blur(6px); }
   .modal.open{ display:flex; }
   .modal-card{ position:relative; max-width:560px; width:100%; background:var(--panel); border:1px solid var(--line); }
-  .modal-card img{ width:100%; aspect-ratio:16/9; object-fit:cover; }
+  .modal-card img{ width:100%; aspect-ratio:460/215; object-fit:contain; }
   .modal-body{ padding:22px 24px 26px; }
   .modal-body h2{ font-family:var(--sans); font-weight:900; font-size:25px; color:#fff; margin-bottom:10px; }
   .modal-body p{ font-family:var(--mono); font-size:12.5px; color:var(--ink-dim); line-height:1.7; }
@@ -239,7 +239,7 @@ const KO = {
 };
 
 let lang="en", search="", page=1;
-const PER_PAGE=12; // 每页显示数量（12 ≈ 桌面端 4 排；想改成 6 排=18，或 9、15 等，改这个数字即可）
+const PER_PAGE=18;
 const sel={ genre:new Set(), stage:new Set(), need:new Set(), platform:new Set(), region:new Set() };
 let onlyFeatured=false;
 const FEAT_L={en:"FEATURED",zh:"精选",ko:"추천"};
@@ -291,7 +291,7 @@ function cardHTML(g,i,pos){
       ${g.featured?`<span class="feat-badge">★ ${L18("featBadge")}</span>`:""}
       <span class="stage-badge">${L('stage',g.stage)}</span>
       <span class="region-badge">${L('region',g.region)}</span>
-      <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="640" height="360" data-t="${title(g).replace(/"/g,'&quot;')}"
+      <img src="${g.cover}" alt="" ${eager?'loading="eager" fetchpriority="high"':'loading="lazy"'} decoding="async" width="460" height="215" data-t="${title(g).replace(/"/g,'&quot;')}"
         onerror="this.style.display='none';this.parentElement.style.background='${hashColor(g.t_en)}';this.insertAdjacentHTML('afterend','<div class=\\'fallback cjk-swap\\'>'+this.dataset.t+'</div>')">
     </div>
     <div class="card-body">
