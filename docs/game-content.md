@@ -2,7 +2,11 @@
 
 ## 自动三语
 
-开发者选择“简介与正文的原文语言”，填写一种语言即可。提交时只为缺失的游戏名、简介和正文生成英文、简体中文、韩文；不覆盖人工内容。Steam 导入会保留其已有三语简介和正文，原文被编辑后不再沿用对应的旧译文。
+开发者选择“简介与项目概览的原文语言”，填写一种语言即可。提交时只为缺失的游戏名、简介和概览生成英文、简体中文、韩文；不覆盖人工内容。Steam 导入保留已有三语名称和卡片简介，简介被编辑后不再沿用旧译文。
+
+2026-10-13 起，开发者项目概览面向发行商和投资者，由开发者自行撰写，最多 500 字符（按浏览器字符串长度计算，含空格、标点和 Markdown）。表单提供产品定位与独特性、进度与验证、具体合作需求三类提示，支持短段落、要点和预览。
+
+开发者 Steam 解析接口仅提供名称、简短简介、图片、工作室及基础属性，省去三语 `full_*` 正文；前端也忽略旧接口的这些字段，并且不把它们作为隐藏译文提交。解析会保留开发者选择的原文语言及已写概览。提交接口检查所有实际提交的概览语言版本，超限返回 `desc_too_long`，不会截断后入库。
 
 新申请仍为 `pending`，不会自动上架。后台“自动补全缺失三语”生成的是编辑框草稿，必须检查并点击“保存三语内容”；审核通过仍是独立操作。已有游戏不会被批量修改。
 
@@ -25,7 +29,7 @@
 
 密钥创建入口：[DeepSeek](https://platform.deepseek.com/) · [Kimi / Moonshot](https://platform.moonshot.cn/) · [OpenAI](https://platform.openai.com/api-keys)。
 
-密钥缺失、服务超时、额度不足或返回格式无效时，申请保留原文并提示翻译未完成；后台可以重试。不会把原文复制三份冒充译文。真实模型质量与时延需要有凭据后验证。开发者提交与自动翻译正文采用 2000 字符限制，翻译会要求保持事实并精简到限制内，审核时应检查专有名词与事实。
+密钥缺失、服务超时、额度不足或返回格式无效时，申请保留原文并提示翻译未完成；后台可以重试。不会把原文复制三份冒充译文。真实模型质量与时延需要有凭据后验证。开发者提交及自动生成的各语言概览均采用 500 字符上限，翻译以 350 字符为目标，要求保留原文中的具体卖点、项目进度、团队依据和合作需求，审核时应检查专有名词与事实。新生成的译文超限会判定失败，原文保留供审核员处理；已填写的管理员较长正文也会保留。
 
 ## 管理员编辑游戏
 
@@ -57,10 +61,10 @@
 
 ```sh
 cd /workspace/sry-projects
-NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs tests/admin-edit.mjs
+NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs tests/admin-edit.mjs tests/submission-overview.mjs
 ```
 
-回归覆盖描述安全渲染、Steam 排版保留、翻译补全/失败恢复，以及真实本地 D1 上的提交、管理员删除和内容修改。编辑检查包含管理员权限、原状态和归属保留、冲突、链接校验、仅韩文标题展示及旧接口长文本保存。翻译服务在这些测试中使用模拟响应，不调用真实模型。
+回归覆盖描述安全渲染、Steam 基础资料与图片导入、翻译补全/失败恢复，以及真实本地 D1 上的提交、管理员删除和内容修改。投稿检查 500/501 字符边界、三语超限拦截和超长译文失败时的原文保留。编辑检查包含管理员权限、原状态和归属保留、冲突、链接校验、仅韩文标题展示及旧接口长文本保存。翻译服务在这些测试中使用模拟响应，不调用真实模型。
 
 浏览器测试需要 Playwright、系统 Chromium 和一个静态服务器：
 
@@ -69,6 +73,7 @@ python3 -m http.server 8811 --bind 127.0.0.1
 # 在另一终端运行；接口均由测试模拟，不访问生产：
 NODE_PATH=/workspace/.setup-tools/node_modules node tests/browser.cjs
 NODE_PATH=/workspace/.setup-tools/node_modules node tests/admin-edit-browser.cjs
+NODE_PATH=/workspace/.setup-tools/node_modules node tests/submission-overview-browser.cjs
 ```
 
 测试工具安装在仓库外的 `/workspace/.setup-tools`。缺少时安装 Wrangler 4.149.0（包含 Miniflare）和 Playwright；浏览器可用 `CHROMIUM_PATH` 指定。Pages Functions 已用 Wrangler 编译验证。

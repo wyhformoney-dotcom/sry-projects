@@ -52,6 +52,10 @@
   label .req{ color:var(--accent); }
   label .multi{ font-family:var(--mono); font-size:10px; font-weight:400; color:var(--ink-faint); margin-left:6px; }
   .sub{ font-size:11.5px; color:var(--ink-faint); line-height:1.55; margin:0 0 9px; }
+  #g3n{ font-size:13px; color:var(--ink-dim); line-height:1.7; }
+  .overview-tips{ margin:0 0 14px; padding:12px 18px 12px 34px; border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--panel); color:var(--ink-dim); font-size:13px; line-height:1.7; }
+  .overview-tips li{ margin:5px 0; }
+  .overview-tips li::marker{ color:var(--accent); }
   input[type=text], input[type=url], textarea{
     width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
     color:var(--ink); font-size:14px; padding:11px 13px; outline:none; font-family:inherit;
@@ -199,14 +203,15 @@
       <p class="sub cjk-swap" id="g2n"></p>
       <input type="text" id="d-en" maxlength="300">
       <div class="cnt"><span id="d-cnt">0</span>/300</div></div>
-    <div class="f"><label><span id="g3"></span> <span class="req">*</span></label>
+    <div class="f"><label for="full-en"><span id="g3"></span> <span class="req">*</span></label>
       <p class="sub cjk-swap" id="g3n"></p>
+      <ol class="overview-tips cjk-swap" id="overview-tips"></ol>
       <div class="description-tools" id="description-tools">
         <button type="button" data-format="heading"></button><button type="button" data-format="bold"></button><button type="button" data-format="list"></button><button type="button" data-format="quote"></button><button type="button" id="description-preview-toggle" aria-expanded="false"></button>
       </div>
-      <textarea id="full-en" maxlength="2000"></textarea>
+      <textarea id="full-en" maxlength="500" aria-describedby="g3n overview-tips" style="min-height:150px"></textarea>
       <div id="description-preview" class="description-preview game-description" hidden></div>
-      <div class="cnt"><span id="full-cnt">0</span>/2000</div></div>
+      <div class="cnt"><span id="full-cnt">0</span>/500</div></div>
 
     <div class="sec"><span class="num">03</span><span class="st" id="s2"></span><span class="rule"></span></div>
     <div class="f"><label><span id="g4"></span> <span class="req">*</span></label>
@@ -290,14 +295,15 @@ const I18N = {
     ph_t_en:"Game title (English)", ph_t_zh:"Chinese title (optional)", ph_t_ko:"Korean title (optional)",
     g2:"One-line Pitch", g2n:"Shown on your game card in the library.",
     ph_d:"e.g. A hand-drawn narrative puzzle game about restoring forgotten bronze-age myths.",
-    g3:"Full Description", g3n:"Gameplay, story, current progress, team size — anything a publisher should know.",
-    ph_full:"What is the game? What makes it special? Where are you in development?",
+    g3:"Project Overview for Publishers & Investors", g3n:"Write this overview yourself to help publishers and investors assess a partnership. Maximum 500 characters, including spaces, punctuation and Markdown. Use a short paragraph or 2–3 focused points.",
+    overviewTips:["Positioning and differentiation: describe the core gameplay, target players and specific differences from comparable games.","Progress and evidence: outline your playable build, next milestone and team strengths. Include genuine test or market results if available.","Partnership needs: explain the publishing, funding or marketing support you seek, with a concrete scope or use where known."],
+    ph_full:"Positioning / unique strengths: …\nProgress / team: …\nPartnership needs: …",
     g4:"Development Stage", g5:"Genres", g6:"Platforms", g7:"Target Market",
     g7n:"Where do you want this game to go?",
     g8:"What are you looking for?",
-    g9:"⚡ One-click Auto-fill from Steam", g9n:"Paste your Steam store link — we'll pull the title (incl. CN/KR if available), descriptions, cover, screenshots, studio name and more. Everything stays editable.",
+    g9:"⚡ One-click Auto-fill from Steam", g9n:"Paste your Steam link to fill titles, short pitches, images, studio and basic game details. Write the publisher / investor project overview yourself.",
     parse:"AUTO-FILL", parsing:"FETCHING…",
-    parseOk:"Auto-filled from Steam. Please review each field — especially genres and stage — then complete the rest.",
+    parseOk:"Steam details filled. Review the genres and stage, then write your project overview for publishers and investors (up to 500 characters).",
     g10:"Trailer / Gameplay Video", g10n:"YouTube, Bilibili or a direct link.",
     g11:"Cover Image", g11n:"16:9 landscape, 1280×720 or larger. Wider images (like a Steam header) will be cropped slightly on the left and right. JPG/PNG/WebP, up to 5MB.",
     g12:"Screenshots", g12n:"Up to 5 images. JPG/PNG/WebP, up to 5MB each.",
@@ -307,7 +313,7 @@ const I18N = {
     ok:"Submitted! We'll review it and get back to you soon.",
     back:"← Back to My Account", backHome:"← Back to Home", multi:"(multi-select)",
     errors:{ title_required:"Please enter a game title in at least one language.", pitch_required:"Please write the one-line pitch.",
-      desc_required:"Please write the full description.", stage_required:"Please pick a development stage.",
+      desc_required:"Please write your project overview for publishers and investors.", desc_too_long:"Keep the project overview within 500 characters, including spaces, punctuation and Markdown.", stage_required:"Please pick a development stage.",
       genres_required:"Please pick at least one genre.", platforms_required:"Please pick at least one platform.",
       market_required:"Please pick a target market.", needs_required:"Please pick what you are looking for.",
       cover_required:"Please upload a cover image.", shots_required:"Please upload at least one screenshot.", studio_required:"Please enter your studio / developer name.", url_invalid:"Please check the URL format (http/https).", steam_invalid:"Please paste a valid Steam store link (store.steampowered.com/app/…).", steam_fetch_failed:"Couldn't fetch from Steam. Check the link or try again later.",
@@ -331,14 +337,15 @@ const I18N = {
     ph_t_en:"英文名(选填)", ph_t_zh:"游戏名称(中文)", ph_t_ko:"韩文名(选填)",
     g2:"一句话简介", g2n:"显示在项目库的游戏卡片上。",
     ph_d:"例:一款手绘风叙事解谜游戏,修复被遗忘的青铜时代神话。",
-    g3:"完整介绍", g3n:"玩法、故事、当前进度、团队规模——任何发行商需要知道的信息。",
-    ph_full:"这是一款什么游戏?特别在哪?开发到什么阶段了?",
+    g3:"面向发行商和投资者的项目概览", g3n:"请自行撰写，帮助发行商和投资者判断合作机会。最多 500 字符，含空格、标点及排版符号；建议用短段落或 2–3 条要点说明。",
+    overviewTips:["定位与独特性：核心玩法、目标玩家，以及与同类游戏相比的具体差异。","进度与验证：可玩版本、下一步计划和团队优势；有测试或市场数据时可简要写出真实结果。","合作需求：希望获得哪些发行、资金或推广支持；已有明确的支持范围或资金用途时可简要说明。"],
+    ph_full:"定位 / 独特卖点：…\n进度 / 团队：…\n合作需求：…",
     g4:"开发阶段", g5:"品类", g6:"平台", g7:"目标市场",
     g7n:"你希望这款游戏去哪个市场?",
     g8:"你在寻找什么?",
-    g9:"⚡ 一键抓取:用 Steam 链接自动填表", g9n:"粘贴你的 Steam 商店链接,自动带出游戏名(含中/韩文,如有)、简介、封面、截图、工作室名等,填完全部可修改。",
+    g9:"⚡ 一键抓取：用 Steam 链接自动填表", g9n:"可自动填充游戏名称、简短简介、封面、截图、工作室和基础属性。面向发行商与投资者的项目概览请自行撰写。",
     parse:"自动填充", parsing:"解析中…",
-    parseOk:"已从 Steam 自动填充。请逐项检查(尤其品类和阶段),再补齐剩余内容。",
+    parseOk:"Steam 基础资料已填充。请检查品类和阶段，并自行填写面向发行商和投资者的项目概览（最多 500 字符）。",
     g10:"预告片 / 实机视频", g10n:"YouTube、B 站或直链均可。",
     g11:"封面图", g11n:"16:9 横图,建议 1280×720 以上。更宽的图(如 Steam 头图)左右会被轻微裁切。JPG/PNG/WebP,最大 5MB。",
     g12:"游戏截图", g12n:"最多 5 张,每张最大 5MB。",
@@ -348,7 +355,7 @@ const I18N = {
     ok:"已提交!我们会尽快审核并回复你。",
     back:"← 返回账号中心", backHome:"← 返回首页", multi:"(可多选)",
     errors:{ title_required:"请至少填写一种语言的游戏名称。", pitch_required:"请填写一句话简介。",
-      desc_required:"请填写完整介绍。", stage_required:"请选择开发阶段。",
+      desc_required:"请自行填写面向发行商和投资者的项目概览。", desc_too_long:"项目概览请控制在 500 字符以内，含空格、标点及排版符号。", stage_required:"请选择开发阶段。",
       genres_required:"请至少选择一个品类。", platforms_required:"请至少选择一个平台。",
       market_required:"请选择目标市场。", needs_required:"请选择你在寻找什么。",
       cover_required:"请上传封面图。", shots_required:"请至少上传一张游戏截图。", studio_required:"请填写工作室/开发商名称。", url_invalid:"链接格式不对(需以 http/https 开头)。", steam_invalid:"请粘贴有效的 Steam 商店链接(store.steampowered.com/app/…)。", steam_fetch_failed:"从 Steam 获取失败,请检查链接或稍后再试。",
@@ -372,14 +379,15 @@ const I18N = {
     ph_t_en:"영문명(선택)", ph_t_zh:"중문명(선택)", ph_t_ko:"게임 이름(한글)",
     g2:"한 줄 소개", g2n:"라이브러리의 게임 카드에 표시됩니다.",
     ph_d:"예: 잊혀진 청동기 신화를 복원하는 손그림 내러티브 퍼즐 게임.",
-    g3:"상세 소개", g3n:"게임플레이, 스토리, 현재 진행 상황, 팀 규모 — 퍼블리셔가 알아야 할 모든 것.",
-    ph_full:"어떤 게임인가요? 무엇이 특별한가요? 개발은 어느 단계인가요?",
+    g3:"퍼블리셔·투자자를 위한 프로젝트 개요", g3n:"퍼블리셔와 투자자가 협업을 검토할 수 있도록 직접 작성하세요. 공백, 문장 부호, 마크다운을 포함해 최대 500자입니다. 짧은 문단 또는 핵심 항목 2–3개를 권장합니다.",
+    overviewTips:["포지셔닝과 차별점: 핵심 플레이, 목표 이용자, 유사 게임과의 구체적인 차이를 설명하세요.","진척과 검증: 플레이 가능한 빌드, 다음 목표, 팀의 강점을 소개하세요. 실제 테스트나 시장 데이터가 있다면 간략히 제시하세요.","협업 요구: 필요한 퍼블리싱, 투자, 마케팅 지원과 구체적인 범위나 자금 용도를 설명하세요."],
+    ph_full:"포지셔닝 / 차별점: …\n진척 / 팀: …\n협업 요구: …",
     g4:"개발 단계", g5:"장르", g6:"플랫폼", g7:"목표 시장",
     g7n:"이 게임을 어느 시장에 내고 싶나요?",
     g8:"무엇을 찾고 있나요?",
-    g9:"⚡ Steam 링크로 원클릭 자동 입력", g9n:"Steam 스토어 링크를 붙여넣으면 제목(중/한국어 포함, 있는 경우)·소개·커버·스크린샷·스튜디오명 등을 가져옵니다. 모두 수정 가능합니다.",
+    g9:"⚡ Steam 링크로 원클릭 자동 입력", g9n:"게임 이름, 짧은 소개, 이미지, 스튜디오 및 기본 정보를 가져옵니다. 퍼블리셔·투자자를 위한 프로젝트 개요는 직접 작성하세요.",
     parse:"자동 입력", parsing:"가져오는 중…",
-    parseOk:"Steam에서 자동 입력했습니다. 각 항목(특히 장르·단계)을 확인하고 나머지를 완성하세요.",
+    parseOk:"Steam 기본 정보를 입력했습니다. 장르와 단계를 확인한 뒤 퍼블리셔·투자자를 위한 프로젝트 개요를 직접 작성하세요(최대 500자).",
     g10:"트레일러 / 게임플레이 영상", g10n:"YouTube, Bilibili 또는 직접 링크.",
     g11:"커버 이미지", g11n:"16:9 가로 이미지, 1280×720 이상 권장. 더 넓은 이미지(Steam 헤더 등)는 좌우가 약간 잘립니다. JPG/PNG/WebP, 최대 5MB.",
     g12:"스크린샷", g12n:"최대 5장, 각 5MB 이하.",
@@ -389,7 +397,7 @@ const I18N = {
     ok:"제출되었습니다! 곧 심사 후 연락드리겠습니다.",
     back:"← 내 계정으로", backHome:"← 홈으로", multi:"(복수 선택 가능)",
     errors:{ title_required:"한 언어로 게임 이름을 입력하세요.", pitch_required:"한 줄 소개를 입력하세요.",
-      desc_required:"상세 소개를 입력하세요.", stage_required:"개발 단계를 선택하세요.",
+      desc_required:"퍼블리셔·투자자를 위한 프로젝트 개요를 직접 작성하세요.", desc_too_long:"프로젝트 개요는 공백, 문장 부호, 마크다운을 포함해 500자 이내로 작성하세요.", stage_required:"개발 단계를 선택하세요.",
       genres_required:"장르를 하나 이상 선택하세요.", platforms_required:"플랫폼을 하나 이상 선택하세요.",
       market_required:"목표 시장을 선택하세요.", needs_required:"찾고 있는 것을 선택하세요.",
       cover_required:"커버 이미지를 업로드하세요.", shots_required:"스크린샷을 최소 한 장 업로드하세요.", studio_required:"스튜디오/개발사 이름을 입력하세요.", url_invalid:"URL 형식을 확인하세요(http/https).", steam_invalid:"올바른 Steam 스토어 링크를 붙여넣으세요.", steam_fetch_failed:"Steam에서 가져오지 못했습니다. 링크를 확인하거나 나중에 다시 시도하세요.",
@@ -416,9 +424,9 @@ let studioLogo="preset:solo";
 let steamParsing=false;
 let steamTranslations = {};
 const EDITOR_TEXT = {
- en:{source:"Language of your description",hint:"Write in one language. Missing English, Chinese and Korean versions will be generated when translation is available, then reviewed before publication. Long translations may be condensed to fit the length limit.",heading:"Heading",bold:"Bold",list:"List",quote:"Quote",preview:"Preview",hide:"Hide preview",empty:"Your description preview will appear here.",warning:" Your original text was saved; translation is incomplete and the reviewer can retry."},
- zh:{source:"简介与正文的原文语言",hint:"只需填写一种语言，系统会在翻译服务可用时补全中、英、韩三语，由后台审核后上架。较长正文的译文会精简以符合长度限制。",heading:"标题",bold:"粗体",list:"列表",quote:"引用",preview:"预览",hide:"收起预览",empty:"在这里预览你的游戏介绍。",warning:" 原文已保存；翻译暂未完成，审核员可以稍后补全。"},
- ko:{source:"소개 원문 언어",hint:"한 언어로 작성하면 번역 서비스가 제공될 때 영어·중국어·한국어 버전을 생성하고 게시 전에 검토합니다. 긴 번역은 글자 수 제한에 맞춰 요약될 수 있습니다.",heading:"제목",bold:"굵게",list:"목록",quote:"인용",preview:"미리보기",hide:"미리보기 닫기",empty:"게임 소개 미리보기가 여기에 표시됩니다.",warning:" 원문은 저장되었지만 번역이 미완료입니다. 검토자가 다시 시도할 수 있습니다."}
+ en:{source:"Language of your pitch and project overview",hint:"Write in one language. Missing English, Chinese and Korean versions will be generated when translation is available and reviewed before publication. Each overview stays within 500 characters.",heading:"Heading",bold:"Bold",list:"List",quote:"Quote",preview:"Preview",hide:"Hide preview",empty:"Your project overview preview will appear here.",warning:" Your original text was saved; translation is incomplete and the reviewer can retry."},
+ zh:{source:"简介与项目概览的原文语言",hint:"只需填写一种语言，系统会在翻译服务可用时补全中、英、韩三语，各语言概览均控制在 500 字符以内，由后台审核后上架。",heading:"标题",bold:"粗体",list:"列表",quote:"引用",preview:"预览",hide:"收起预览",empty:"在这里预览你的项目概览。",warning:" 原文已保存；翻译暂未完成，审核员可以稍后补全。"},
+ ko:{source:"짧은 소개와 프로젝트 개요의 원문 언어",hint:"한 언어로 작성하면 번역 서비스가 제공될 때 영어·중국어·한국어 버전을 생성하고 게시 전에 검토합니다. 각 개요는 500자 이내로 작성됩니다.",heading:"제목",bold:"굵게",list:"목록",quote:"인용",preview:"미리보기",hide:"미리보기 닫기",empty:"프로젝트 개요 미리보기가 여기에 표시됩니다.",warning:" 원문은 저장되었지만 번역이 미완료입니다. 검토자가 다시 시도할 수 있습니다."}
 };
 $("#content-language").value=["en","zh","ko"].includes(lang)?lang:"en";
 function renderDescriptionPreview(){
@@ -443,11 +451,9 @@ $("#description-tools").addEventListener("click",e=>{
 });
 function submittedTranslations(){
  const result={};
- for(const base of ["d","full"]){
-  const text=$(base==="d"?"#d-en":"#full-en").value;
-  if($("#content-language").value==="en" && text===steamTranslations[base+"_en"])
-   for(const L of ["zh","ko"])result[base+"_"+L]=steamTranslations[base+"_"+L]||"";
- }
+ const source=$("#content-language").value;
+ if($("#d-en").value===steamTranslations["d_"+source])
+  for(const L of ["en","zh","ko"])if(L!==source)result["d_"+L]=steamTranslations["d_"+L]||"";
  return result;
 }
 
@@ -567,6 +573,7 @@ function renderText(){
   $("#to").appendChild(document.getElementById("t-"+ord[2]));
   $("#g2").textContent=t.g2; $("#g2n").textContent=t.g2n; $("#d-en").placeholder=t.ph_d;
   $("#g3").textContent=t.g3; $("#g3n").textContent=t.g3n; $("#full-en").placeholder=t.ph_full;
+  $("#overview-tips").replaceChildren(...t.overviewTips.map(text=>{const item=document.createElement("li");item.textContent=text;return item;}));
   $("#g4").textContent=t.g4; $("#g5").textContent=t.g5; $("#g5m").textContent=t.multi;
   $("#g6").textContent=t.g6; $("#g6m").textContent=t.multi;
   $("#g7").textContent=t.g7; $("#g7n").textContent=t.g7n;
@@ -592,6 +599,7 @@ $("#submit").onclick = async ()=>{
   if(!["en","zh","ko"].some(L=>$("#t-"+L).value.trim())) return err("title_required");
   if(!$("#d-en").value.trim()) return err("pitch_required");
   if(!$("#full-en").value.trim()) return err("desc_required");
+  if($("#full-en").value.length>$("#full-en").maxLength) return err("desc_too_long");
   if(!selStage.length) return err("stage_required");
   if(!selGenres.length) return err("genres_required");
   if(!selPlatforms.length) return err("platforms_required");
@@ -629,13 +637,12 @@ $("#steambtn").onclick = async ()=>{
   try{
     const d=await api("/api/games-submit/steam-fetch",{ method:"POST", headers:{"content-type":"application/json"}, body:JSON.stringify({url:u}) });
     steamTranslations=d;
-    if(!$("#d-en").value && !$("#full-en").value) $("#content-language").value="en";
     // 文本:仅填空字段,不覆盖已填内容
     if(d.t_en && !$("#t-en").value) $("#t-en").value=d.t_en;
     if(d.t_zh && !$("#t-zh").value) $("#t-zh").value=d.t_zh;
     if(d.t_ko && !$("#t-ko").value) $("#t-ko").value=d.t_ko;
-    if($("#content-language").value==="en" && d.d_en && !$("#d-en").value){ $("#d-en").value=d.d_en; $("#d-cnt").textContent=d.d_en.length; }
-    if($("#content-language").value==="en" && d.full_en && !$("#full-en").value){ $("#full-en").value=d.full_en; $("#full-cnt").textContent=d.full_en.length; }
+    const pitch=d["d_"+$("#content-language").value];
+    if(pitch && !$("#d-en").value){ $("#d-en").value=pitch; $("#d-cnt").textContent=pitch.length; }
     if(d.studio_name && !$("#studio").value) $("#studio").value=d.studio_name;
     if(d.steam_url) $("#steam").value=d.steam_url;
     if(d.video && !$("#video").value) $("#video").value=d.video;

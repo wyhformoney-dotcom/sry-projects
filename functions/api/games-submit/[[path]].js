@@ -1,5 +1,5 @@
 import { steamDescription as stripHtml } from "../../lib/steam-description.js";
-import { completeLanguages } from "../../lib/translate.js";
+import { completeLanguages, OVERVIEW_LIMIT } from "../../lib/translate.js";
 // Cloudflare Pages Function —— 游戏提交(开发者)
 //   GET  /api/games-submit/mine    → 我提交的游戏及审核状态
 //   POST /api/games-submit/create  → 提交新游戏(入库为待审核,不上架)
@@ -192,10 +192,8 @@ async function handleSteamFetch(env, s, request) {
   return json({
     ok: true,
     t_en, t_zh: zhName, t_ko: koName,
-    ...Object.fromEntries([["en", en], ["zh", zh], ["ko", ko]].flatMap(([L, data]) => [
-      [`d_${L}`, stripHtml(data?.short_description).slice(0, 300)],
-      [`full_${L}`, stripHtml(data?.about_the_game || data?.detailed_description).slice(0, 2000)]
-    ])),
+    ...Object.fromEntries([["en", en], ["zh", zh], ["ko", ko]].map(([L, data]) =>
+      [`d_${L}`, stripHtml(data?.short_description).slice(0, 300)])),
     cover, screenshots: shots.filter(Boolean),
     video,
     genres,
@@ -232,10 +230,11 @@ async function handleCreate(env, s, request) {
   const original = { t_en, t_zh, t_ko, source_language: sourceLanguage };
   for (const L of ["en", "zh", "ko"]) {
     original[`d_${L}`] = S(b[`d_${L}`], 300);
-    original[`full_${L}`] = S(b[`full_${L}`], 2000);
+    original[`full_${L}`] = String(b[`full_${L}`] ?? "").trim();
   }
   if (b.d_source !== undefined) original[`d_${sourceLanguage}`] = S(b.d_source, 300);
-  if (b.full_source !== undefined) original[`full_${sourceLanguage}`] = S(b.full_source, 2000);
+  if (b.full_source !== undefined) original[`full_${sourceLanguage}`] = String(b.full_source ?? "").trim();
+  if (["en","zh","ko"].some(L=>original[`full_${L}`].length>OVERVIEW_LIMIT)) return bad("desc_too_long");
   const stage = S(b.stage, 30);
   const genres = arrOf(b.genres, GENRES, 20);
   const platforms = arrOf(b.platforms, PLATFORMS, 3);
@@ -260,7 +259,7 @@ async function handleCreate(env, s, request) {
   if (!cover) return bad("cover_required");
   if (!screenshots.length) return bad("shots_required");
 
-  const translation = await completeLanguages(env, original);
+  const translation = await completeLanguages(env, original, {fullLimit:OVERVIEW_LIMIT});
   const content = translation.content;
 
   // 开发商展示名取自工作室信息
