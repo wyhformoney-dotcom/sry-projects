@@ -402,7 +402,7 @@ async function review(id, action, btn){
       body:JSON.stringify({ id, action, note }) });
     await load({force:true});
   }catch(e){
-    msg.className="amsg err"; msg.textContent="操作失败:"+e; btn.disabled=false;btn.textContent=old;
+    msg.className="amsg err"; msg.textContent=e==="translations_required"?"请先补全三语并修复语言不符的内容，保存后再通过上架。":"操作失败:"+e; btn.disabled=false;btn.textContent=old;
   }
 }
 
@@ -492,7 +492,7 @@ function gameDetailHtml(r){
                 <textarea id="f${L}-${r.id}" placeholder="完整介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:70px;font-family:inherit;margin-bottom:7px">${esc(r["full_"+L]||"")}</textarea>
                 <textarea id="s${L}-${r.id}" placeholder="团队 / 工作室介绍" style="width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--ink);font-size:12.5px;padding:8px 10px;min-height:56px;font-family:inherit">${esc(r["studio_"+L]||"")}</textarea>
               </div>`).join("")}
-            <button class="abtn" style="padding:8px 16px;width:fit-content" onclick="translateGame(${r.id},this)">自动补全缺失三语（保留已填内容）</button>
+            <button class="abtn" style="padding:8px 16px;width:fit-content" onclick="translateGame(${r.id},this)">补全三语并修复语言不符的内容</button>
             <button class="abtn ok" style="padding:8px 16px;width:fit-content" onclick="saveGameI18n(${r.id},this)">保存三语内容</button>
           </div></div>
         ${kvHtml("封面", r.cover?`<img loading="lazy" decoding="async" src="${esc(r.cover)}" style="max-width:280px;border-radius:6px;cursor:zoom-in" onclick="showLightbox(this.src)">`:"—", true)}
@@ -704,7 +704,7 @@ $("#ng-submit").onclick=async ()=>{
     await load({force:true});
     if(!editing) $("#load-status").textContent="游戏已创建并上架 ✓";
   }catch(e){
-    const errors={invalid_email:"邮箱格式不对",title_required:"请至少保留一个语言的游戏名",invalid_url:"图片、视频和 Steam 链接请填写有效的 HTTP / HTTPS 地址",field_too_long:"有内容超过长度限制，请精简后保存",edit_conflict:"这款游戏的相同字段已被其他操作修改。你的草稿仍保留，请复制后关闭编辑器，重新打开最新资料再修改。"};
+    const errors={invalid_email:"邮箱格式不对",title_required:"请至少保留一个语言的游戏名",invalid_url:"图片、视频和 Steam 链接请填写有效的 HTTP / HTTPS 地址",field_too_long:"有内容超过长度限制，请精简后保存",wrong_content_language:"简介、概览和团队介绍须使用对应栏目的语言，请先修正或自动翻译。",edit_conflict:"这款游戏的相同字段已被其他操作修改。你的草稿仍保留，请复制后关闭编辑器，重新打开最新资料再修改。"};
     m.textContent=errors[e]||(editing?"保存失败，请重试：":"创建失败：")+e;m.style.color="var(--danger)";m.style.display="block";
   }
   finally{ngSaving=false;controls.forEach(el=>el.disabled=false);$("#ng-submit").textContent=editing?"保存修改":"创建并上架";}
@@ -742,14 +742,14 @@ async function translateGame(id, btn){
   btn.disabled=true; btn.textContent="正在生成翻译…";
   try {
     const content={};
-    for(const base of ["t","d","full"]) for(const L of ["en","zh","ko"]){
-      const prefix=base==="full"?"f":base;
+    for(const base of ["t","d","full","studio"]) for(const L of ["en","zh","ko"]){
+      const prefix=base==="full"?"f":base==="studio"?"s":base;
       content[base+"_"+L]=document.getElementById(prefix+L+"-"+id).value;
     }
     const d=await api("game-translate",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id,content})});
-    for(const [key,value] of Object.entries(d.content)){
-      const [base,L]=key.split("_"); const el=document.getElementById((base==="full"?"f":base)+L+"-"+id);
-      if(el && !el.value.trim()) el.value=value;
+    for(const key of d.translated_fields||[]){
+      const [base,L]=key.split("_"); const el=document.getElementById((base==="full"?"f":base==="studio"?"s":base)+L+"-"+id);
+      if(el && el.value===content[key]) el.value=d.content[key];
     }
     btn.textContent="已补全，请审核后保存三语内容";
   }catch(e){btn.textContent=e==="translation_unconfigured"?"请先配置翻译服务": "翻译失败，请重试";}

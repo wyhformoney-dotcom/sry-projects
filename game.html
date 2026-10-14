@@ -169,7 +169,7 @@
   <div class="nav-links">
     <a href="/" class="active" data-en="Projects" data-zh="项目" data-ko="프로젝트">Projects</a>
     <a href="/partners.html" data-en="Partners" data-zh="合作发行商" data-ko="파트너">Partners</a>
-    <a class="soon" data-en="Events" data-zh="行业活动" data-ko="행사">Events<span class="soon-tag">SOON</span></a>
+    <a class="soon" data-en="Events" data-zh="行业活动" data-ko="행사">Events<span class="soon-tag" data-en="SOON" data-zh="即将开放" data-ko="준비 중">SOON</span></a>
   </div>
   <div class="nav-spacer"></div>
   <div class="lang" id="lang"><button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button></div>
@@ -199,9 +199,9 @@ function logoSrc(v){ return (typeof v==="string"&&v.startsWith("preset:")) ? "da
 const SUBMIT="https://z5gxmjtpe7.feishu.cn/share/base/form/shrcnMt1EytDgy79CO7mgbrkIed"; // 提交游戏表单（飞书）
 const CONTACT_DOMAIN="srygamehub.com"; // 项目专属邮箱域名（Cloudflare Email Routing 兜底转发）
 const ZH={
-  genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
+  genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"轻度肉鸽",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
   need:{"Seeking Publisher":"寻找发行","Seeking Publisher Partner":"寻找联合发行","Seeking Investment":"寻找投资"},
-  stage:{"In Development":"开发中",Demo:"Demo",Playtest:"Playtest","Early Access":"EA",Released:"发布"},
+  stage:{"In Development":"开发中",Demo:"试玩版",Playtest:"封闭测试","Early Access":"抢先体验",Released:"已发售"},
   platform:{PC:"PC",Console:"主机",Mobile:"移动端"},
   region:{Global:"全球",China:"中国",Overseas:"海外"}
 };
@@ -224,7 +224,7 @@ const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const L=(c,v)=> lang==="zh"?((ZH[c]&&ZH[c][v])||v):lang==="ko"?((KO[c]&&KO[c][v])||v):v;
 const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
-const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
+const field=(g,base)=>{ for(const l of base==='t'?FB[lang]:[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
 function slugify(s){ return (s||"").toLowerCase().trim().replace(/['']/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,""); }
 
 let CURRENT_GAME=null, IS_FAVED=false, CAN_FAV=false;
@@ -255,6 +255,7 @@ async function initFav(){
     paintFav();
   }catch(e){}
 }
+const AUDIENCE={en:"DEVELOPER × PUBLISHER",zh:"开发者 × 发行商",ko:"개발자 × 퍼블리셔"};
 const FEAT_L={en:"FEATURED",zh:"精选",ko:"추천"};
 const CM_I18N = {
   en:{ title:"Developer Contact", already:"(previously unlocked — free)", fallback:"The developer hasn't provided contact details. To reach them, email us at wangyanhui@sryinteractive.com — this doesn't use your quota.", quota:(u,q)=>`This month: ${u}/${q} contacts unlocked. Resets on the 1st.`,
@@ -396,7 +397,7 @@ function render(){ if(!GAME){ renderNotFound(); return; }
   const genres=g.genres||[], needs=g.needs||[], platforms=g.platforms||[];
   $("#app").innerHTML=`
     <a class="back" href="/">${t.back}</a>
-    <div class="kicker">SRY GAME HUB // DEVELOPER × PUBLISHER${g.featured?`<span class="feat-pill">★ ${FEAT_L[lang]||FEAT_L.en}</span>`:""}</div>
+    <div class="kicker">SRY GAME HUB // ${AUDIENCE[lang]}${g.featured?`<span class="feat-pill">★ ${FEAT_L[lang]||FEAT_L.en}</span>`:""}</div>
     <h1 class="ptitle cjk-swap">${esc(title)}</h1>
     ${tag?`<p class="tagline cjk-swap">${esc(tag)}</p>`:''}
     ${genres.length?`<div class="head-chips">${genres.map(x=>`<span class="gtag">${L('genre',x)}</span>`).join("")}</div>`:''}

@@ -151,7 +151,7 @@
   <div class="nav-links">
     <a href="/" class="active" data-en="Projects" data-zh="项目" data-ko="프로젝트">Projects</a>
     <a href="/partners.html" data-en="Partners" data-zh="合作发行商" data-ko="파트너">Partners</a>
-    <a class="soon" data-en="Events" data-zh="行业活动" data-ko="행사">Events<span class="soon-tag">SOON</span></a>
+    <a class="soon" data-en="Events" data-zh="行业活动" data-ko="행사">Events<span class="soon-tag" data-en="SOON" data-zh="即将开放" data-ko="준비 중">SOON</span></a>
   </div>
   <div class="nav-spacer"></div>
   <div class="lang" id="lang">
@@ -165,7 +165,7 @@
 
 <div class="wrap">
   <header class="hero">
-    <div class="kicker">SRY GAME HUB // DEVELOPER × PUBLISHER</div>
+    <div class="kicker" data-en="SRY GAME HUB // DEVELOPER × PUBLISHER" data-zh="SRY GAME HUB // 开发者 × 发行商" data-ko="SRY GAME HUB // 개발자 × 퍼블리셔">SRY GAME HUB // DEVELOPER × PUBLISHER</div>
     <h1 id="ptitle">Project Index</h1>
     <p class="cjk-swap" id="lead"></p>
   </header>
@@ -224,9 +224,9 @@ const I18N = {
        note:"" }
 };
 const ZH = {
-  genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"Roguelite",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
+  genre:{Action:"动作",Adventure:"冒险",RPG:"角色扮演",Strategy:"策略",Simulation:"模拟",Puzzle:"解谜",Platformer:"平台",Shooter:"射击",Survival:"生存",Horror:"恐怖",Roguelite:"轻度肉鸽",Metroidvania:"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界",Narrative:"叙事",Comedy:"喜剧","Co-op":"合作",Multiplayer:"多人"},
   need:{"Seeking Publisher":"寻找发行","Seeking Publisher Partner":"寻找联合发行","Seeking Investment":"寻找投资"},
-  stage:{"In Development":"开发中",Demo:"Demo",Playtest:"Playtest","Early Access":"EA",Released:"发布"},
+  stage:{"In Development":"开发中",Demo:"试玩版",Playtest:"封闭测试","Early Access":"抢先体验",Released:"已发售"},
   platform:{PC:"PC",Console:"主机",Mobile:"移动端"},
   region:{Global:"全球",China:"中国",Overseas:"海外"}
 };
@@ -277,7 +277,7 @@ window.addEventListener('pagehide',saveState);
 
 const L=(cat,v)=> lang==="zh" ? (ZH[cat][v]||v) : lang==="ko" ? ((KO[cat]&&KO[cat][v])||v) : v;
 const FB={en:['en','zh','ko'],zh:['zh','en','ko'],ko:['ko','en','zh']};
-const field=(g,base)=>{ for(const l of FB[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
+const field=(g,base)=>{ for(const l of base==='t'?FB[lang]:[lang]){ const val=g[base+'_'+l]; if(val&&String(val).trim()) return val; } return ""; };
 const title=g=> field(g,'t');
 const desc=g=> field(g,'d');
 
@@ -372,7 +372,7 @@ async function loadGames(){
   }catch(e){
     $("#grid").innerHTML="";
     $("#empty").style.display="block";
-    $("#empty").textContent=(lang==="zh"?"数据加载失败，请稍后刷新重试。":"Failed to load data. Please refresh.");
+    $("#empty").textContent=({en:"Failed to load data. Please refresh.",zh:"数据加载失败，请稍后刷新重试。",ko:"데이터를 불러오지 못했습니다. 새로고침해 주세요."}[lang]);
     console.error("loadGames",e); return;
   }
   renderGrid();
@@ -380,7 +380,7 @@ async function loadGames(){
 }
 restoreState();
 body.setAttribute("lang",lang); renderText(); renderChips();
-$("#grid").innerHTML='<div style="grid-column:1/-1;padding:70px 0;text-align:center;color:#6b6d62;font-family:Space Mono,monospace">加载中 / Loading…</div>';
+$("#grid").innerHTML=`<div style="grid-column:1/-1;padding:70px 0;text-align:center;color:#6b6d62;font-family:Space Mono,monospace">${{en:"Loading…",zh:"加载中…",ko:"불러오는 중…"}[lang]}</div>`;
 loadGames();
 </script>
 

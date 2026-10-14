@@ -1,5 +1,6 @@
 import { steamDescription as aStrip } from "../../lib/steam-description.js";
 import { completeLanguages } from "../../lib/translate.js";
+import {localizedSteamText, matchesContentLanguage, gameNames, translationTargets} from "../../lib/content-language.js";
 // Cloudflare Pages Function —— 审核后台(仅管理员)
 //   GET  /api/admin/partners?status=pending|verified|rejected|all → 合作方账号列表(含完整资料)
 //   POST /api/admin/review { id, action: "approve"|"reject", note? } → 通过/驳回
@@ -165,12 +166,13 @@ async function handleReviewGame(env, request) {
   if (action === "reject" && !String(note || "").trim()) return bad("note_required");
 
   const game = await env.DB.prepare(
-    "SELECT id FROM games WHERE id = ? AND claimed_by IS NOT NULL"
+    "SELECT * FROM games WHERE id = ? AND claimed_by IS NOT NULL"
   ).bind(gid).first();
   if (!game) return bad("not_found", 404);
 
   const cleanNote = String(note || "").trim().slice(0, 500);
   if (action === "approve") {
+    if (translationTargets(game).some(key=>!key.startsWith('t_'))) return bad("translations_required");
     await env.DB.prepare(
       "UPDATE games SET status='approved', visible=1, review_note=? WHERE id = ?"
     ).bind(cleanNote, gid).run();
@@ -517,6 +519,7 @@ async function handleGameUpdate(env, request) {
       if (typeof changes[key]!=="string") return bad("invalid_"+key);
       let value=changes[key].trim();
       if (value.length>GAME_TEXT_LIMITS[key]) return bad("field_too_long");
+      if (value && /^(d|full|studio)_(en|zh|ko)$/.test(key) && !matchesContentLanguage(value,key.split('_')[1],gameNames({...game,...changes}))) return bad("wrong_content_language");
       if (key==="stage" && value && !A_STAGES.includes(value)) return bad("invalid_stage");
       if (key==="region" && value && !A_MARKETS.includes(value)) return bad("invalid_region");
       if (["cover","studio_logo","video","steam_url"].includes(key)) {
@@ -545,6 +548,12 @@ async function handleGameCreate(env, request) {
   const t_en = T(b.t_en, 120), t_zh = T(b.t_zh, 120), t_ko = T(b.t_ko, 120);
   if (!t_en && !t_zh && !t_ko) return bad("title_required");
   if (email && !isEmail(email)) return bad("invalid_email");
+
+  const original={t_en,t_zh,t_ko,developer:T(b.developer,300)};
+  for(const base of ['d','full']) for(const L of ['en','zh','ko']) original[`${base}_${L}`]=T(b[`${base}_${L}`],base==='d'?300:10000);
+  const translated=await completeLanguages(env,original);
+  if(translated.status!=='complete' && translationTargets(original).some(key=>!key.startsWith('t_'))) return bad('translation_'+translated.status,503);
+  const content=translated.content;
 
   // 按邮箱建号 / 复用
   let ownerId = null;
@@ -576,9 +585,9 @@ async function handleGameCreate(env, request) {
                         visible, status, sort, created_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved', 0, datetime('now'))`
   ).bind(
-    aSlug(t_en || t_zh || t_ko), t_en, t_zh, t_ko,
-    T(b.d_en, 300), T(b.d_zh, 300), T(b.d_ko, 300),
-    T(b.full_en, 2000), T(b.full_zh, 2000), T(b.full_ko, 2000),
+    aSlug(t_en || t_zh || t_ko), content.t_en, content.t_zh, content.t_ko,
+    content.d_en, content.d_zh, content.d_ko,
+    content.full_en, content.full_zh, content.full_ko,
     T(b.developer, 120), T(b.studio_logo, 500),
     A_STAGES.includes(b.stage) ? b.stage : "Demo",
     arrJson(b.genres), arrJson(b.needs), arrJson(b.platforms),
@@ -597,12 +606,13 @@ async function handleGameTranslate(env, request) {
   const game = await env.DB.prepare("SELECT * FROM games WHERE id = ?").bind(id).first();
   if (!game) return bad("game_not_found", 404);
   const original = {};
-  for (const base of ["t", "d", "full"]) for (const L of ["en", "zh", "ko"])
-    original[`${base}_${L}`] = String(b.content?.[`${base}_${L}`] ?? game[`${base}_${L}`] ?? "").trim().slice(0, base === "t" ? 120 : base === "d" ? 300 : 2000);
-  if (!["en", "zh", "ko"].some(L => original[`full_${L}`])) return bad("desc_required");
+  original.developer=game.developer||"";
+  for (const base of ["t", "d", "full", "studio"]) for (const L of ["en", "zh", "ko"])
+    original[`${base}_${L}`] = String(b.content?.[`${base}_${L}`] ?? game[`${base}_${L}`] ?? "").trim();
+  if (!["d","full","studio"].some(base=>["en", "zh", "ko"].some(L => original[`${base}_${L}`]))) return bad("desc_required");
   const result = await completeLanguages(env, original);
   if (result.status !== "complete") return bad(`translation_${result.status}`, 503);
-  return json({ ok: true, content: result.content });
+  return json({ ok: true, content: result.content, translated_fields:result.translated_fields||[] });
 }
 
 /* ---------- 删除 ---------- */
@@ -694,12 +704,10 @@ async function handleAdminSteamFetch(env, request) {
     t_en: String(en.name || "").slice(0, 120),
     t_zh: zh && zh.name && zh.name !== en.name ? String(zh.name).slice(0, 120) : "",
     t_ko: ko && ko.name && ko.name !== en.name ? String(ko.name).slice(0, 120) : "",
-    d_en: aStrip(en.short_description).slice(0, 300),
-    d_zh: zh ? aStrip(zh.short_description).slice(0, 300) : "",
-    d_ko: ko ? aStrip(ko.short_description).slice(0, 300) : "",
-    full_en: aStrip(en.about_the_game || en.detailed_description).slice(0, 2000),
-    full_zh: zh ? aStrip(zh.about_the_game || zh.detailed_description).slice(0, 2000) : "",
-    full_ko: ko ? aStrip(ko.about_the_game || ko.detailed_description).slice(0, 2000) : "",
+    ...Object.fromEntries([["en",en],["zh",zh],["ko",ko]].flatMap(([L,data])=>[
+      ["d_"+L,localizedSteamText(aStrip(data?.short_description).slice(0,300),L,[en.name,zh?.name,ko?.name])],
+      ["full_"+L,localizedSteamText(aStrip(data?.about_the_game||data?.detailed_description).slice(0,2000),L,[en.name,zh?.name,ko?.name])]
+    ])),
     developer: String((en.developers && en.developers[0]) || "").slice(0, 120),
     cover, screenshots: shots.filter(Boolean), video,
     genres: [...new Set((en.genres || []).map((g) => A_GENRE_MAP[g.description]).filter(Boolean))],

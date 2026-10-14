@@ -1,3 +1,4 @@
+import {matchesContentLanguage,gameNames} from '../lib/content-language.js';
 // Cloudflare Pages Function —— 路由 /api/games(D1 版)
 // 游戏库已切换到 D1 数据库(sry-db 的 games 表)。
 // 数据来源:1) 审核后台"从飞书同步"导入的老数据 2) 开发者提交并审核通过的新游戏。
@@ -49,6 +50,10 @@ export async function onRequestGet(context) {
       has_owner: !!r.claimed_by,
       featured: !!r.featured,
     }));
+    for (const game of games) for (const base of ['d','full','studio']) for (const locale of ['en','zh','ko']) {
+      const key=base+'_'+locale;
+      if (game[key] && !matchesContentLanguage(game[key],locale,gameNames(game))) game[key]='';
+    }
 
     return new Response(JSON.stringify(games), {
       headers: {

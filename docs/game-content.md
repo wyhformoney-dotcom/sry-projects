@@ -2,13 +2,23 @@
 
 ## 自动三语
 
-开发者选择“简介与项目概览的原文语言”，填写一种语言即可。提交时只为缺失的游戏名、简介和概览生成英文、简体中文、韩文；不覆盖人工内容。Steam 导入保留已有三语名称和卡片简介，简介被编辑后不再沿用旧译文。
+开发者选择“简介与项目概览的原文语言”，填写一种语言即可。提交时补全三语名称、卡片简介和概览；已正确本地化的文字及官方名称保留。2026-10-14 起，非空但明显使用错误语言的简介、概览和团队介绍也纳入翻译修复，不再把“已填值”视为“已翻译”。
+
+Steam 在没有某语言译文时可能返回英文。开发者和管理员的导入接口均检查返回文字的语言，识别出错语言的字段按缺译处理。开发者解析时尝试补全三语简介；服务暂不可用时，提交时仍会补全。若所有语言的卡片简介都为空，可只写项目概览，系统据此生成三语短简介，不补充未提供的玩法、数据或合作需求。开发者 Steam 解析仍不填项目概览。
+
+`functions/lib/content-language.js` 检查英语、简体中文和韩文的明显文字脚本不符，排除已知游戏名、开发商品牌、链接及通用缩写；它不是通用语言识别服务，也不代替逐句审校。模型输出也经过语言和长度检查，避免返回错误语言却被当作成功。可选团队介绍三语全空时保持为空。
 
 2026-10-13 起，开发者项目概览面向发行商和投资者，由开发者自行撰写，最多 500 字符（按浏览器字符串长度计算，含空格、标点和 Markdown）。表单提供产品定位与独特性、进度与验证、具体合作需求三类提示，支持短段落、要点和预览。
 
 开发者 Steam 解析接口仅提供名称、简短简介、图片、工作室及基础属性，省去三语 `full_*` 正文；前端也忽略旧接口的这些字段，并且不把它们作为隐藏译文提交。解析会保留开发者选择的原文语言及已写概览。提交接口检查所有实际提交的概览语言版本，超限返回 `desc_too_long`，不会截断后入库。
 
-新申请仍为 `pending`，不会自动上架。后台“自动补全缺失三语”生成的是编辑框草稿，必须检查并点击“保存三语内容”；审核通过仍是独立操作。已有游戏不会被批量修改。
+新申请仍为 `pending`，不会自动上架。后台“补全三语并修复语言不符的内容”生成编辑框草稿，包含非空错语言字段和团队介绍；必须检查并点击“保存三语内容”。请求期间新输入的文字保留。通过上架前检查已提供内容组的三语是否齐全、语言是否对应；管理员直接创建上架时先完成必要的翻译，失败时不创建半成品记录或账号。
+
+公开游戏接口过滤明显放错语言的说明文字，首页和详情页的简介、概览、团队介绍只使用当前界面的语言。官方游戏名允许回退到其他语言中的官方名称。手工编辑保存也检查改动字段的语言。
+
+2026-10-14 核查 119 条游戏记录（其中 114 条已上架），比对简介、概览和已填写团队介绍。确认并保存 8 处错语言简介：Zenden 的中文/韩文，以及 Teleport Master 三条待审申请各自的中文/韩文。保留名称、其他内容、归属和原审核状态；未合并或删除申请。先备份、核对译文，再按旧简介值条件更新；本地 SQLite 和正式回读均确认只有这 8 个字段发生变化。候选检查中的名称、措辞或其他非语言问题经人工复核后未批量改写。
+
+同日使用配置的 DeepSeek 服务实测：输入已经非空的英文版中文/韩文简介和单语团队介绍，实际返回并通过校验的字段为 `d_zh`、`d_ko`、`studio_zh`、`studio_ko`。这次服务验证仅生成草稿，不再次写入游戏数据。
 
 服务可选择 OpenAI、DeepSeek 或 Kimi，采用兼容 Chat Completions 的接口。OpenAI 使用严格 JSON Schema；DeepSeek 和 Kimi 使用 JSON 模式，三者均在应用层校验缺失字段、长度与响应完整性。
 
@@ -61,7 +71,7 @@
 
 ```sh
 cd /workspace/sry-projects
-NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs tests/admin-edit.mjs tests/submission-overview.mjs
+NODE_PATH=/workspace/.setup-tools/node_modules node --test tests/regression.mjs tests/admin-edit.mjs tests/submission-overview.mjs tests/language-integrity.mjs
 ```
 
 回归覆盖描述安全渲染、Steam 基础资料与图片导入、翻译补全/失败恢复，以及真实本地 D1 上的提交、管理员删除和内容修改。投稿检查 500/501 字符边界、三语超限拦截和超长译文失败时的原文保留。编辑检查包含管理员权限、原状态和归属保留、冲突、链接校验、仅韩文标题展示及旧接口长文本保存。翻译服务在这些测试中使用模拟响应，不调用真实模型。
@@ -74,6 +84,7 @@ python3 -m http.server 8811 --bind 127.0.0.1
 NODE_PATH=/workspace/.setup-tools/node_modules node tests/browser.cjs
 NODE_PATH=/workspace/.setup-tools/node_modules node tests/admin-edit-browser.cjs
 NODE_PATH=/workspace/.setup-tools/node_modules node tests/submission-overview-browser.cjs
+NODE_PATH=/workspace/.setup-tools/node_modules node tests/language-integrity-browser.cjs
 ```
 
 测试工具安装在仓库外的 `/workspace/.setup-tools`。缺少时安装 Wrangler 4.149.0（包含 Miniflare）和 Playwright；浏览器可用 `CHROMIUM_PATH` 指定。Pages Functions 已用 Wrangler 编译验证。

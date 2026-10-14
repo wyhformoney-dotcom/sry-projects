@@ -23,7 +23,7 @@ test('Steam imports only basic details and new submissions enforce a 500-charact
    const u=new URL(url);
    if(u.pathname.endsWith('/appdetails')){
     const locale=u.searchParams.get('l');
-    return Response.json({'123':{success:true,data:{name:'Title '+locale,short_description:'<p>Pitch '+locale+'</p>',about_the_game:'Player marketing copy '.repeat(150),detailed_description:'More player marketing',header_image:'https://example.com/cover.png',screenshots:[{path_full:'https://example.com/shot.png'}],developers:['Steam Studio'],genres:[{description:'Adventure'}],release_date:{coming_soon:true}}}});
+    return Response.json({'123':{success:true,data:{name:'Title '+locale,short_description:'<p>'+({english:'Pitch english',schinese:'中文简介',koreana:'한국어 소개'}[locale])+'</p>',about_the_game:'Player marketing copy '.repeat(150),detailed_description:'More player marketing',header_image:'https://example.com/cover.png',screenshots:[{path_full:'https://example.com/shot.png'}],developers:['Steam Studio'],genres:[{description:'Adventure'}],release_date:{coming_soon:true}}}});
    }
    return new Response('test-image',{headers:{'content-type':'image/png'}});
   };
@@ -31,7 +31,7 @@ test('Steam imports only basic details and new submissions enforce a 500-charact
   assert.equal(imported.status,200);
   const data=await imported.json();
   for(const [lang,locale] of [['en','english'],['zh','schinese'],['ko','koreana']]){
-   assert.equal(data['t_'+lang],'Title '+locale);assert.equal(data['d_'+lang],'Pitch '+locale);
+   assert.equal(data['t_'+lang],'Title '+locale);assert.equal(data['d_'+lang],{en:'Pitch english',zh:'中文简介',ko:'한국어 소개'}[lang]);
    assert.equal('full_'+lang in data,false);
   }
   assert.equal(data.studio_name,'Steam Studio');assert.equal(data.stage,'In Development');
@@ -69,7 +69,7 @@ test('translation drafts stay within 500 characters and preserve existing longer
    const request=JSON.parse(options.body),missing=JSON.parse(request.messages[1].content).missing;
    assert.match(request.messages[0].content,/B2B project overviews for publishers and investors/);
    if(length===500)assert.match(request.messages[0].content,/350-character target/);
-   return Response.json({choices:[{message:{content:JSON.stringify(Object.fromEntries(missing.map(key=>[key,'x'.repeat(length)])))}}]});
+   return Response.json({choices:[{message:{content:JSON.stringify(Object.fromEntries(missing.map(key=>[key,(key.endsWith('_ko')?'가':'x').repeat(length)])))}}]});
   };
   const env={TRANSLATION_API_KEY:'test-only',TRANSLATION_PROVIDER:'deepseek'};
   const translated=await completeLanguages(env,original,{fullLimit:500});

@@ -1,5 +1,6 @@
 import { steamDescription as stripHtml } from "../../lib/steam-description.js";
 import { completeLanguages, OVERVIEW_LIMIT } from "../../lib/translate.js";
+import {localizedSteamText} from "../../lib/content-language.js";
 // Cloudflare Pages Function —— 游戏提交(开发者)
 //   GET  /api/games-submit/mine    → 我提交的游戏及审核状态
 //   POST /api/games-submit/create  → 提交新游戏(入库为待审核,不上架)
@@ -189,11 +190,14 @@ async function handleSteamFetch(env, s, request) {
     if (video.startsWith("http://")) video = "https://" + video.slice(7);
   }
 
+  const pitches=Object.fromEntries([["en",en],["zh",zh],["ko",ko]].map(([L,data])=>
+    ['d_'+L,localizedSteamText(stripHtml(data?.short_description).slice(0,300),L,[t_en,zhName,koName])]));
+  const pitchTranslation=await completeLanguages(env,{t_en,t_zh:zhName||t_en,t_ko:koName||t_en,...pitches});
   return json({
     ok: true,
     t_en, t_zh: zhName, t_ko: koName,
-    ...Object.fromEntries([["en", en], ["zh", zh], ["ko", ko]].map(([L, data]) =>
-      [`d_${L}`, stripHtml(data?.short_description).slice(0, 300)])),
+    ...Object.fromEntries(['en','zh','ko'].map(L=>['d_'+L,pitchTranslation.content['d_'+L]||''])),
+    pitch_translation_status:pitchTranslation.status,
     cover, screenshots: shots.filter(Boolean),
     video,
     genres,
@@ -248,7 +252,6 @@ async function handleCreate(env, s, request) {
     ? b.screenshots.map((x) => S(x, 500)).filter(Boolean).slice(0, 5) : [];
 
   if (!t_en && !t_zh && !t_ko) return bad("title_required");
-  if (!original[`d_${sourceLanguage}`]) return bad("pitch_required");
   if (!original[`full_${sourceLanguage}`]) return bad("desc_required");
   if (!inSet(stage, STAGES)) return bad("stage_required");
   if (!genres) return bad("genres_required");

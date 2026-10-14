@@ -199,7 +199,7 @@
       <select id="content-language" style="padding:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:7px"><option value="en">English</option><option value="zh">中文</option><option value="ko">한국어</option></select>
       <p class="sub cjk-swap" id="translation-hint"></p>
     </div>
-    <div class="f"><label><span id="g2"></span> <span class="req">*</span></label>
+    <div class="f"><label><span id="g2"></span></label>
       <p class="sub cjk-swap" id="g2n"></p>
       <input type="text" id="d-en" maxlength="300">
       <div class="cnt"><span id="d-cnt">0</span>/300</div></div>
@@ -293,7 +293,7 @@ const I18N = {
     gateHint:"Already have games submitted? This same email keeps them all together.",
     g1:"Game Title", g1n:"Fill in a title in any language. Missing English, Chinese and Korean titles will be generated for review.",
     ph_t_en:"Game title (English)", ph_t_zh:"Chinese title (optional)", ph_t_ko:"Korean title (optional)",
-    g2:"One-line Pitch", g2n:"Shown on your game card in the library.",
+    g2:"One-line Pitch", g2n:"Shown on your game card. If Steam has no pitch, leave this blank to generate a short pitch from your project overview for review.",
     ph_d:"e.g. A hand-drawn narrative puzzle game about restoring forgotten bronze-age myths.",
     g3:"Project Overview for Publishers & Investors", g3n:"Write this overview yourself to help publishers and investors assess a partnership. Maximum 500 characters, including spaces, punctuation and Markdown. Use a short paragraph or 2–3 focused points.",
     overviewTips:["Positioning and differentiation: describe the core gameplay, target players and specific differences from comparable games.","Progress and evidence: outline your playable build, next milestone and team strengths. Include genuine test or market results if available.","Partnership needs: explain the publishing, funding or marketing support you seek, with a concrete scope or use where known."],
@@ -335,7 +335,7 @@ const I18N = {
     gateHint:"以前提交过游戏?用同一个邮箱,所有游戏都会归到一起。",
     g1:"游戏名称", g1n:"至少填写一种语言的名称，缺失的中、英、韩名称会自动生成，供后台审核。",
     ph_t_en:"英文名(选填)", ph_t_zh:"游戏名称(中文)", ph_t_ko:"韩文名(选填)",
-    g2:"一句话简介", g2n:"显示在项目库的游戏卡片上。",
+    g2:"一句话简介", g2n:"显示在项目库的游戏卡片上。如果 Steam 未提供，可留空，系统会根据你填写的项目概览生成简短介绍，供后台审核。",
     ph_d:"例:一款手绘风叙事解谜游戏,修复被遗忘的青铜时代神话。",
     g3:"面向发行商和投资者的项目概览", g3n:"请自行撰写，帮助发行商和投资者判断合作机会。最多 500 字符，含空格、标点及排版符号；建议用短段落或 2–3 条要点说明。",
     overviewTips:["定位与独特性：核心玩法、目标玩家，以及与同类游戏相比的具体差异。","进度与验证：可玩版本、下一步计划和团队优势；有测试或市场数据时可简要写出真实结果。","合作需求：希望获得哪些发行、资金或推广支持；已有明确的支持范围或资金用途时可简要说明。"],
@@ -377,7 +377,7 @@ const I18N = {
     gateHint:"이전에 게임을 제출하셨나요? 같은 이메일을 쓰면 모두 함께 관리됩니다.",
     g1:"게임 이름", g1n:"한 언어로 이름을 입력하세요. 비어 있는 영어·중국어·한국어 이름은 자동 생성 후 검토됩니다.",
     ph_t_en:"영문명(선택)", ph_t_zh:"중문명(선택)", ph_t_ko:"게임 이름(한글)",
-    g2:"한 줄 소개", g2n:"라이브러리의 게임 카드에 표시됩니다.",
+    g2:"한 줄 소개", g2n:"게임 카드에 표시됩니다. Steam 소개가 없다면 비워 두세요. 작성한 프로젝트 개요를 바탕으로 짧은 소개를 생성해 검토합니다.",
     ph_d:"예: 잊혀진 청동기 신화를 복원하는 손그림 내러티브 퍼즐 게임.",
     g3:"퍼블리셔·투자자를 위한 프로젝트 개요", g3n:"퍼블리셔와 투자자가 협업을 검토할 수 있도록 직접 작성하세요. 공백, 문장 부호, 마크다운을 포함해 최대 500자입니다. 짧은 문단 또는 핵심 항목 2–3개를 권장합니다.",
     overviewTips:["포지셔닝과 차별점: 핵심 플레이, 목표 이용자, 유사 게임과의 구체적인 차이를 설명하세요.","진척과 검증: 플레이 가능한 빌드, 다음 목표, 팀의 강점을 소개하세요. 실제 테스트나 시장 데이터가 있다면 간략히 제시하세요.","협업 요구: 필요한 퍼블리싱, 투자, 마케팅 지원과 구체적인 범위나 자금 용도를 설명하세요."],
@@ -423,6 +423,7 @@ let backMode="home";
 let studioLogo="preset:solo";
 let steamParsing=false;
 let steamTranslations = {};
+const PITCH_PENDING_TEXT={en:" Any missing pitch translation will be completed when you submit your overview.",zh:" 缺失的简介译文会在提交项目概览时补全。",ko:" 누락된 짧은 소개 번역은 프로젝트 개요를 제출할 때 완성합니다."};
 const EDITOR_TEXT = {
  en:{source:"Language of your pitch and project overview",hint:"Write in one language. Missing English, Chinese and Korean versions will be generated when translation is available and reviewed before publication. Each overview stays within 500 characters.",heading:"Heading",bold:"Bold",list:"List",quote:"Quote",preview:"Preview",hide:"Hide preview",empty:"Your project overview preview will appear here.",warning:" Your original text was saved; translation is incomplete and the reviewer can retry."},
  zh:{source:"简介与项目概览的原文语言",hint:"只需填写一种语言，系统会在翻译服务可用时补全中、英、韩三语，各语言概览均控制在 500 字符以内，由后台审核后上架。",heading:"标题",bold:"粗体",list:"列表",quote:"引用",preview:"预览",hide:"收起预览",empty:"在这里预览你的项目概览。",warning:" 原文已保存；翻译暂未完成，审核员可以稍后补全。"},
@@ -597,7 +598,6 @@ $("#submit").onclick = async ()=>{
   const t=T(); clearMsg();
   if(!$("#studio").value.trim()) return err("studio_required");
   if(!["en","zh","ko"].some(L=>$("#t-"+L).value.trim())) return err("title_required");
-  if(!$("#d-en").value.trim()) return err("pitch_required");
   if(!$("#full-en").value.trim()) return err("desc_required");
   if($("#full-en").value.length>$("#full-en").maxLength) return err("desc_too_long");
   if(!selStage.length) return err("stage_required");
@@ -654,7 +654,7 @@ $("#steambtn").onclick = async ()=>{
     if(d.cover){ coverUrl=d.cover; $("#coverbox").innerHTML=`<img src="${d.cover}">`; }
     if((d.screenshots||[]).length && !shotUrls.length){ shotUrls=d.screenshots.slice(0,MAX_SHOTS); }
     renderText();
-    sm.className="msg ok"; sm.textContent=t.parseOk;
+    sm.className="msg ok"; sm.textContent=t.parseOk+(!pitch?PITCH_PENDING_TEXT[lang]:"");
   }catch(e){
     sm.className="msg err"; sm.textContent=t.errors[e]||String(e);
   }finally{

@@ -48,6 +48,12 @@ const assert=require('node:assert/strict');
   assert.equal(submissions,1);assert.equal(payload.full_source,overview);assert.equal(payload.source_language,'zh');
   for(const language of ['en','zh','ko'])assert.equal('full_'+language in payload,false);
   assert.equal(payload.d_source,steam.d_zh);assert.equal(payload.d_en,steam.d_en);assert.equal(payload.d_ko,steam.d_ko);
+  steam.d_en='';steam.d_zh='';steam.d_ko='';
+  await page.goto('http://127.0.0.1:8811/submit-game.html');await page.locator('#steam').fill(steam.steam_url);await page.locator('#steambtn').click();
+  await page.waitForFunction(()=>!document.querySelector('#steambtn').disabled);
+  await page.locator('#full-en').fill(overview);await page.evaluate(()=>{selMarket=['Global'];selNeeds=['Seeking Publisher'];});
+  await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('#msg').classList.contains('ok'));
+  assert.equal(submissions,2);assert.equal(payload.d_source,'');assert.equal(payload.full_source,overview);
   assert.deepEqual(errors,[]);
   console.log('PASS: three-language B2B guidance, manual Steam overview, source-language preservation, retained drafts, preview, mobile layout and 500-character submission limit');
  }finally{await browser.close();}
