@@ -52,6 +52,9 @@
   .pill.pending{ color:var(--warn); border-color:var(--warn); }
   .pill.verified{ color:var(--accent); border-color:var(--accent); }
   .pill.rejected{ color:var(--danger); border-color:var(--danger); }
+  .pill.merged{ color:var(--ink-dim);border-color:var(--line); }
+  #mergemask .ngbox{ overflow-wrap:anywhere;min-width:0; }
+  #merge-cancel{ background:transparent;border:1px solid var(--line);color:var(--ink-dim); }
   .pill.mail{ color:var(--accent); border-color:var(--line); }
   .arrow{ color:var(--ink-faint); font-family:var(--mono); font-size:12px; }
 
@@ -229,6 +232,7 @@
       <button class="tab on" data-s="pending">待审核<span class="n" id="n-pending"></span></button>
       <button class="tab" data-s="verified" id="tab-verified">已通过<span class="n" id="n-verified"></span></button>
       <button class="tab" data-s="rejected">已驳回<span class="n" id="n-rejected"></span></button>
+      <button class="tab" data-s="merged" id="tab-merged" style="display:none">已合并<span class="n" id="n-merged"></span></button>
       <button class="tab" data-s="all">全部</button>
       <button class="tab" data-s="feature" id="tab-feature" style="display:none">★ 精选申请<span class="n" id="n-feature"></span></button>
     </div>
@@ -241,6 +245,17 @@
 </div>
 
 <div class="lightbox" id="lightbox" onclick="this.classList.remove('on')"><img id="lightbox-img"></div>
+<div class="ngmask" id="mergemask" role="dialog" aria-modal="true" aria-labelledby="merge-title"><div class="ngbox">
+  <h3 id="merge-title">合并重复申请</h3>
+  <p class="ngp" id="merge-source"></p>
+  <p class="ngp">所选保留记录的资料继续使用。当前申请保留原内容，状态显示“已合并”，并移出待审核列表；开发者仍能看到两条记录。</p>
+  <label for="merge-target">选择保留的申请（同一开发者）</label><select id="merge-target"></select>
+  <p class="ngp" id="merge-target-info" style="margin-top:12px"></p>
+  <label for="merge-note">合并备注（选填，仅后台记录）</label><textarea id="merge-note" maxlength="500"></textarea>
+  <button type="button" class="abtn ok" id="merge-save" style="width:100%;margin-top:18px" disabled>确认合并</button>
+  <button type="button" class="abtn" id="merge-cancel" style="width:100%;margin-top:9px">取消</button>
+  <div class="ngmsg" id="merge-msg" role="status"></div>
+</div></div>
 
 <script>
 const KIND_ZH = { publishing:"发行", investment:"投资" };
@@ -255,7 +270,7 @@ try{ const dn = new Intl.DisplayNames(["zh-Hans"],{type:"region"}); regionName =
 const STAGE_ZH = { "In Development":"开发中", "Demo":"Demo", "Playtest":"Playtest", "Early Access":"抢先体验", "Released":"已发售" };
 const PLATFORM_ZH = { PC:"PC", Console:"主机", Mobile:"移动端" };
 const NEED_ZH = { "Seeking Publisher":"寻找发行", "Seeking Publisher Partner":"寻找联合发行", "Seeking Investment":"寻找投资" };
-const GSTATUS_ZH = { pending:"待审核", approved:"已上架", rejected:"已驳回" };
+const GSTATUS_ZH = { pending:"待审核", approved:"已上架", rejected:"已驳回",merged:"已合并" };
 const $ = (s)=>document.querySelector(s);
 let curTab = "pending";
 let curMode = "partners";
@@ -402,7 +417,7 @@ async function review(id, action, btn){
       body:JSON.stringify({ id, action, note }) });
     await load({force:true});
   }catch(e){
-    msg.className="amsg err"; msg.textContent=e==="translations_required"?"请先补全三语并修复语言不符的内容，保存后再通过上架。":"操作失败:"+e; btn.disabled=false;btn.textContent=old;
+    msg.className="amsg err"; msg.textContent=e==="translations_required"?"请先补全三语并修复语言不符的内容，保存后再通过上架。":e==="game_merged"?"此申请已合并，请刷新后查看保留记录。":"操作失败:"+e; btn.disabled=false;btn.textContent=old;
   }
 }
 
@@ -463,8 +478,22 @@ function gameRowHtml(r){
 function gameDetailHtml(r){
   const name=r.t_en||r.t_zh||r.t_ko||"(未填名称)", isFeishu=!!r.feishu_id;
   const shots=(r.screenshots||[]).map(u=>`<img loading="lazy" decoding="async" src="${esc(u)}" style="max-width:130px;max-height:80px;border-radius:5px;cursor:zoom-in;margin:0 6px 6px 0" onclick="showLightbox(this.src)">`).join("");
+  if(r.status==='merged'){
+    const target=r.merge_target;
+    return `<div class="note">此申请已合并，原始资料保留供查阅。</div><div class="grid">
+      ${kvHtml('保留的申请',target?esc((target.t_en||target.t_zh||target.t_ko||'')+' · #'+target.id+' · '+(GSTATUS_ZH[target.status]||target.status)):'原目标已移除',true)}
+      ${kvHtml('合并时间',r.merged_at?esc(new Date(r.merged_at.replace(' ','T')+'Z').toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})):'—')}${kvHtml('合并备注',esc(r.merge_note))}
+      ${kvHtml('合并前状态',esc(GSTATUS_ZH[r.merged_from_status]||r.merged_from_status))}${kvHtml('开发阶段',esc(STAGE_ZH[r.stage]||r.stage))}
+      ${kvHtml('品类',chipsHtml(r.genres,GENRE_ZH))}${kvHtml('平台',chipsHtml(r.platforms,PLATFORM_ZH))}${kvHtml('合作需求',chipsHtml(r.needs,NEED_ZH),true)}
+      ${kvHtml('预告片',linkHtml(r.video))}${kvHtml('原审核备注',esc(r.review_note))}
+      ${kvHtml('开发者署名',esc(r.developer))}${kvHtml('Steam 页面',linkHtml(r.steam_url))}
+      ${['en','zh','ko'].map(L=>kvHtml(L.toUpperCase(),`<strong>${esc(r['t_'+L])}</strong><p>${esc(r['d_'+L])}</p><div class="game-description">${SryDescription.render(r['full_'+L])}</div><p>${esc(r['studio_'+L])}</p>`,true)).join('')}
+      ${kvHtml('封面',r.cover?`<img loading="lazy" src="${esc(r.cover)}" style="max-width:100%;width:280px">`:'—',true)}${kvHtml('截图',shots||'—',true)}
+      </div><div class="acts"><button class="abtn no" data-name="${esc(name)}" onclick="deleteGame(${r.id},this.dataset.name,this)">删除此历史申请</button></div>`;
+  }
   return `      <div class="acts" style="margin:0 0 18px">
         <button type="button" class="abtn ok" onclick="editGame(${r.id},this)">编辑游戏资料</button>
+        ${r.claimed_by?`<button type="button" class="abtn" onclick="openMerge(${r.id})">合并到其他申请…</button>`:''}
         ${r.status==="approved" && r.visible ? `<a class="abtn" href="/game.html?id=${r.id}" target="_blank" rel="noopener" style="border:1px solid var(--line);color:var(--ink)">查看线上游戏 ↗</a>` : ""}
       </div><div class="grid">
         <div class="kv full"><div class="k">开发者联系方式(可直接修改;已归户的会同步写入该开发者账号)</div>
@@ -536,6 +565,36 @@ function gameDetailHtml(r){
       <div class="amsg" id="amsg-${r.id}"></div>
 `;
 }
+let mergeState=null,mergeBusy=false,mergeSequence=0;
+const mergeErrors={merge_owner_mismatch:'只能合并同一开发者的申请。',merge_keep_live:'请保留已上架记录，将其他申请合并到已上架记录。',merge_target_merged:'目标已被合并，请重新选择保留记录。',merge_conflict:'记录状态已更新，请重新打开合并窗口。',game_merged:'此申请已经合并，请刷新查看。'};
+function closeMerge(){if(mergeBusy)return;++mergeSequence;mergeState=null;$('#mergemask').style.display='none';}
+function paintMergeTarget(){
+  const target=mergeState?.candidates.find(row=>row.id===Number($('#merge-target').value));
+  $('#merge-save').disabled=!target?.can_keep||mergeBusy;
+  $('#merge-target-info').textContent=target?`${GSTATUS_ZH[target.status]||target.status} · 申请 #${target.id}${target.same_game?' · 名称或 Steam 编号匹配':' · 名称或 Steam 编号不同，请核对是否为同一游戏。'}`:'没有可保留的其他申请；已上架记录应作为保留记录。';
+}
+async function openMerge(id){
+  if(mergeBusy)return;
+  const sequence=++mergeSequence;mergeState=null;$('#mergemask').style.display='flex';$('#merge-source').textContent='正在读取同一开发者的申请…';$('#merge-target').replaceChildren();$('#merge-note').value='';$('#merge-msg').style.display='none';$('#merge-save').disabled=true;
+  try{
+    const data=await api('game-merge-candidates?id='+id,{method:'GET'});if(sequence!==mergeSequence)return;
+    mergeState=data;$('#merge-source').textContent='当前申请：'+(data.source.t_en||data.source.t_zh||data.source.t_ko||'—')+' · #'+id+' · '+GSTATUS_ZH[data.source.status];
+    for(const row of data.candidates){const option=new Option((row.t_en||row.t_zh||row.t_ko||'—')+' · #'+row.id+' · '+GSTATUS_ZH[row.status],row.id);option.disabled=!row.can_keep;$('#merge-target').add(option);}
+    const first=data.candidates.find(row=>row.can_keep);$('#merge-target').value=first?String(first.id):'';paintMergeTarget();
+  }catch(e){$('#merge-msg').textContent=mergeErrors[e]||'读取失败，请关闭后重试。';$('#merge-msg').style.display='block';}
+}
+$('#merge-target').onchange=paintMergeTarget;$('#merge-cancel').onclick=closeMerge;
+$('#mergemask').onclick=e=>{if(e.target.id==='mergemask')closeMerge();};
+$('#merge-save').onclick=async()=>{
+  if(mergeBusy||!mergeState)return;
+  const source=mergeState.source.id,target=Number($('#merge-target').value);if(!mergeState.candidates.some(row=>row.id===target&&row.can_keep))return;
+  mergeBusy=true;$('#merge-save').disabled=true;$('#merge-cancel').disabled=true;$('#merge-target').disabled=true;$('#merge-note').disabled=true;$('#merge-save').textContent='合并中…';
+  try{
+    await api('game-merge',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({source_id:source,target_id:target,note:$('#merge-note').value})});
+    mergeBusy=false;closeMerge();await load({force:true});$('#load-status').textContent=`申请 #${source} 已合并至 #${target}，原申请内容已保留。`;
+  }catch(e){$('#merge-msg').textContent=mergeErrors[e]||'合并失败，请重试。';$('#merge-msg').style.display='block';}
+  finally{mergeBusy=false;$('#merge-cancel').disabled=false;$('#merge-target').disabled=false;$('#merge-note').disabled=false;$('#merge-save').textContent='确认合并';paintMergeTarget();}
+};
 async function toggleGameDetail(id,head){
   const row=head.closest(".row"),detail=row.querySelector(".detail");
   row.classList.toggle("open");
@@ -840,6 +899,7 @@ function renderList(d,state){
   const passed=state.mode==="games"?c.approved:c.verified;
   $("#n-verified").textContent=passed?`(${passed})`:"";
   $("#n-rejected").textContent=c.rejected?`(${c.rejected})`:"";
+  $("#n-merged").textContent=c.merged?`(${c.merged})`:"";
   $("#list").innerHTML=d.rows.length?d.rows.map(state.mode==="games"?gameRowHtml:rowHtml).join(""):`<div class="empty">这个状态下没有${state.mode==="games"?"游戏":"账号"}</div>`;
 }
 async function load({force=false}={}){
@@ -879,6 +939,7 @@ $("#modes").addEventListener("click",(e)=>{
   $("#syncbar").style.display = curMode==="games" ? "block" : "none";
   $("#orderbar").style.display = curMode==="games" ? "flex" : "none";
   $("#tab-feature").style.display = curMode==="games" ? "inline-flex" : "none";
+  $("#tab-merged").style.display = curMode==="games" ? "inline-flex" : "none";
   $("#modelead").textContent = curMode==="accounts"
     ? "管理所有注册账号。可按身份筛选、按邮箱搜索;停用后账号无法登录,恢复后即可正常使用。"
     : curMode==="games"

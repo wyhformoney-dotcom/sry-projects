@@ -79,6 +79,7 @@ test('submission and deletion work against real local D1, preserving the other g
  try{
   const DB=await mf.getD1Database('DB');
   await DB.exec("CREATE TABLE accounts(id INTEGER PRIMARY KEY, email TEXT, role TEXT, status TEXT); CREATE TABLE developer_profiles(account_id INTEGER PRIMARY KEY,studio_name TEXT,logo TEXT,contact_email TEXT,updated_at TEXT); CREATE TABLE games(id INTEGER PRIMARY KEY,slug TEXT UNIQUE,t_en TEXT,t_zh TEXT,t_ko TEXT,d_en TEXT,d_zh TEXT,d_ko TEXT,full_en TEXT,full_zh TEXT,full_ko TEXT,developer TEXT,studio_logo TEXT,stage TEXT,genres TEXT,needs TEXT,platforms TEXT,region TEXT,cover TEXT,screenshots TEXT,video TEXT,steam_url TEXT,claimed_by INTEGER,deep_coop INTEGER,visible INTEGER,status TEXT,created_at TEXT); CREATE TABLE favorites(id INTEGER PRIMARY KEY,game_id INTEGER); CREATE TABLE game_claims(id INTEGER PRIMARY KEY,game_id INTEGER REFERENCES games(id) ON DELETE CASCADE); INSERT INTO accounts VALUES(1,'test@example.com','developer','verified');");
+  await DB.exec(await readFile(new URL('../migrations/20261026_game_submission_merges.sql',import.meta.url),'utf8'));
   const secret='test-session-only',body=Buffer.from(JSON.stringify({aid:1,email:'test@example.com',exp:Date.now()+60000})).toString('base64url');
   const cookie='sry_session='+body+'.'+createHmac('sha256',secret).update(body).digest('hex');
   const env={DB,R2:{},SESSION_SECRET:secret,ADMIN_EMAILS:'test@example.com'};

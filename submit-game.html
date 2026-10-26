@@ -56,6 +56,13 @@
   .overview-tips{ margin:0 0 14px; padding:12px 18px 12px 34px; border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--panel); color:var(--ink-dim); font-size:13px; line-height:1.7; }
   .overview-tips li{ margin:5px 0; }
   .overview-tips li::marker{ color:var(--accent); }
+  .duplicate-warning{ margin:12px 0 20px;padding:16px;border:1px solid var(--warn,#f2c94c);border-radius:10px;background:var(--panel);font-size:13px;line-height:1.7;overflow-wrap:anywhere; }
+  .duplicate-warning[hidden]{ display:none; }
+  .duplicate-warning p{ margin:7px 0; color:var(--ink-dim); }
+  .duplicate-warning ul{ padding-left:20px; margin:8px 0; }
+  .duplicate-warning a{ color:var(--accent);text-decoration:underline; }
+  .duplicate-warning label{ display:flex;align-items:flex-start;gap:8px;font-size:13px; }
+  .duplicate-warning input{ margin-top:5px;flex:none; }
   input[type=text], input[type=url], textarea{
     width:100%; background:var(--panel2); border:1px solid var(--line); border-radius:8px;
     color:var(--ink); font-size:14px; padding:11px 13px; outline:none; font-family:inherit;
@@ -195,6 +202,10 @@
         <input type="text" id="t-zh" maxlength="120">
         <input type="text" id="t-ko" maxlength="120">
       </div></div>
+    <div class="duplicate-warning" id="duplicate-warning" hidden role="status">
+      <strong id="duplicate-title"></strong><p id="duplicate-hint"></p><ul id="duplicate-list"></ul>
+      <label><input type="checkbox" id="duplicate-confirm"><span id="duplicate-confirm-label"></span></label>
+    </div>
     <div class="f"><label for="content-language" id="content-language-label"></label>
       <select id="content-language" style="padding:10px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:7px"><option value="en">English</option><option value="zh">中文</option><option value="ko">한국어</option></select>
       <p class="sub cjk-swap" id="translation-hint"></p>
@@ -423,6 +434,27 @@ let backMode="home";
 let studioLogo="preset:solo";
 let steamParsing=false;
 let steamTranslations = {};
+let duplicateRows=[],duplicateTimer=null,duplicateSequence=0,submissionBusy=false,draftSignature='',draftKey='';
+const DUPLICATE_TEXT={
+ en:{title:'You may have submitted this game before',hint:'Review your existing applications below. You can still create a separate application; an administrator can mark duplicate applications as merged.',confirm:'I still want to create a new application',submit:'Submit another application',states:{pending:'In review',approved:'Live',rejected:'Rejected',merged:'Merged'}},
+ zh:{title:'你可能已提交过这款游戏',hint:'以下是你已有的申请。可以先查看，也可以继续新增申请；管理员之后可将重复申请标记为已合并。',confirm:'我确认仍要新增一条申请',submit:'仍然提交新申请',states:{pending:'待审核',approved:'已上架',rejected:'已驳回',merged:'已合并'}},
+ ko:{title:'이미 제출한 게임일 수 있습니다',hint:'기존 신청을 확인하세요. 별도 신청을 계속 제출할 수 있으며, 관리자가 중복 신청을 병합됨으로 표시할 수 있습니다.',confirm:'새 신청을 계속 제출하겠습니다',submit:'새 신청 추가 제출',states:{pending:'심사 중',approved:'등록됨',rejected:'반려됨',merged:'병합됨'}}
+};
+function paintDuplicateWarning(){
+ const text=DUPLICATE_TEXT[lang];$('#duplicate-warning').hidden=!duplicateRows.length;
+ $('#duplicate-title').textContent=text.title;$('#duplicate-hint').textContent=text.hint;$('#duplicate-confirm-label').textContent=text.confirm;
+ $('#duplicate-list').replaceChildren(...duplicateRows.map(row=>{const li=document.createElement('li'),a=document.createElement('a');a.href='/account.html#game-'+row.id;a.target='_blank';a.rel='noopener';a.textContent=(row['t_'+lang]||row.t_en||row.t_zh||row.t_ko||'—')+' · '+(text.states[row.status]||row.status)+' · #'+row.id;li.append(a);return li;}));
+ if(!submissionBusy)$('#submit').textContent=duplicateRows.length&&$('#duplicate-confirm').checked?text.submit:T().submit;
+}
+function duplicateIdentity(){const game={steam_url:$('#steam').value.trim()};for(const L of ['en','zh','ko'])game['t_'+L]=$('#t-'+L).value.trim();return game;}
+function scheduleDuplicateCheck(){
+ const sequence=++duplicateSequence;clearTimeout(duplicateTimer);duplicateRows=[];$('#duplicate-confirm').checked=false;paintDuplicateWarning();
+ if(!gateVerified)return;
+ const identity=duplicateIdentity();if(!identity.steam_url&&!['en','zh','ko'].some(L=>identity['t_'+L]))return;
+ duplicateTimer=setTimeout(async()=>{try{const data=await api('/api/games-submit/duplicates',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(identity)});if(sequence===duplicateSequence){duplicateRows=data.duplicates||[];paintDuplicateWarning();}}catch{}},450);
+}
+for(const selector of ['#t-en','#t-zh','#t-ko','#steam'])$(selector).addEventListener('input',scheduleDuplicateCheck);
+$('#duplicate-confirm').onchange=paintDuplicateWarning;
 const PITCH_PENDING_TEXT={en:" Any missing pitch translation will be completed when you submit your overview.",zh:" 缺失的简介译文会在提交项目概览时补全。",ko:" 누락된 짧은 소개 번역은 프로젝트 개요를 제출할 때 완성합니다."};
 const EDITOR_TEXT = {
  en:{source:"Language of your pitch and project overview",hint:"Write in one language. Missing English, Chinese and Korean versions will be generated when translation is available and reviewed before publication. Each overview stays within 500 characters.",heading:"Heading",bold:"Bold",list:"List",quote:"Quote",preview:"Preview",hide:"Hide preview",empty:"Your project overview preview will appear here.",warning:" Your original text was saved; translation is incomplete and the reviewer can retry."},
@@ -470,6 +502,7 @@ async function api(path, opts){
   if(!data.ok){
     const e = String(data.error||"server");
     const key = e.split(":")[0].trim();
+    if(key==='duplicate_confirmation_required')throw {code:key,duplicates:data.duplicates||[]};
     throw (key==="server_error") ? e : key;
   }
   return data;
@@ -590,11 +623,13 @@ function renderText(){
   chips($("#market"), MARKETS, MARKET_L, selMarket, true);
   chips($("#needs"), NEEDS, NEED_L, selNeeds);
   renderShots();
+  paintDuplicateWarning();
 }
 
 const isUrl=(v)=>v===""||/^https?:\/\/\S+$/i.test(v);
 
 $("#submit").onclick = async ()=>{
+  if(submissionBusy)return;
   const t=T(); clearMsg();
   if(!$("#studio").value.trim()) return err("studio_required");
   if(!["en","zh","ko"].some(L=>$("#t-"+L).value.trim())) return err("title_required");
@@ -608,10 +643,11 @@ $("#submit").onclick = async ()=>{
   if(!isUrl($("#steam").value.trim())||!isUrl($("#video").value.trim())) return err("url_invalid");
   if(!coverUrl) return err("cover_required");
   if(!shotUrls.length) return err("shots_required");
+  if(duplicateRows.length&&!$('#duplicate-confirm').checked){paintDuplicateWarning();$('#duplicate-warning').scrollIntoView({block:'center',behavior:'smooth'});return;}
+  submissionBusy=true;
   $("#submit").disabled=true; $("#submit").textContent=t.submitting;
   try{
-    const result=await api("/api/games-submit/create",{ method:"POST", headers:{"content-type":"application/json"},
-      body:JSON.stringify({
+    const payload={
         studio_name:$("#studio").value, studio_logo:studioLogo, deep_coop:$("#deep-coop").checked,
         t_en:$("#t-en").value, t_zh:$("#t-zh").value, t_ko:$("#t-ko").value,
         source_language:$("#content-language").value,
@@ -621,12 +657,16 @@ $("#submit").onclick = async ()=>{
         region:selMarket[0], needs:selNeeds,
         steam_url:$("#steam").value.trim(), video:$("#video").value.trim(),
         cover:coverUrl, screenshots:shotUrls
-      })});
+      };
+    const signature=JSON.stringify(payload);if(signature!==draftSignature){draftSignature=signature;draftKey=crypto.randomUUID();}
+    payload.submission_key=draftKey;payload.allow_duplicate=duplicateRows.length>0&&$('#duplicate-confirm').checked;
+    const result=await api("/api/games-submit/create",{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
+    ++duplicateSequence;clearTimeout(duplicateTimer);duplicateRows=[];$('#duplicate-confirm').checked=false;draftSignature='';paintDuplicateWarning();
     okmsg();
     if(result.translation_status!=="complete") $("#msg").textContent+=EDITOR_TEXT[lang].warning;
     window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});
-  }catch(e){ err(e); }
-  finally{ $("#submit").disabled=false; $("#submit").textContent=t.submit; }
+  }catch(e){if(e?.code==='duplicate_confirmation_required'){duplicateRows=e.duplicates;$('#duplicate-confirm').checked=false;paintDuplicateWarning();$('#duplicate-warning').scrollIntoView({block:'center',behavior:'smooth'});}else err(e);}
+  finally{submissionBusy=false;$("#submit").disabled=false;paintDuplicateWarning();}
 };
 
 $("#steambtn").onclick = async ()=>{
@@ -654,6 +694,7 @@ $("#steambtn").onclick = async ()=>{
     if(d.cover){ coverUrl=d.cover; $("#coverbox").innerHTML=`<img src="${d.cover}">`; }
     if((d.screenshots||[]).length && !shotUrls.length){ shotUrls=d.screenshots.slice(0,MAX_SHOTS); }
     renderText();
+    scheduleDuplicateCheck();
     sm.className="msg ok"; sm.textContent=t.parseOk+(!pitch?PITCH_PENDING_TEXT[lang]:"");
   }catch(e){
     sm.className="msg err"; sm.textContent=t.errors[e]||String(e);

@@ -1,0 +1,62 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {createHmac,randomUUID} from 'node:crypto';
+import {onRequest as submissions} from '../functions/api/games-submit/[[path]].js';
+import {onRequest as admin} from '../functions/api/admin/[[path]].js';
+import {onRequestGet as publicGames} from '../functions/api/games.js';
+const {Miniflare,convertV4MiniflareOptions}=createRequire(import.meta.url)('miniflare');
+
+test('duplicate warnings permit confirmed submissions, retries are idempotent, and merges preserve application history',async()=>{
+ const mf=new Miniflare(convertV4MiniflareOptions({name:'merges-test',modules:true,script:'export default {fetch(){return new Response("test")}}',d1Databases:{DB:'submission-merges'},compatibilityDate:'2026-10-08'}));
+ try{
+  const DB=await mf.getD1Database('DB');await DB.exec(await readFile(new URL('./fixtures/schema.sql',import.meta.url),'utf8'));
+  await DB.exec("INSERT INTO accounts(id,email,role,status) VALUES(1,'admin@example.com','developer','verified'),(2,'dev@example.com','developer','verified'),(3,'other@example.com','developer','verified'); INSERT INTO games(id,slug,t_en,t_zh,t_ko,claimed_by,status,visible,steam_url,full_en,genres,feature_state) VALUES(10,'retained','Duplicate Game','重复游戏','중복 게임',2,'approved',1,'https://store.steampowered.com/app/123/','Retained approved text','[\"Adventure\"]','none'),(11,'older','Another title','','',2,'pending',0,'https://store.steampowered.com/app/123/?l=chinese','Earlier draft','[]','none'),(12,'source','Duplicate Game','','',2,'pending',0,'','Original source text','[]','pending'),(14,'foreign','Duplicate Game','','',3,'pending',0,'','Another owner text','[]','none'),(16,'second-live','Duplicate Game','','',2,'approved',1,'','Second live body','[]','none');");
+  const secret='local-merge-test-only',env={DB,R2:{},SESSION_SECRET:secret,ADMIN_EMAILS:'admin@example.com'};
+  const cookie=aid=>{const body=Buffer.from(JSON.stringify({aid,email:aid===1?'admin@example.com':aid===2?'dev@example.com':'other@example.com',exp:Date.now()+60000})).toString('base64url');return 'sry_session='+body+'.'+createHmac('sha256',secret).update(body).digest('hex');};
+  const call=(handler,path,payload,aid=2,bindings=env)=>handler({env:bindings,params:{path:[path.split('?')[0]]},request:new Request('https://test.example/api/'+path,{method:payload?'POST':'GET',headers:{...(aid?{cookie:cookie(aid)}:{}),...(payload?{'content-type':'application/json'}:{})},body:payload?JSON.stringify(payload):undefined})});
+  const get=async id=>DB.prepare('SELECT * FROM games WHERE id=?').bind(id).first();
+  const duplicate=await call(submissions,'duplicates',{t_en:'Ｄｕｐｌｉｃａｔｅ　Ｇａｍｅ！',steam_url:'https://store.steampowered.com/app/123/?utm=test'});
+  const matches=(await duplicate.json()).duplicates;assert.deepEqual(matches.map(x=>x.id).sort((a,b)=>a-b),[10,11,12,16]);assert.ok(!matches.some(x=>x.id===14));
+  assert.equal((await call(submissions,'duplicates',{t_en:'Duplicate Game'},null)).status,401);
+  const payload={t_en:'Duplicate Game',t_zh:'重复游戏',t_ko:'중복 게임',d_en:'A puzzle adventure.',d_zh:'解谜冒险游戏。',d_ko:'퍼즐 어드벤처 게임입니다.',full_en:'Seeking a publisher.',full_zh:'寻找发行合作。',full_ko:'퍼블리싱 협력을 찾습니다.',source_language:'en',studio_name:'Developer',stage:'Demo',genres:['Adventure'],platforms:['PC'],needs:['Seeking Publisher'],region:'Global',cover:'https://example.com/cover.png',screenshots:['https://example.com/shot.png'],submission_key:randomUUID()};
+  const beforeCount=(await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n;
+  const warning=await call(submissions,'create',payload);assert.equal(warning.status,409);assert.equal((await warning.json()).error,'duplicate_confirmation_required');
+  assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n,beforeCount);
+  const forced={...payload,allow_duplicate:true};const accepted=await call(submissions,'create',forced);assert.equal(accepted.status,200);const created=await accepted.json();
+  const replay=await (await call(submissions,'create',{...forced,submission_key:forced.submission_key.toUpperCase()})).json();assert.equal(replay.id,created.id);assert.equal(replay.replayed,true);
+  assert.equal((await call(submissions,'create',{...forced,full_en:'Changed content with reused key.'})).status,409);
+  const concurrent={...forced,submission_key:randomUUID()};const responses=await Promise.all([call(submissions,'create',concurrent),call(submissions,'create',concurrent)]);
+  assert.ok(responses.every(r=>r.status===200));const results=await Promise.all(responses.map(r=>r.json()));assert.equal(results[0].id,results[1].id);
+  assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n,beforeCount+2);
+
+  const original=await get(12),retained=await get(10);
+  assert.equal((await call(admin,'game-merge',{source_id:12,target_id:10},2)).status,403);
+  assert.equal((await call(admin,'game-merge',{source_id:12,target_id:14},1)).status,400);
+  assert.equal((await call(admin,'game-merge',{source_id:12,target_id:12},1)).status,400);
+  assert.equal((await call(admin,'game-merge',{source_id:10,target_id:11},1)).status,400);
+  const merged=await call(admin,'game-merge',{source_id:12,target_id:10,note:'Duplicate application'},1);assert.equal(merged.status,200);
+  assert.deepEqual(await get(10),retained);
+  const archived=await get(12);assert.equal(archived.status,'merged');assert.equal(archived.visible,0);assert.equal(archived.merged_into,10);assert.equal(archived.merged_by,1);assert.equal(archived.merged_from_status,'pending');assert.equal(archived.merged_from_visible,0);
+  const changed=new Set(['status','visible','merged_into','merged_at','merged_by','merge_note','merged_from_status','merged_from_visible']);for(const key of Object.keys(original))if(!changed.has(key))assert.deepEqual(archived[key],original[key]);
+  const again=await (await call(admin,'game-merge',{source_id:12,target_id:10},1)).json();assert.equal(again.replayed,true);
+  const summary=await (await call(admin,'games?summary=1&status=merged',null,1)).json();assert.equal(summary.counts.merged,1);assert.deepEqual(summary.rows.map(r=>r.id),[12]);assert.equal(summary.counts.feature,0);
+  assert.equal((await call(admin,'review-game',{id:12,action:'approve'},1)).status,409);
+  assert.equal((await call(admin,'game-update',{id:12,changes:{d_en:'Edited archive'},expected:{d_en:''}},1)).status,409);
+  assert.equal((await call(submissions,'delete',{game_id:12})).status,403);
+  let mine=await (await call(submissions,'mine',null)).json();assert.ok(mine.rows.some(r=>r.id===12&&r.status==='merged'&&r.merge_target.id===10));assert.ok(mine.rows.some(r=>r.id===10));assert.ok(!mine.rows.some(r=>r.id===14));
+  assert.equal((await call(admin,'game-merge',{source_id:10,target_id:16},1)).status,200);
+  mine=await (await call(submissions,'mine',null)).json();assert.equal(mine.rows.find(r=>r.id===12).merge_target.id,16);assert.equal(mine.rows.find(r=>r.id===10).merge_target.id,16);
+  const live=await (await publicGames({env})).json();assert.ok(live.some(r=>r.id===16));assert.ok(!live.some(r=>r.id===10||r.id===12));
+  const candidates=await (await call(admin,'game-merge-candidates?id=11',null,1)).json();assert.ok(candidates.candidates.every(r=>r.id!==14&&r.id!==10&&r.id!==12));
+  const detail=await (await call(admin,'game?id=12',null,1)).json();assert.equal(detail.row.merge_target.id,16);
+  const historyWarning=await (await call(submissions,'duplicates',{t_en:'Duplicate Game'})).json();assert.ok(historyWarning.duplicates.some(r=>r.id===12&&r.status==='merged'));
+  assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n,beforeCount+2);
+  await DB.exec("INSERT INTO games(id,slug,t_en,claimed_by,status,visible) VALUES(30,'race-a','Race A',2,'pending',0),(31,'race-b','Race B',2,'pending',0);");
+  const opposed=await Promise.all([call(admin,'game-merge',{source_id:30,target_id:31},1),call(admin,'game-merge',{source_id:31,target_id:30},1)]);
+  assert.equal(opposed.filter(r=>r.status===200).length,1);assert.equal(opposed.filter(r=>r.status===409).length,1);
+  const raceRows=(await DB.prepare('SELECT status FROM games WHERE id IN (30,31)').all()).results;
+  assert.equal(raceRows.filter(r=>r.status==='pending').length,1);assert.equal(raceRows.filter(r=>r.status==='merged').length,1);
+ }finally{await mf.dispose();}
+});

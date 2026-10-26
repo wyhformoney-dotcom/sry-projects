@@ -1,6 +1,7 @@
 import { steamDescription as aStrip } from "../../lib/steam-description.js";
 import { completeLanguages } from "../../lib/translate.js";
 import {localizedSteamText, matchesContentLanguage, gameNames, translationTargets} from "../../lib/content-language.js";
+import {sameGame,canonicalMergeTarget} from "../../lib/game-submissions.js";
 // Cloudflare Pages Function —— 审核后台(仅管理员)
 //   GET  /api/admin/partners?status=pending|verified|rejected|all → 合作方账号列表(含完整资料)
 //   POST /api/admin/review { id, action: "approve"|"reject", note? } → 通过/驳回
@@ -111,14 +112,14 @@ const GAME_DETAIL_SELECT = `SELECT g.id, g.slug, g.feishu_id, g.visible, g.featu
             g.full_en, g.full_zh, g.full_ko, g.studio_en, g.studio_zh, g.studio_ko, g.stage,
             g.genres, g.needs, g.platforms, g.region, g.cover, g.screenshots,
             g.developer, g.studio_logo, g.video, g.steam_url, g.status, g.review_note, g.created_at,
-            g.contact AS legacy_contact, a.email AS login_email,
+            g.claimed_by,g.merged_into,g.merged_at,g.merge_note,g.merged_from_status,g.contact AS legacy_contact, a.email AS login_email,
             dp.studio_name, dp.contact_email AS dev_contact
      FROM games g
      LEFT JOIN accounts a ON a.id = g.claimed_by
      LEFT JOIN developer_profiles dp ON dp.account_id = g.claimed_by
 `;
 const GAME_SUMMARY_SELECT = `SELECT g.id, g.t_en, g.t_zh, g.t_ko, g.feishu_id,
-  g.visible, g.featured, g.feature_state, g.status, g.stage, g.cover, g.created_at,
+  g.visible, g.featured, g.feature_state, g.status, g.stage, g.cover, g.created_at,g.merged_into,
   a.email AS login_email, dp.studio_name
   FROM games g LEFT JOIN accounts a ON a.id=g.claimed_by
   LEFT JOIN developer_profiles dp ON dp.account_id=g.claimed_by`;
@@ -135,6 +136,7 @@ async function handleGameDetail(env, request) {
   if (!Number.isSafeInteger(id) || id<=0) return bad("invalid_id");
   const row=await env.DB.prepare(GAME_DETAIL_SELECT+" WHERE g.id = ?").bind(id).first();
   if (!row) return bad("game_not_found",404);
+  if(row.status==='merged')row.merge_target=await canonicalMergeTarget(env.DB,id);
   return json({ok:true,row:parseGameArrays(row)});
 }
 async function handleGamesList(env, request) {
@@ -142,15 +144,15 @@ async function handleGamesList(env, request) {
   const status = url.searchParams.get("status") || "pending";
   const summary=url.searchParams.get("summary")==="1";
   const where = ["1=1"], binds = [];
-  if (status === "feature") where.push("g.feature_state = 'pending'");
-  else if (["pending", "approved", "rejected"].includes(status)) {
+  if (status === "feature") where.push("g.feature_state = 'pending' AND g.status!='merged'");
+  else if (["pending", "approved", "rejected", "merged"].includes(status)) {
     where.push("g.status = ?"); binds.push(status);
   }
   const [games,statuses,features]=await env.DB.batch([
     env.DB.prepare((summary?GAME_SUMMARY_SELECT:GAME_DETAIL_SELECT)+
       ` WHERE ${where.join(" AND ")} ORDER BY g.featured DESC, g.sort ASC, g.id DESC LIMIT 200`).bind(...binds),
     env.DB.prepare("SELECT status, COUNT(*) AS c FROM games GROUP BY status"),
-    env.DB.prepare("SELECT COUNT(*) AS c FROM games WHERE feature_state='pending'")
+    env.DB.prepare("SELECT COUNT(*) AS c FROM games WHERE feature_state='pending' AND status!='merged'")
   ]);
   const counts={};
   for (const row of statuses.results || []) counts[row.status]=row.c;
@@ -169,6 +171,7 @@ async function handleReviewGame(env, request) {
     "SELECT * FROM games WHERE id = ? AND claimed_by IS NOT NULL"
   ).bind(gid).first();
   if (!game) return bad("not_found", 404);
+  if(game.status==='merged')return bad('game_merged',409);
 
   const cleanNote = String(note || "").trim().slice(0, 500);
   if (action === "approve") {
@@ -396,6 +399,8 @@ async function handleFeatureSet(env, request) {
   const { id, action, note } = await request.json().catch(() => ({}));
   const gid = parseInt(id, 10);
   if (!gid) return bad("invalid_id");
+  const game=await env.DB.prepare('SELECT status FROM games WHERE id=?').bind(gid).first();
+  if(game?.status==='merged')return bad('game_merged',409);
   const cleanNote = String(note || "").trim().slice(0, 500);
   if (action === "feature") {
     await env.DB.prepare("UPDATE games SET featured=1, feature_state='featured', feature_note=NULL WHERE id=?").bind(gid).run();
@@ -414,6 +419,7 @@ async function handleGameI18n(env, request) {
   if (!Number.isSafeInteger(id) || id<=0) return bad("invalid_id");
   const game=await env.DB.prepare("SELECT * FROM games WHERE id=?").bind(id).first();
   if (!game) return bad("game_not_found",404);
+  if(game.status==='merged')return bad('game_merged',409);
   const keys=Object.keys(GAME_TEXT_LIMITS).filter(key=>/^(t|d|full|studio)_(en|zh|ko)$/.test(key));
   const changes=Object.fromEntries(keys.map(key=>[key,String(b[key] ?? "")]));
   const expected=Object.fromEntries(keys.map(key=>[key,gameFieldValue(game,key)]));
@@ -499,6 +505,7 @@ async function handleGameUpdate(env, request) {
   if (!keys.length || keys.some(key=>!Object.hasOwn(GAME_TEXT_LIMITS,key) && !GAME_ARRAY_FIELDS.includes(key))) return bad("invalid_changes");
   const game=await env.DB.prepare("SELECT * FROM games WHERE id=?").bind(id).first();
   if (!game) return bad("game_not_found",404);
+  if(game.status==='merged')return bad('game_merged',409);
   const values={};
   for (const key of keys) {
     if (!Object.hasOwn(expected,key)) return bad("expected_required");
@@ -605,6 +612,7 @@ async function handleGameTranslate(env, request) {
   if (!Number.isSafeInteger(id) || id <= 0) return bad("invalid_id");
   const game = await env.DB.prepare("SELECT * FROM games WHERE id = ?").bind(id).first();
   if (!game) return bad("game_not_found", 404);
+  if(game.status==='merged')return bad('game_merged',409);
   const original = {};
   original.developer=game.developer||"";
   for (const base of ["t", "d", "full", "studio"]) for (const L of ["en", "zh", "ko"])
@@ -613,6 +621,37 @@ async function handleGameTranslate(env, request) {
   const result = await completeLanguages(env, original);
   if (result.status !== "complete") return bad(`translation_${result.status}`, 503);
   return json({ ok: true, content: result.content, translated_fields:result.translated_fields||[] });
+}
+
+async function handleMergeCandidates(env,request){
+  const id=Number(new URL(request.url).searchParams.get('id'));
+  if(!Number.isSafeInteger(id)||id<=0)return bad('invalid_id');
+  const source=await env.DB.prepare('SELECT id,claimed_by,t_en,t_zh,t_ko,steam_url,status,visible,created_at FROM games WHERE id=?').bind(id).first();
+  if(!source)return bad('game_not_found',404);
+  if(!source.claimed_by)return bad('merge_owner_required');
+  if(source.status==='merged')return bad('game_merged',409);
+  const {results}=await env.DB.prepare("SELECT id,t_en,t_zh,t_ko,steam_url,status,visible,created_at FROM games WHERE claimed_by=? AND id!=? AND status!='merged'").bind(source.claimed_by,id).all();
+  const candidates=(results||[]).map(row=>({...row,same_game:sameGame(source,row),can_keep:!(source.status==='approved'&&(row.status!=='approved'||(source.visible&&!row.visible)))}));
+  candidates.sort((a,b)=>Number(b.same_game)-Number(a.same_game)||Number(b.status==='approved'&&!!b.visible)-Number(a.status==='approved'&&!!a.visible)||a.id-b.id);
+  return json({ok:true,source,candidates});
+}
+async function handleGameMerge(env,request,s){
+  const body=await request.json().catch(()=>({})),sourceId=Number(body.source_id),targetId=Number(body.target_id);
+  if(!Number.isSafeInteger(sourceId)||sourceId<=0||!Number.isSafeInteger(targetId)||targetId<=0||sourceId===targetId)return bad('invalid_merge');
+  const {results}=await env.DB.prepare('SELECT id,claimed_by,status,visible,merged_into FROM games WHERE id IN (?,?)').bind(sourceId,targetId).all();
+  const source=(results||[]).find(row=>row.id===sourceId),target=(results||[]).find(row=>row.id===targetId);
+  if(!source||!target)return bad('game_not_found',404);
+  if(!source.claimed_by||source.claimed_by!==target.claimed_by)return bad('merge_owner_mismatch');
+  if(source.status==='merged')return source.merged_into===targetId?json({ok:true,source_id:sourceId,target_id:targetId,replayed:true}):bad('game_merged',409);
+  if(target.status==='merged')return bad('merge_target_merged',409);
+  if(source.status==='approved'&&(target.status!=='approved'||(source.visible&&!target.visible)))return bad('merge_keep_live');
+  const result=await env.DB.prepare(`UPDATE games SET merged_from_status=status,merged_from_visible=visible,
+    status='merged',visible=0,merged_into=?,merged_at=datetime('now'),merged_by=?,merge_note=?
+    WHERE id=? AND claimed_by=? AND status=? AND visible=? AND merged_into IS NULL
+      AND EXISTS(SELECT 1 FROM games target WHERE target.id=? AND target.claimed_by=? AND target.status=? AND target.visible=? AND target.status!='merged')`)
+    .bind(targetId,s.aid||null,String(body.note||'').trim().slice(0,500),sourceId,source.claimed_by,source.status,source.visible,targetId,source.claimed_by,target.status,target.visible).run();
+  if(!result.meta.changes)return bad('merge_conflict',409);
+  return json({ok:true,source_id:sourceId,target_id:targetId});
 }
 
 /* ---------- 删除 ---------- */
@@ -732,6 +771,8 @@ export async function onRequest(context) {
     if (method === "POST" && path === "review") return await handleReview(env, request);
     if (method === "POST" && path === "intro") return await handleIntroSave(env, request);
     if (method === "GET" && path === "game") return await handleGameDetail(env, request);
+    if (method === "GET" && path === "game-merge-candidates") return await handleMergeCandidates(env,request);
+    if (method === "POST" && path === "game-merge") return await handleGameMerge(env,request,s);
     if (method === "GET" && path === "games") return await handleGamesList(env, request);
     if (method === "POST" && path === "import-feishu") return await handleImportFeishu(env);
     if (method === "POST" && path === "claim-legacy") return await handleClaimLegacy(env, request);

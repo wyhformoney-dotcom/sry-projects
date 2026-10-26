@@ -1,6 +1,7 @@
 import { steamDescription as stripHtml } from "../../lib/steam-description.js";
 import { completeLanguages, OVERVIEW_LIMIT } from "../../lib/translate.js";
-import {localizedSteamText} from "../../lib/content-language.js";
+import {localizedSteamText,translationTargets} from "../../lib/content-language.js";
+import {duplicateSubmissions,canonicalMergeTargets} from "../../lib/game-submissions.js";
 // Cloudflare Pages Function —— 游戏提交(开发者)
 //   GET  /api/games-submit/mine    → 我提交的游戏及审核状态
 //   POST /api/games-submit/create  → 提交新游戏(入库为待审核,不上架)
@@ -220,15 +221,35 @@ async function requireDeveloper(env, s) {
 async function handleMine(env, s) {
   const { results } = await env.DB.prepare(
     `SELECT id, slug, t_en, t_zh, t_ko, cover, status, review_note, created_at,
-            featured, feature_state, feature_note
+            featured, feature_state, feature_note, merged_into,merged_at
      FROM games WHERE claimed_by = ? ORDER BY id DESC LIMIT 100`
   ).bind(s.aid).all();
-  return json({ ok: true, rows: results || [] });
+  const rows=results||[];
+  const targets=await canonicalMergeTargets(env.DB,rows.filter(row=>row.status==='merged').map(row=>row.id));
+  for(const row of rows)if(row.status==='merged')row.merge_target=targets.get(row.id)||null;
+  return json({ ok: true, rows },200,{'cache-control':'private, no-store'});
+}
+
+async function handleDuplicates(env,s,request){
+  const b=await request.json().catch(()=>({})),game={steam_url:S(b.steam_url,400)};
+  for(const L of ['en','zh','ko'])game['t_'+L]=S(b['t_'+L],120);
+  return json({ok:true,duplicates:await duplicateSubmissions(env.DB,s.aid,game)},200,{'cache-control':'private, no-store'});
 }
 
 async function handleCreate(env, s, request) {
   const b = await request.json().catch(() => ({}));
 
+  let submissionKey=b.submission_key||null;
+  if(submissionKey && (typeof submissionKey!=='string'||!/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(submissionKey)))return bad('invalid_submission_key');
+  if(submissionKey)submissionKey=submissionKey.toLowerCase();
+  const signature=await sha256hex(JSON.stringify(Object.fromEntries(Object.keys(b).filter(key=>!['submission_key','allow_duplicate'].includes(key)).sort().map(key=>[key,b[key]]))));
+  if(submissionKey){
+    const previous=await env.DB.prepare('SELECT * FROM games WHERE submission_key=?').bind(submissionKey).first();
+    if(previous){
+      if(previous.claimed_by!==s.aid || previous.submission_hash!==signature)return bad('submission_key_conflict',409);
+      return json({ok:true,id:previous.id,replayed:true,translation_status:translationTargets(previous).length?'failed':'complete'});
+    }
+  }
   const t_en = S(b.t_en, 120), t_zh = S(b.t_zh, 120), t_ko = S(b.t_ko, 120);
   const sourceLanguage = ["en", "zh", "ko"].includes(b.source_language) ? b.source_language : "en";
   const original = { t_en, t_zh, t_ko, source_language: sourceLanguage };
@@ -262,8 +283,17 @@ async function handleCreate(env, s, request) {
   if (!cover) return bad("cover_required");
   if (!screenshots.length) return bad("shots_required");
 
+  const identity={t_en,t_zh,t_ko,steam_url};
+  if(b.allow_duplicate!==true){
+    const duplicates=await duplicateSubmissions(env.DB,s.aid,identity);
+    if(duplicates.length)return json({ok:false,error:'duplicate_confirmation_required',duplicates},409);
+  }
   const translation = await completeLanguages(env, original, {fullLimit:OVERVIEW_LIMIT});
   const content = translation.content;
+  if(b.allow_duplicate!==true){
+    const duplicates=await duplicateSubmissions(env.DB,s.aid,{...content,steam_url});
+    if(duplicates.length)return json({ok:false,error:'duplicate_confirmation_required',duplicates},409);
+  }
 
   // 开发商展示名取自工作室信息
   const studioInput = S(b.studio_name, 120);
@@ -277,18 +307,23 @@ async function handleCreate(env, s, request) {
   ).bind(s.aid, studioInput, studioLogo || "preset:solo", (dp0 && dp0.contact_email) || s.email).run();
   const developer = studioInput;
 
-  await env.DB.prepare(
+  const inserted=await env.DB.prepare(
     `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko, developer, studio_logo, stage,
                         genres, needs, platforms, region, cover, screenshots, video, steam_url,
-                        claimed_by, deep_coop, visible, status, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))`
+                        claimed_by, deep_coop, submission_key,submission_hash,visible, status, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'pending', datetime('now'))
+     ON CONFLICT(submission_key) DO NOTHING`
   ).bind(
     slugify(t_en || t_zh || t_ko), content.t_en, content.t_zh, content.t_ko, content.d_en, content.d_zh, content.d_ko, content.full_en, content.full_zh, content.full_ko, developer, studioLogo || "preset:solo", stage,
     JSON.stringify(genres), JSON.stringify(needs), JSON.stringify(platforms), region,
-    cover, JSON.stringify(screenshots), video, steam_url, s.aid, deepCoop
+    cover, JSON.stringify(screenshots), video, steam_url, s.aid, deepCoop,submissionKey,signature
   ).run();
-
-  return json({ ok: true, translation_status: translation.status });
+  if(!inserted.meta.changes && submissionKey){
+    const previous=await env.DB.prepare('SELECT id,claimed_by,submission_hash FROM games WHERE submission_key=?').bind(submissionKey).first();
+    if(!previous || previous.claimed_by!==s.aid || previous.submission_hash!==signature)return bad('submission_key_conflict',409);
+    return json({ok:true,id:previous.id,replayed:true,translation_status:translation.status});
+  }
+  return json({ ok: true,id:inserted.meta.last_row_id, translation_status: translation.status });
 }
 
 async function handleGameDeleteMine(env, s, request) {
@@ -300,6 +335,7 @@ async function handleGameDeleteMine(env, s, request) {
   ).bind(gid, s.aid).first();
   if (!g) return bad("not_found", 404);
   if (g.status === "approved") return bad("cannot_delete_live", 403);
+  if (g.status === "merged") return bad("cannot_delete_merged", 403);
   await env.DB.prepare("DELETE FROM games WHERE id = ? AND claimed_by = ?").bind(gid, s.aid).run();
   return json({ ok: true });
 }
@@ -359,6 +395,7 @@ export async function onRequest(context) {
 
     if (method === "GET" && path === "mine") return await handleMine(env, s);
     if (method === "POST" && path === "create") return await handleCreate(env, s, request);
+    if (method === "POST" && path === "duplicates") return await handleDuplicates(env, s, request);
     if (method === "POST" && path === "upload") return await handleUpload(env, s, request);
     if (method === "POST" && path === "steam-fetch") return await handleSteamFetch(env, s, request);
     if (method === "POST" && path === "feature-apply") return await handleFeatureApply(env, s, request);

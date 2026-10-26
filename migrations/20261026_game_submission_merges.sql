@@ -1,0 +1,10 @@
+ALTER TABLE games ADD COLUMN merged_into INTEGER REFERENCES games(id) ON DELETE SET NULL;
+ALTER TABLE games ADD COLUMN merged_at TEXT;
+ALTER TABLE games ADD COLUMN merged_by INTEGER REFERENCES accounts(id) ON DELETE SET NULL;
+ALTER TABLE games ADD COLUMN merge_note TEXT;
+ALTER TABLE games ADD COLUMN merged_from_status TEXT;
+ALTER TABLE games ADD COLUMN merged_from_visible INTEGER;
+ALTER TABLE games ADD COLUMN submission_key TEXT;
+ALTER TABLE games ADD COLUMN submission_hash TEXT;
+CREATE INDEX idx_games_merged_into ON games(merged_into);
+CREATE UNIQUE INDEX idx_games_submission_key ON games(submission_key);

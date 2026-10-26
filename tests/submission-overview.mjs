@@ -53,7 +53,7 @@ test('Steam imports only basic details and new submissions enforce a 500-charact
    const missing=JSON.parse(request.messages[1].content).missing;
    return Response.json({choices:[{message:{content:JSON.stringify(Object.fromEntries(missing.map(key=>[key,key.startsWith('full_')?'x'.repeat(501):'Translation'])))}}]});
   };
-  const failedTranslation=await call('create',payload,{...env,TRANSLATION_API_KEY:'test-only'});
+  const failedTranslation=await call('create',{...payload,allow_duplicate:true},{...env,TRANSLATION_API_KEY:'test-only'});
   assert.equal(failedTranslation.status,200);assert.equal((await failedTranslation.json()).translation_status,'failed');
   const recoverable=await DB.prepare('SELECT full_en,full_zh,status FROM games ORDER BY id DESC LIMIT 1').first();
   assert.deepEqual(recoverable,{full_en:'',full_zh:payload.full_source,status:'pending'});

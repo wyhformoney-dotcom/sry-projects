@@ -113,6 +113,9 @@
   .gcard .gpill.pending{ color:var(--warn); border-color:var(--warn); }
   .gcard .gpill.verified{ color:var(--accent); border-color:var(--accent); }
   .gcard .gpill.rejected{ color:var(--danger); border-color:var(--danger); }
+  .gcard .gpill.merged{ color:var(--ink-dim);border-color:var(--line); }
+  .gmerge{ font-size:11px;color:var(--ink-dim);line-height:1.6;margin-top:7px;overflow-wrap:anywhere; }
+  .gmerge a{ color:var(--accent);text-decoration:underline; }
   .gcard .grej{ font-size:10.5px; color:var(--danger); margin-top:5px; line-height:1.4; }
   .gadd{ border:1px dashed var(--line); border-radius:11px; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:6px; cursor:pointer; color:var(--ink-dim); min-height:120px; transition:all .15s; }
@@ -235,7 +238,7 @@ const I18N = {
     noticeNoProfilePar:"Next step: complete your company profile and submit it for review.",
     mProfileDev:"Studio Info", mProfileDevSub:"Name, contact email, logo & intro — edit anytime",
     mProfilePar:"Company Profile", mProfileParSub:"Edit and resubmit your profile",
-    mGames:"Submit a Game", mGamesSub:"Goes into review, then appears in the library", myGames:"MY GAMES", gst:{pending:"IN REVIEW",approved:"LIVE",rejected:"REJECTED"},
+    mGames:"Submit a Game", mGamesSub:"Goes into review, then appears in the library", myGames:"MY GAMES", gst:{pending:"IN REVIEW",approved:"LIVE",rejected:"REJECTED",merged:"MERGED"},
     mBrowse:"Browse Projects", mBrowseSub:"Back to the game library", mBrowseDev:"Find Publishers & Investors", mBrowseDevSub:"Browse verified partners in the network", submitCard:"Submit a Game",
     myContacts:"UNLOCKED CONTACTS", myFavs:"SAVED GAMES", ctDev:"DEV", ctPar:"PARTNER",
     featApply:"★ APPLY FOR FEATURED", delGame:"🗑 DELETE", delConfirm:(n)=>`Delete "${n}"? This cannot be undone.`, featOn:"★ FEATURED", featPend:"FEATURED — IN REVIEW", featRej:"FEATURED — NOT APPROVED",
@@ -261,7 +264,7 @@ const I18N = {
     noticeNoProfilePar:"下一步:填写公司资料并提交审核。",
     mProfileDev:"工作室信息", mProfileDevSub:"名称、联系邮箱、Logo 与简介,随时可改",
     mProfilePar:"公司资料", mProfileParSub:"修改资料、重新提交审核",
-    mGames:"提交新游戏", mGamesSub:"提交后审核,通过即上架项目库", myGames:"我的游戏", gst:{pending:"待审核",approved:"已上架",rejected:"未通过"},
+    mGames:"提交新游戏", mGamesSub:"提交后审核,通过即上架项目库", myGames:"我的游戏", gst:{pending:"待审核",approved:"已上架",rejected:"未通过",merged:"已合并"},
     mBrowse:"浏览项目库", mBrowseSub:"回到游戏列表", mBrowseDev:"寻找发行商 / 投资方", mBrowseDevSub:"浏览网络中已认证的合作方", submitCard:"提交新游戏",
     myContacts:"已解锁的联系人", myFavs:"我收藏的游戏", ctDev:"开发者", ctPar:"合作方",
     featApply:"★ 申请精选", delGame:"🗑 删除", delConfirm:(n)=>`确定删除《${n}》？此操作不可恢复。`, featOn:"★ 精选中", featPend:"精选申请审核中", featRej:"精选申请未通过",
@@ -287,7 +290,7 @@ const I18N = {
     noticeNoProfilePar:"다음 단계: 회사 프로필을 작성하고 심사에 제출하세요.",
     mProfileDev:"스튜디오 정보", mProfileDevSub:"이름, 이메일, 로고, 소개 — 언제든 수정 가능",
     mProfilePar:"회사 프로필", mProfileParSub:"프로필 수정 및 재제출",
-    mGames:"게임 제출", mGamesSub:"심사 후 라이브러리에 등록됩니다", myGames:"내 게임", gst:{pending:"심사 중",approved:"등록됨",rejected:"반려됨"},
+    mGames:"게임 제출", mGamesSub:"심사 후 라이브러리에 등록됩니다", myGames:"내 게임", gst:{pending:"심사 중",approved:"등록됨",rejected:"반려됨",merged:"병합됨"},
     mBrowse:"프로젝트 둘러보기", mBrowseSub:"게임 목록으로", mBrowseDev:"퍼블리셔 / 투자자 찾기", mBrowseDevSub:"네트워크의 인증된 파트너 둘러보기", submitCard:"게임 제출",
     myContacts:"해제한 연락처", myFavs:"저장한 게임", ctDev:"개발자", ctPar:"파트너",
     featApply:"★ 추천 신청", delGame:"🗑 삭제", delConfirm:(n)=>`"${n}" 삭제할까요? 되돌릴 수 없습니다.`, featOn:"★ 추천됨", featPend:"추천 심사 중", featRej:"추천 반려됨",
@@ -352,7 +355,7 @@ function render(){
     $("#games-section").style.display="block";
     $("#mygames-t").textContent=t.myGames;
     const cards = myGames.map(g=>{
-      const name = g.t_en || g.t_zh || g.t_ko || "—";
+      const name = g['t_'+lang] || g.t_en || g.t_zh || g.t_ko || "—";
       const stClass = g.status==="approved" ? "verified" : g.status;
       let featHtml = "";
       if(g.status==="approved"){
@@ -361,14 +364,18 @@ function render(){
         else if(g.feature_state==="rejected") featHtml = `<span class="featstat rej">${t.featRej}</span>${g.feature_note?`<div class="grej">${esc(g.feature_note)}</div>`:""}<div class="featrow"><button class="featbtn" onclick="openFeature(${g.id})">${t.featApply}</button></div>`;
         else featHtml = `<div class="featrow"><button class="featbtn" onclick="openFeature(${g.id})">${t.featApply}</button></div>`;
       }
-      const delHtml = (g.status!=="approved")
+      const delHtml = (!["approved","merged"].includes(g.status))
         ? `<div class="featrow"><button class="featbtn delbtn" onclick="deleteMyGame(${g.id}, ${JSON.stringify(esc(name))})">${t.delGame}</button></div>` : "";
-      return `<div class="gcard${g.featured?" feat":""}">
+      const target=g.merge_target;
+      const targetName=target&&(target['t_'+lang]||target.t_en||target.t_zh||target.t_ko||'—');
+      const mergeLabels={en:'Merged into',zh:'已合并至',ko:'병합된 신청'};
+      const mergeHtml=g.status==='merged'&&target?`<div class="gmerge">${mergeLabels[lang]} ${target.status==='approved'&&target.visible?`<a href="/game.html?id=${target.id}">${esc(targetName)}</a>`:esc(targetName)} · #${target.id}</div>`:'';
+      return `<div id="game-${g.id}" class="gcard${g.featured&&g.status==='approved'?" feat":""}">
         ${g.cover?`<img class="gcover" src="${esc(g.cover)}">`:`<div class="gcover"></div>`}
         <div class="gbody"><div class="gname">${esc(name)}</div>
           <span class="gpill ${stClass}">${t.gst[g.status]||g.status}</span>
           ${g.status==="rejected"&&g.review_note?`<div class="grej">${esc(g.review_note)}</div>`:""}
-          ${featHtml}${delHtml}
+          ${mergeHtml}${featHtml}${delHtml}
         </div></div>`;
     }).join("");
     const addCard = `<div class="gadd" onclick="location.href='/submit-game.html'"><div class="plus">+</div><div class="lbl">${t.submitCard}</div></div>`;
