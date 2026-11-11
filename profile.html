@@ -87,6 +87,9 @@
   .pubbox{ margin-top:12px; border:1px solid var(--line); border-radius:9px; padding:12px 14px; background:var(--panel2); }
   .pubrow{ display:flex !important; align-items:center; gap:9px; font-size:13px; font-weight:700; cursor:pointer; margin:0 !important; }
   .pubrow input{ width:16px; height:16px; accent-color:var(--accent); cursor:pointer; }
+  .termsrow{ display:flex !important; align-items:flex-start; gap:10px; margin:18px 0 6px !important; font-size:13px; font-weight:500; line-height:1.6; cursor:pointer; }
+  .termsrow input{ width:16px; height:16px; margin-top:2px; accent-color:var(--accent); cursor:pointer; flex:none; }
+  .termsrow a{ color:var(--accent); text-decoration:underline; }
   .pubhint{ font-size:11.5px; color:var(--ink-faint); line-height:1.65; margin:8px 0 0; }
   .pubhint a{ color:var(--accent); }
   .logopick{ display:flex; gap:12px; flex-wrap:wrap; }
@@ -260,6 +263,7 @@
       <input type="file" id="par-file" accept="image/jpeg,image/png,image/webp" hidden>
     </div>
 
+    <label class="termsrow cjk-swap"><input type="checkbox" id="par-terms"><span id="par-terms-label"></span></label>
     <button class="btn" id="par-save"></button>
     <div class="msg" id="par-msg"></div>
   </div>
@@ -267,6 +271,7 @@
   <a class="back" href="/" id="back"></a>
 </div>
 
+<script src="/assets/terms.js"></script>
 <script>
 const GENRES = ["Action","Adventure","RPG","Strategy","Simulation","Puzzle","Platformer","Shooter","Survival","Horror","Roguelite","Metroidvania","Souls-like","Visual Novel","Card Game","Open World","Narrative","Comedy","Co-op","Multiplayer","Other"];
 const GENRE_ZH = {"Action":"动作","Adventure":"冒险","RPG":"角色扮演","Strategy":"策略","Simulation":"模拟","Puzzle":"解谜","Platformer":"平台","Shooter":"射击","Survival":"生存","Horror":"恐怖","Roguelite":"肉鸽","Metroidvania":"银河恶魔城","Souls-like":"类魂","Visual Novel":"视觉小说","Card Game":"卡牌","Open World":"开放世界","Narrative":"叙事","Comedy":"喜剧","Co-op":"合作","Multiplayer":"多人","Other":"其他"};
@@ -444,6 +449,7 @@ let devLogoUrl = "preset:solo", parProofUrl = "", parLogoUrl = "", regionCode = 
 let selKinds = [], selGenres = [], selMarkets = [];
 
 function T(){ return I18N[lang]; }
+for(const L of Object.keys(I18N)) Object.assign(I18N[L].errors, SryTerms.errors("partner", L));
 function err(el,key){ el.className=el.classList.contains("smsg")||el.id==="work-msg"?"smsg err":"msg err"; el.textContent = T().errors[key] || T().errors.server; }
 function ok(el,text){ el.className=el.id==="work-msg"?"smsg ok":"msg ok"; el.textContent = text; }
 function clearMsg(el){ el.className=el.id==="work-msg"?"smsg":"msg"; el.textContent=""; }
@@ -615,6 +621,7 @@ function renderText(){
   $("#pubHintOn").innerHTML=t.pubHintOn; $("#pubHintOff").innerHTML=t.pubHintOff; $("#pubRec").innerHTML=t.pubRec;
   syncPubHint();
   $("#p11").textContent=t.p11; $("#p11n").textContent=t.p11n;
+  SryTerms.renderConsent($("#par-terms-label"), "partner", lang);
   $("#pw1").textContent=t.pw1; $("#pw1n").textContent=t.pw1n;
   $("#work-send").textContent=t.sendCode; $("#work-verify").textContent=t.verify;
   $("#p12").textContent=t.p12; $("#p12n").textContent=t.p12n;
@@ -648,6 +655,7 @@ $("#dev-save").onclick = async ()=>{
 
 $("#par-save").onclick = async ()=>{
   const t=T(), m=$("#par-msg"); clearMsg(m);
+  if(!$("#par-terms").checked) return err(m,"terms_required");
   $("#par-save").disabled=true; $("#par-save").textContent=t.saving;
   try{
     await api("save",{ method:"POST", headers:{"content-type":"application/json"},
@@ -657,7 +665,8 @@ $("#par-save").onclick = async ()=>{
         genres:selGenres, markets:selMarkets,
         steam_url:$("#par-steam").value.trim(), website:$("#par-web").value.trim(),
         contact_email:$("#par-email").value, contact_public:$("#par-public").checked,
-        proof_type:$("#par-prooftype").value, proof_image:parProofUrl
+        proof_type:$("#par-prooftype").value, proof_image:parProofUrl,
+        terms_version:SryTerms.version.partner
       })});
     status="pending"; renderText(); ok(m, t.saved);
   }catch(e){ err(m,e); }

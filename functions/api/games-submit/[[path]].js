@@ -2,6 +2,7 @@ import { steamDescription as stripHtml } from "../../lib/steam-description.js";
 import { completeLanguages, OVERVIEW_LIMIT } from "../../lib/translate.js";
 import {localizedSteamText,translationTargets} from "../../lib/content-language.js";
 import {duplicateSubmissions,canonicalMergeTargets} from "../../lib/game-submissions.js";
+import {termsError,recordTermsAcceptance} from "../../lib/terms.js";
 // Cloudflare Pages Function —— 游戏提交(开发者)
 //   GET  /api/games-submit/mine    → 我提交的游戏及审核状态
 //   POST /api/games-submit/create  → 提交新游戏(入库为待审核,不上架)
@@ -250,6 +251,8 @@ async function handleCreate(env, s, request) {
       return json({ok:true,id:previous.id,replayed:true,translation_status:translationTargets(previous).length?'failed':'complete'});
     }
   }
+  const terms = termsError('developer', b.terms_version);
+  if (terms) return bad(terms);
   const t_en = S(b.t_en, 120), t_zh = S(b.t_zh, 120), t_ko = S(b.t_ko, 120);
   const sourceLanguage = ["en", "zh", "ko"].includes(b.source_language) ? b.source_language : "en";
   const original = { t_en, t_zh, t_ko, source_language: sourceLanguage };
@@ -306,6 +309,7 @@ async function handleCreate(env, s, request) {
      ON CONFLICT(account_id) DO UPDATE SET studio_name=excluded.studio_name, logo=excluded.logo, updated_at=datetime('now')`
   ).bind(s.aid, studioInput, studioLogo || "preset:solo", (dp0 && dp0.contact_email) || s.email).run();
   const developer = studioInput;
+  await recordTermsAcceptance(env.DB, s.aid, 'developer');
 
   const inserted=await env.DB.prepare(
     `INSERT INTO games (slug, t_en, t_zh, t_ko, d_en, d_zh, d_ko, full_en, full_zh, full_ko, developer, studio_logo, stage,

@@ -6,6 +6,7 @@ import {createHmac,randomUUID} from 'node:crypto';
 import {onRequest as submissions} from '../functions/api/games-submit/[[path]].js';
 import {onRequest as admin} from '../functions/api/admin/[[path]].js';
 import {onRequestGet as publicGames} from '../functions/api/games.js';
+import {TERMS_VERSION} from '../functions/lib/terms.js';
 const {Miniflare,convertV4MiniflareOptions}=createRequire(import.meta.url)('miniflare');
 
 test('duplicate warnings permit confirmed submissions, retries are idempotent, and merges preserve application history',async()=>{
@@ -20,7 +21,7 @@ test('duplicate warnings permit confirmed submissions, retries are idempotent, a
   const duplicate=await call(submissions,'duplicates',{t_en:'Ｄｕｐｌｉｃａｔｅ　Ｇａｍｅ！',steam_url:'https://store.steampowered.com/app/123/?utm=test'});
   const matches=(await duplicate.json()).duplicates;assert.deepEqual(matches.map(x=>x.id).sort((a,b)=>a-b),[10,11,12,16]);assert.ok(!matches.some(x=>x.id===14));
   assert.equal((await call(submissions,'duplicates',{t_en:'Duplicate Game'},null)).status,401);
-  const payload={t_en:'Duplicate Game',t_zh:'重复游戏',t_ko:'중복 게임',d_en:'A puzzle adventure.',d_zh:'解谜冒险游戏。',d_ko:'퍼즐 어드벤처 게임입니다.',full_en:'Seeking a publisher.',full_zh:'寻找发行合作。',full_ko:'퍼블리싱 협력을 찾습니다.',source_language:'en',studio_name:'Developer',stage:'Demo',genres:['Adventure'],platforms:['PC'],needs:['Seeking Publisher'],region:'Global',cover:'https://example.com/cover.png',screenshots:['https://example.com/shot.png'],submission_key:randomUUID()};
+  const payload={terms_version:TERMS_VERSION.developer,t_en:'Duplicate Game',t_zh:'重复游戏',t_ko:'중복 게임',d_en:'A puzzle adventure.',d_zh:'解谜冒险游戏。',d_ko:'퍼즐 어드벤처 게임입니다.',full_en:'Seeking a publisher.',full_zh:'寻找发行合作。',full_ko:'퍼블리싱 협력을 찾습니다.',source_language:'en',studio_name:'Developer',stage:'Demo',genres:['Adventure'],platforms:['PC'],needs:['Seeking Publisher'],region:'Global',cover:'https://example.com/cover.png',screenshots:['https://example.com/shot.png'],submission_key:randomUUID()};
   const beforeCount=(await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n;
   const warning=await call(submissions,'create',payload);assert.equal(warning.status,409);assert.equal((await warning.json()).error,'duplicate_confirmation_required');
   assert.equal((await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n,beforeCount);

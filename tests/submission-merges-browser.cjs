@@ -38,7 +38,7 @@ const base='http://127.0.0.1:8811';
   if(directory){await page.locator('#lang [data-l="zh"]').click();await page.locator('#duplicate-warning').screenshot({path:directory+'/duplicate-warning.png'});}
   await page.locator('#full-en').fill('A project seeking publishing support.');await page.evaluate(()=>{selStage=['Demo'];selGenres=['Adventure'];selPlatforms=['PC'];selMarket=['Global'];selNeeds=['Seeking Publisher'];coverUrl='https://example.com/cover.png';shotUrls=['https://example.com/shot.png'];});
   await page.locator('#submit').click();assert.equal(creates,0);
-  await page.locator('#duplicate-confirm').check();await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('#msg').classList.contains('err'));assert.equal(creates,1);
+  await page.locator('#duplicate-confirm').check();await page.locator('#terms-agree').check();await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('#msg').classList.contains('err'));assert.equal(creates,1);
   await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('#msg').classList.contains('ok'));assert.equal(creates,2);
   duplicate=false;await page.locator('#t-en').fill('Different title');await page.waitForFunction(()=>document.querySelector('#duplicate-warning').hidden);
   await page.goto(base+'/admin.html');await page.locator('[data-m="games"]').click();await page.locator('.row[data-id="11"] .rhead').click();

@@ -125,6 +125,15 @@
     color:var(--ink-faint); font-family:var(--mono); font-size:11px; line-height:1; cursor:pointer; padding:0; }
   .qmark:hover{ border-color:var(--accent); color:var(--accent); }
   .deephint{ font-size:12px; color:var(--ink-dim); line-height:1.75; margin:11px 0 0; padding-top:11px; border-top:1px solid var(--line); }
+  .guidelines{ margin:22px 0 0; padding:14px 16px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; background:var(--panel2); font-size:12.5px; line-height:1.65; color:var(--ink-dim); }
+  .guidelines strong{ display:block; color:var(--ink); font-size:13.5px; margin-bottom:5px; }
+  .guidelines ul{ padding-left:18px; }
+  .guidelines li{ margin:4px 0; }
+  .guidelines li::marker{ color:var(--accent); }
+  .guidelines a{ display:inline-block; margin-top:6px; color:var(--accent); font-family:var(--mono); font-size:11px; }
+  .termsrow{ display:flex !important; align-items:flex-start; gap:10px; margin:18px 0 6px !important; font-size:13px; font-weight:500; line-height:1.6; cursor:pointer; }
+  .termsrow input{ width:16px; height:16px; margin-top:2px; accent-color:var(--accent); cursor:pointer; flex:none; }
+  .termsrow a{ color:var(--accent); text-decoration:underline; }
   .btn{ width:100%; margin-top:8px; padding:14px 0; border:none; border-radius:8px; cursor:pointer;
     background:var(--accent); color:var(--accent-ink); font-family:var(--mono); font-weight:700; font-size:13px;
     letter-spacing:.08em; text-transform:uppercase; }
@@ -141,6 +150,7 @@
 </style>
 <link rel="stylesheet" href="/assets/description.css">
 <script src="/assets/description.js"></script>
+<script src="/assets/terms.js"></script>
 
 <nav class="nav">
   <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
@@ -175,6 +185,7 @@
   </div>
 
   <div class="card" id="form">
+    <div class="guidelines cjk-swap" id="guidelines"></div>
     <div class="steambox">
       <div class="sb-title cjk-swap" id="g9"></div>
       <p class="sub cjk-swap" id="g9n" style="margin-bottom:12px"></p>
@@ -262,6 +273,7 @@
       <p class="deephint cjk-swap" id="deepHint" style="display:none"></p>
     </div>
 
+    <label class="termsrow cjk-swap"><input type="checkbox" id="terms-agree"><span id="terms-label"></span></label>
     <button class="btn" id="submit"></button>
     <div class="msg" id="msg"></div>
   </div>
@@ -490,6 +502,7 @@ function submittedTranslations(){
  return result;
 }
 
+for(const L of Object.keys(I18N)) Object.assign(I18N[L].errors, SryTerms.errors("developer", L));
 function T(){ return I18N[lang]; }
 function err(key){ const m=$("#msg"); m.className="msg err"; m.textContent=T().errors[key]||String(key); }
 function okmsg(){ const m=$("#msg"); m.className="msg ok"; m.textContent=T().ok; }
@@ -616,6 +629,7 @@ function renderText(){
   $("#g11").textContent=t.g11; $("#g11n").textContent=t.g11n;
   $("#g12").textContent=t.g12; $("#g12n").textContent=t.g12n;
   $("#deepLabel").textContent=t.deepLabel; $("#deepHint").textContent=t.deepHint;
+  SryTerms.renderGuidelines($("#guidelines"), lang, true); SryTerms.renderConsent($("#terms-label"), "developer", lang);
   $("#submit").textContent=t.submit;
   chips($("#stage"), STAGES, STAGE_L, selStage, true);
   chips($("#genres"), GENRES, GENRE_L, selGenres);
@@ -644,6 +658,7 @@ $("#submit").onclick = async ()=>{
   if(!coverUrl) return err("cover_required");
   if(!shotUrls.length) return err("shots_required");
   if(duplicateRows.length&&!$('#duplicate-confirm').checked){paintDuplicateWarning();$('#duplicate-warning').scrollIntoView({block:'center',behavior:'smooth'});return;}
+  if(!$("#terms-agree").checked) return err("terms_required");
   submissionBusy=true;
   $("#submit").disabled=true; $("#submit").textContent=t.submitting;
   try{
@@ -656,12 +671,14 @@ $("#submit").onclick = async ()=>{
         stage:selStage[0], genres:selGenres, platforms:selPlatforms,
         region:selMarket[0], needs:selNeeds,
         steam_url:$("#steam").value.trim(), video:$("#video").value.trim(),
-        cover:coverUrl, screenshots:shotUrls
+        cover:coverUrl, screenshots:shotUrls,
+        terms_version:SryTerms.version.developer
       };
     const signature=JSON.stringify(payload);if(signature!==draftSignature){draftSignature=signature;draftKey=crypto.randomUUID();}
     payload.submission_key=draftKey;payload.allow_duplicate=duplicateRows.length>0&&$('#duplicate-confirm').checked;
     const result=await api("/api/games-submit/create",{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});
     ++duplicateSequence;clearTimeout(duplicateTimer);duplicateRows=[];$('#duplicate-confirm').checked=false;draftSignature='';paintDuplicateWarning();
+    $("#terms-agree").checked=false;
     okmsg();
     if(result.translation_status!=="complete") $("#msg").textContent+=EDITOR_TEXT[lang].warning;
     window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"});

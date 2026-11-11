@@ -8,6 +8,7 @@ import {completeLanguages} from '../functions/lib/translate.js';
 import {onRequest as admin} from '../functions/api/admin/[[path]].js';
 import {onRequest as submit} from '../functions/api/games-submit/[[path]].js';
 import {onRequestGet as games} from '../functions/api/games.js';
+import {TERMS_VERSION} from '../functions/lib/terms.js';
 const {Miniflare,convertV4MiniflareOptions}=createRequire(import.meta.url)('miniflare');
 
 test('wrong nonempty short pitches and optional studio introductions are translation targets',async()=>{
@@ -75,7 +76,7 @@ test('Steam fallback is rejected, admin drafts repair filled fields and approval
    assert.ok(source.missing.includes('d_en')&&source.missing.includes('d_zh')&&source.missing.includes('d_ko'));
    return Response.json({choices:[{message:{content:JSON.stringify(Object.fromEntries(source.missing.map(key=>[key,key.startsWith('t_')?'Card Project':key.endsWith('_zh')?'卡牌解谜游戏，已有试玩版。':key.endsWith('_ko')?'체험판이 있는 카드 퍼즐 게임입니다.':'A card puzzle game with a demo.'])))}}]});
   };
-  const derived=await call(submit,'create',{t_en:'Card Project',t_zh:'卡牌项目',t_ko:'카드 프로젝트',source_language:'zh',full_source:'卡牌解谜游戏，已有试玩版，寻找发行合作。',studio_name:'Studio',stage:'Demo',genres:['Puzzle'],platforms:['PC'],needs:['Seeking Publisher'],region:'Global',cover:'https://example.com/cover.png',screenshots:['https://example.com/shot.png']});
+  const derived=await call(submit,'create',{terms_version:TERMS_VERSION.developer,t_en:'Card Project',t_zh:'卡牌项目',t_ko:'카드 프로젝트',source_language:'zh',full_source:'卡牌解谜游戏，已有试玩版，寻找发行合作。',studio_name:'Studio',stage:'Demo',genres:['Puzzle'],platforms:['PC'],needs:['Seeking Publisher'],region:'Global',cover:'https://example.com/cover.png',screenshots:['https://example.com/shot.png']});
   assert.equal(derived.status,200);assert.equal((await derived.json()).translation_status,'complete');
   const derivedRow=await DB.prepare('SELECT d_en,d_zh,d_ko,status FROM games ORDER BY id DESC LIMIT 1').first();
   assert.equal(derivedRow.d_en,'A card puzzle game with a demo.');assert.equal(derivedRow.d_zh,'卡牌解谜游戏，已有试玩版。');assert.equal(derivedRow.d_ko,'체험판이 있는 카드 퍼즐 게임입니다.');assert.equal(derivedRow.status,'pending');

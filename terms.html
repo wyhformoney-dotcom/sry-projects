@@ -1,0 +1,113 @@
+<!-- SRY Game Hub — 提交须知与协议(开发者 / 合作方),正文在 /assets/terms.js -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terms · SRY Game Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0c0d0a; --panel:#121310; --panel2:#16170f;
+    --line:#2c2e26; --line-soft:#1e1f19;
+    --ink:#e7e7df; --ink-dim:#9a9b92; --ink-faint:#6b6d62;
+    --accent:#c6f24e; --accent-ink:#0c0d0a;
+    --mono:'Space Mono',monospace; --sans:'Archivo',sans-serif; --cjk:'Noto Sans SC',sans-serif; --kr:'Noto Sans KR',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  a{text-decoration:none;color:inherit;}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--sans);
+    background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:46px 46px; -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body[lang="zh"]{ font-family:var(--cjk); }
+  body[lang="ko"]{ font-family:var(--kr); }
+
+  .nav{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 28px; border-bottom:1px solid var(--line-soft); }
+  .logo{ display:flex; align-items:center; gap:9px; font-family:var(--sans); font-weight:900; font-size:17px; white-space:nowrap; }
+  .logo .mark{ width:11px; height:11px; background:var(--accent); display:inline-block; }
+  .lang{ display:flex; border:1px solid var(--line); border-radius:7px; overflow:hidden; }
+  .lang button{ font-family:var(--mono); font-size:11px; padding:6px 11px; background:transparent; color:var(--ink-dim); border:none; cursor:pointer; }
+  .lang button.on{ background:var(--accent); color:var(--accent-ink); font-weight:700; }
+
+  .wrap{ max-width:680px; margin:0 auto; padding:48px 20px 90px; }
+  .kicker{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; color:var(--accent); margin-bottom:18px; }
+  .tabs{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:30px; }
+  .tabs a{ font-family:var(--mono); font-size:11.5px; padding:8px 14px; border:1px solid var(--line); border-radius:20px; color:var(--ink-dim); }
+  .tabs a.on{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:700; }
+  h1{ font-size:28px; font-weight:900; letter-spacing:-.02em; margin-bottom:8px; }
+  .meta{ font-family:var(--mono); font-size:11px; color:var(--ink-faint); margin-bottom:22px; }
+  .intro{ color:var(--ink-dim); font-size:14px; line-height:1.75; margin-bottom:26px; }
+  .guidelines{ margin:0 0 26px; padding:16px 18px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; background:var(--panel); font-size:13.5px; line-height:1.7; color:var(--ink-dim); }
+  .guidelines strong{ display:block; color:var(--ink); font-size:14px; margin-bottom:6px; }
+  .guidelines ul{ padding-left:18px; }
+  .guidelines li{ margin:5px 0; }
+  .guidelines li::marker{ color:var(--accent); }
+  .clauses{ list-style:none; counter-reset:clause; }
+  .clauses li{ counter-increment:clause; padding:18px 0; border-top:1px solid var(--line-soft); overflow-wrap:anywhere; }
+  .clauses h2{ display:flex; align-items:baseline; gap:10px; font-size:15px; font-weight:800; margin-bottom:7px; }
+  .clauses h2::before{ content:counter(clause,decimal-leading-zero); font-family:var(--mono); font-size:11px; color:var(--accent); flex:none; }
+  .clauses p{ color:var(--ink-dim); font-size:14px; line-height:1.75; }
+  .back{ display:inline-block; margin-top:26px; font-family:var(--mono); font-size:11.5px; color:var(--ink-dim); }
+  .back:hover{ color:var(--accent); }
+  @media (max-width:520px){ .nav{ padding:14px 16px; } .wrap{ padding-top:34px; } h1{ font-size:24px; } }
+</style>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark"></span>SRY GAME HUB</a>
+  <div class="lang" id="lang">
+    <button data-l="en" class="on">EN</button><button data-l="zh">中文</button><button data-l="ko">한국어</button>
+  </div>
+</nav>
+
+<main class="wrap">
+  <div class="kicker" id="kicker"></div>
+  <div class="tabs" id="tabs"><a href="#developer" data-doc="developer"></a><a href="#partner" data-doc="partner"></a></div>
+  <h1 id="title"></h1>
+  <div class="meta" id="meta"></div>
+  <div class="guidelines" id="guidelines"></div>
+  <p class="intro" id="intro"></p>
+  <ol class="clauses" id="clauses"></ol>
+  <a class="back" href="/" id="back"></a>
+</main>
+
+<script src="/assets/terms.js"></script>
+<script>
+const PAGE_TEXT = {
+  en:{ kicker:"SRY GAME HUB // TERMS", developer:"Developers", partner:"Publishers & Investors", version:"Version", back:"← Back to Home" },
+  zh:{ kicker:"SRY GAME HUB // 协议", developer:"开发者", partner:"发行商与投资者", version:"版本", back:"← 返回首页" },
+  ko:{ kicker:"SRY GAME HUB // 약관", developer:"개발자", partner:"퍼블리셔·투자자", version:"버전", back:"← 홈으로" }
+};
+const $ = (s)=>document.querySelector(s);
+let lang = localStorage.getItem("sry_lang") || "en";
+if(!PAGE_TEXT[lang]) lang = "en";
+const currentDoc = ()=> location.hash === "#partner" ? "partner" : "developer";
+
+function render(){
+  const doc = currentDoc(), text = PAGE_TEXT[lang], terms = SryTerms.agreements[doc][lang];
+  document.body.setAttribute("lang", lang);
+  document.documentElement.lang = lang === "zh" ? "zh-Hans" : lang;
+  document.title = terms.title + " · SRY Game Hub";
+  document.querySelectorAll("#lang button").forEach(b=>b.classList.toggle("on", b.dataset.l===lang));
+  document.querySelectorAll("#tabs a").forEach(a=>{ a.textContent = text[a.dataset.doc]; a.classList.toggle("on", a.dataset.doc===doc); });
+  $("#kicker").textContent = text.kicker;
+  $("#title").textContent = terms.title;
+  $("#meta").textContent = terms.audience + " · " + text.version + " " + SryTerms.version[doc];
+  $("#guidelines").hidden = doc !== "developer";
+  if(doc === "developer") SryTerms.renderGuidelines($("#guidelines"), lang);
+  $("#intro").textContent = terms.intro;
+  $("#clauses").replaceChildren(...terms.clauses.map(([heading, body])=>{
+    const item = document.createElement("li"), h = document.createElement("h2"), p = document.createElement("p");
+    h.textContent = heading; p.textContent = body; item.append(h, p); return item;
+  }));
+  $("#back").textContent = text.back;
+}
+
+$("#lang").addEventListener("click",(e)=>{
+  const b = e.target.closest("button"); if(!b) return;
+  lang = b.dataset.l; localStorage.setItem("sry_lang", lang); render();
+});
+window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
+render();
+</script>
