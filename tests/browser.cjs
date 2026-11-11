@@ -27,7 +27,7 @@ await page.setViewportSize({width:390,height:844});assert.equal(await page.evalu
 await page.setViewportSize({width:1200,height:900});
 await page.locator('#studio').fill('Test Studio');await page.locator('#t-zh').fill('只有中文名的测试游戏');await page.locator('#d-en').fill('中文简介');
 await page.evaluate(()=>{selStage=['Demo'];selGenres=['Adventure'];selPlatforms=['PC'];selMarket=['Global'];selNeeds=['Seeking Publisher'];coverUrl='https://example.com/a.png';shotUrls=['https://example.com/b.png'];});
-await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('#msg').classList.contains('ok'));
+await page.locator('#terms-agree').check();await page.locator('#submit').click();await page.waitForFunction(()=>document.querySelector('#msg').classList.contains('ok'));
 assert.equal(submitted.source_language,'zh');assert.equal(submitted.t_en,'');assert.equal(submitted.t_zh,'只有中文名的测试游戏');assert.equal(submitted.d_source,'中文简介');
 await page.goto('http://127.0.0.1:8811/game.html?id=a-quoted-developers-game');
 // Use the same slug computation the app uses, including punctuation.

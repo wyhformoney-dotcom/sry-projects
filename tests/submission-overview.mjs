@@ -5,6 +5,7 @@ import {createRequire} from 'node:module';
 import {readFile} from 'node:fs/promises';
 import {onRequest as submit} from '../functions/api/games-submit/[[path]].js';
 import {completeLanguages} from '../functions/lib/translate.js';
+import {TERMS_VERSION} from '../functions/lib/terms.js';
 const {Miniflare,convertV4MiniflareOptions}=createRequire(import.meta.url)('miniflare');
 
 test('Steam imports only basic details and new submissions enforce a 500-character authored overview',async()=>{
@@ -37,7 +38,7 @@ test('Steam imports only basic details and new submissions enforce a 500-charact
   assert.equal(data.studio_name,'Steam Studio');assert.equal(data.stage,'In Development');
   assert.equal(data.screenshots.length,1);assert.equal(images.length,2);
   assert.ok(data.cover.startsWith('https://assets.srygamehub.com/'));
-  const payload={t_zh:'项目',source_language:'zh',d_source:'一句话简介',full_source:'特色玩法与发行需求。',studio_name:'Studio',stage:'Demo',genres:['Adventure'],platforms:['PC'],region:'Global',needs:['Seeking Publisher'],cover:data.cover,screenshots:data.screenshots};
+  const payload={terms_version:TERMS_VERSION.developer,t_zh:'项目',source_language:'zh',d_source:'一句话简介',full_source:'特色玩法与发行需求。',studio_name:'Studio',stage:'Demo',genres:['Adventure'],platforms:['PC'],region:'Global',needs:['Seeking Publisher'],cover:data.cover,screenshots:data.screenshots};
   const count=async()=>Number((await DB.prepare('SELECT COUNT(*) AS n FROM games').first()).n);
   for(const extra of [{full_source:'字'.repeat(501)},{full_en:'x'.repeat(501)},{full_ko:'가'.repeat(501)}]){
    const response=await call('create',{...payload,...extra});

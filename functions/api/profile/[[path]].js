@@ -6,6 +6,8 @@
 //   POST /api/profile/verify-work-code → 校验并给账号打"邮箱已验证"标记 { email, code }
 // 依赖:env.DB、env.R2、env.RESEND_API_KEY、env.SESSION_SECRET
 
+import {termsError,recordTermsAcceptance} from "../../lib/terms.js";
+
 const COOKIE = "sry_session";
 const ASSET_HOST = "https://assets.srygamehub.com";
 const MAX_UPLOAD = 5 * 1024 * 1024;
@@ -169,6 +171,8 @@ async function handleSave(env, s, request) {
     if (!isUrl(steam_url) || !isUrl(website)) return bad("url_invalid");
     if (!isEmail(contact_email)) return bad("contact_email_invalid");
     if (!inSet(proof_type, PARTNER_PROOF)) return bad("proof_type_invalid");
+    const terms = termsError('partner', b.terms_version);
+    if (terms) return bad(terms);
 
     // 验证方式:企业邮箱 → 必须已完成验证;其他 → 必须有材料图
     if (proof_type === "work_email") {
@@ -180,6 +184,7 @@ async function handleSave(env, s, request) {
       return bad("proof_image_required");
     }
 
+    await recordTermsAcceptance(env.DB, s.aid, 'partner');
     await env.DB.prepare(
       `INSERT INTO partner_profiles (account_id, name_zh, name_en, name_ko, logo, kinds, region, intro, genres, markets,
                                      steam_url, website, contact_email, proof_type, proof_image, contact_public, updated_at)
